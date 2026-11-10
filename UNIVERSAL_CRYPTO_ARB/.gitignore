@@ -1,0 +1,50 @@
+# Logs
+*.log
+
+# Output text files
+arb_*.txt
+
+# Keep requirements.txt
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Cache directories (auto-regenerated)
+bt_cache/
+factor_cache/
+backtest_cache/
+backtest_cache_v2/
+arb_research_cache/
+cache_5yr/
+futures_cache/
+options_cache/
+stat_arb_cache/
+risk_cache/
+
+# ML models (re-trained on first run)
+alpha_cache/
+
+# Large result/output files
+*.json
+!.env.example
+
+# Secrets
+.env
+
+# Large logs
+backend_restart.log
+backend_new.log
+backend_8901.log
+backend.log
+frontend.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# accuracy_db — keep the SQLite DB (GitHub Actions writes to it)
+# accuracy_db/ is intentionally NOT ignored

@@ -1,0 +1,43 @@
+name: Crypto Quant Scan
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'   # Every 30 minutes
+  workflow_dispatch:           # Manual trigger from GitHub UI
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Cache pip
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Run accuracy tracker cycle
+      run: python signal_accuracy_tracker.py --once
+
+    - name: Commit signal database
+      run: |
+        git config --global user.email "quant-bot@github.com"
+        git config --global user.name "Quant Bot"
+        git add accuracy_db/
+        git diff --staged --quiet || git commit -m "Signal scan $(date -u '+%Y-%m-%d %H:%M UTC')"
+        git push || true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
