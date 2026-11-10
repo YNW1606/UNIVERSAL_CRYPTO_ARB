@@ -344,7 +344,14 @@ def run_global_scan(symbols=None, portfolio_size=PORTFOLIO_SIZE):
 
     fused.sort(key=lambda r: abs(r["unified_score"]), reverse=True)
     print_dashboard(fused, pair_sigs, carry_ops, risk_summary, engine_status, portfolio_size)
-    return fused
+    extra = {
+        "carry_ops":      carry_ops,
+        "pair_sigs":      pair_sigs,
+        "risk_summary":   risk_summary,
+        "engine_status":  engine_status,
+        "engines_online": n_online,
+    }
+    return fused, extra
 
 # ── DISPLAY ───────────────────────────────────────────────────────────────────
 
@@ -510,7 +517,7 @@ def main():
     syms = args.symbols or SYMBOLS
 
     def once():
-        results = run_global_scan(syms, args.portfolio)
+        results, _extra = run_global_scan(syms, args.portfolio)
         if args.json:
             out = [{"symbol": r["symbol"],
                     "unified_score": r["unified_score"],

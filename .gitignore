@@ -28,8 +28,10 @@ risk_cache/
 # ML models (re-trained on first run)
 alpha_cache/
 
-# Large result/output files
+# Large result/output files (keep only accuracy_db + docs)
 *.json
+!accuracy_db/*.json
+!docs/*.json
 !.env.example
 
 # Secrets
