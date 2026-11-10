@@ -95,15 +95,17 @@ def compute_stats(signals):
 
 # ── HTML BUILDERS ────────────────────────────────────────────────────────────
 
-def _tier_badge(tier):
-    tier = tier or ""
-    if "PERFECT" in tier:
-        return f'<span class="badge badge-perfect">{tier}</span>'
-    if "HIGH" in tier:
-        return f'<span class="badge badge-high">{tier}</span>'
-    if "MODERATE" in tier:
-        return f'<span class="badge badge-moderate">{tier}</span>'
-    return f'<span class="badge badge-wait">{tier}</span>'
+def _tier_badge(score):
+    s = abs(score) if isinstance(score, (int, float)) else 0
+    if s >= 65:
+        return '<span class="badge badge-perfect">★★★ PERFECT</span>'
+    if s >= 50:
+        return '<span class="badge badge-high">★★ HIGH</span>'
+    if s >= 35:
+        return '<span class="badge badge-moderate">★ MODERATE</span>'
+    if s >= 15:
+        return '<span class="badge badge-monitor">○ MONITORING</span>'
+    return '<span class="badge badge-wait">WAIT</span>'
 
 
 def _dir_badge(direction):
@@ -159,12 +161,60 @@ def build_signal_cards(scan):
     <span class="sym">{sym}</span>
     {_dir_badge(dirn)}
   </div>
-  {_tier_badge(tier)}
+  {_tier_badge(score)}
   <div class="score">{score:+d}/100</div>
   {size_html}
   <div class="bars">{bars}</div>
 </div>''')
     return "\n".join(cards)
+
+
+def build_watchlist(scan):
+    """Score bars for ALL scanned symbols, sorted by |score| descending."""
+    items = scan.get("watchlist") or []
+    if not items:
+        # Fallback: use active_signals if watchlist not in JSON yet
+        items = scan.get("active_signals") or []
+    if not items:
+        return '<div class="empty-state">Watchlist data not yet available — will appear on next scan.</div>'
+
+    items_sorted = sorted(items, key=lambda x: abs(x.get("unified_score", 0)), reverse=True)
+    rows = ""
+    for s in items_sorted:
+        sym   = s.get("symbol", "?")
+        score = s.get("unified_score", 0)
+        dirn  = s.get("direction", "NEUTRAL")
+        comp  = s.get("components") or {}
+
+        # Score bar: -100 to +100
+        bar_w = min(100, abs(score))
+        bar_cls = "bar-bull" if score >= 0 else "bar-bear"
+        # Direction colours
+        dir_cls = "long" if score > 0 else ("short" if score < 0 else "")
+
+        # Mini engine breakdown
+        eng_html = ""
+        for eng, val in comp.items():
+            ew = max(0, min(50, abs(float(val)) / 2))
+            ec = "bar-bull" if float(val) >= 0 else "bar-bear"
+            eng_html += (f'<div class="mini-bar-row">'
+                         f'<span class="mini-label">{eng[:3].upper()}</span>'
+                         f'<div class="mini-track"><div class="mini-fill {ec}" style="width:{ew:.0f}%"></div></div>'
+                         f'<span class="mini-val">{float(val):+.0f}</span>'
+                         f'</div>')
+
+        rows += f'''
+<div class="wl-row">
+  <div class="wl-sym">{sym.replace("USDT","")}</div>
+  <div class="wl-score-wrap">
+    <div class="wl-track"><div class="wl-fill {bar_cls}" style="width:{bar_w}%"></div></div>
+    <span class="wl-val {dir_cls}">{score:+d}</span>
+  </div>
+  <div class="wl-tier">{_tier_badge(score)}</div>
+  <div class="wl-engines">{eng_html}</div>
+</div>'''
+
+    return f'<div class="watchlist-grid">{rows}</div>'
 
 
 def build_carry_table(scan):
@@ -489,6 +539,29 @@ a{color:#00d4aa;text-decoration:none}
 .footer{text-align:center;color:#8095a8;font-size:11px;margin-top:24px;padding-top:16px;
         border-top:1px solid rgba(255,255,255,0.06)}
 
+/* Watchlist */
+.watchlist-grid{display:flex;flex-direction:column;gap:6px}
+.wl-row{display:grid;grid-template-columns:72px 1fr 100px 180px;align-items:center;gap:12px;
+        padding:8px 10px;border-radius:7px;background:#111928;border:1px solid rgba(255,255,255,0.05)}
+.wl-row:hover{border-color:rgba(0,212,170,0.2)}
+.wl-sym{font-size:13px;font-weight:700;color:#fff}
+.wl-score-wrap{display:flex;align-items:center;gap:8px}
+.wl-track{flex:1;height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden}
+.wl-fill{height:100%;border-radius:3px}
+.wl-fill.bar-bull{background:#00d4aa}
+.wl-fill.bar-bear{background:#ff6b6b}
+.wl-val{font-size:13px;font-weight:700;width:38px;text-align:right}
+.wl-tier{text-align:center}
+.wl-engines{display:flex;gap:4px;align-items:center}
+.mini-bar-row{display:flex;align-items:center;gap:3px}
+.mini-label{font-size:9px;color:#8095a8;width:22px}
+.mini-track{width:36px;height:3px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden}
+.mini-fill{height:100%;border-radius:2px}
+.mini-val{font-size:9px;color:#8095a8;width:20px}
+.badge-monitor{background:rgba(255,160,60,0.12);color:#ff9f40;border:1px solid rgba(255,160,60,0.3)}
+
+@media(max-width:700px){.wl-row{grid-template-columns:60px 1fr 80px}.wl-engines{display:none}}
+
 @media(max-width:900px){
   .stats-bar{grid-template-columns:repeat(2,1fr)}
   .charts-grid{grid-template-columns:1fr}
@@ -585,10 +658,16 @@ def build_html(scan, signals, stats):
 
 <!-- Active Signals -->
 <div class="section">
-  <div class="section-title">Active Signals  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">|score| ≥ 35</span></div>
+  <div class="section-title">Active Signals  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">|score| ≥ 35 (actionable)</span></div>
   <div class="cards-grid">
     {build_signal_cards(scan)}
   </div>
+</div>
+
+<!-- Market Watchlist -->
+<div class="section">
+  <div class="section-title">Market Watchlist  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">all {len(scan.get("watchlist") or scan.get("active_signals") or [])} symbols — sorted by conviction</span></div>
+  {build_watchlist(scan)}
 </div>
 
 <!-- Risk Dashboard -->
@@ -623,7 +702,7 @@ def build_html(scan, signals, stats):
 
 <div class="footer">
   Generated at {now_str} &nbsp;·&nbsp;
-  GitHub Actions scan every 30 min &nbsp;·&nbsp;
+  GitHub Actions scan every ~1 min &nbsp;·&nbsp; Tracking {len(scan.get("watchlist") or [])} symbols &nbsp;·&nbsp;
   <a href="https://github.com/YNW1606/UNIVERSAL_CRYPTO_ARB" target="_blank">Source Code</a>
 </div>
 
