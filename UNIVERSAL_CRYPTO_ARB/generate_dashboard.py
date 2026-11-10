@@ -6,9 +6,10 @@ Writes docs/index.html — served free via GitHub Pages
 import sqlite3, json, os, sys
 from datetime import datetime, timezone
 
-BASE = os.path.dirname(os.path.abspath(__file__))
+BASE      = os.path.dirname(os.path.abspath(__file__))
 DB_PATH   = os.path.join(BASE, "accuracy_db", "signals.db")
 JSON_PATH = os.path.join(BASE, "accuracy_db", "latest_scan.json")
+ARB_PATH  = os.path.join(BASE, "accuracy_db", "perp_arb.json")
 OUT_DIR   = os.path.join(BASE, "docs")
 OUT_PATH  = os.path.join(OUT_DIR, "index.html")
 
@@ -22,6 +23,16 @@ def load_scan_json():
         return {}
     try:
         with open(JSON_PATH) as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def load_perp_arb_json():
+    if not os.path.exists(ARB_PATH):
+        return {}
+    try:
+        with open(ARB_PATH) as f:
             return json.load(f)
     except Exception:
         return {}
@@ -215,6 +226,121 @@ def build_watchlist(scan):
 </div>'''
 
     return f'<div class="watchlist-grid">{rows}</div>'
+
+
+def build_perp_arb_panel(arb):
+    """Full perpetual arbitrage paper trading section."""
+    if not arb:
+        return '<div class="empty-state">Perp arb data not yet available — will appear after first cycle.</div>'
+
+    total   = arb.get("total_trades", 0)
+    n_open  = arb.get("open_trades", 0)
+    n_close = arb.get("closed_trades", 0)
+    wr      = arb.get("win_rate", 0)
+    pf      = arb.get("profit_factor", 0)
+    rpnl    = arb.get("realized_pnl", 0)
+    upnl    = arb.get("unrealized_pnl", 0)
+
+    wr_cls  = "green" if wr >= 55 else ("yellow" if wr >= 45 else "red")
+    pf_cls  = "green" if pf >= 1.5 else ("yellow" if pf >= 1.0 else "red")
+    rp_cls  = "green" if rpnl >= 0 else "red"
+    up_cls  = "green" if upnl >= 0 else "red"
+
+    # Strategy breakdown
+    strat_html = ""
+    for s, d in sorted((arb.get("by_strategy") or {}).items(),
+                        key=lambda x: x[1].get("pnl", 0), reverse=True):
+        swr = d.get("win_rate", 0)
+        sw_cls = "pos" if swr >= 50 else "neg"
+        sp_cls = "pos" if d.get("pnl", 0) >= 0 else "neg"
+        strat_html += (
+            f'<tr><td><b>{s}</b></td>'
+            f'<td>{d["n"]}</td>'
+            f'<td class="{sw_cls}">{swr:.0f}%</td>'
+            f'<td class="{sp_cls}">${d["pnl"]:+.2f}</td></tr>\n'
+        )
+
+    # Open positions
+    open_rows = ""
+    for p in (arb.get("open_positions") or [])[:12]:
+        sym      = p.get("symbol", "?").replace("USDT", "")
+        strat    = p.get("strategy", "")
+        dirn     = "↑Spot↓Perp" if p.get("direction") == "LONG_SPOT_SHORT_PERP" else "↑Perp↓Spot"
+        ann      = p.get("ann_yield", 0) or 0
+        basis_e  = p.get("basis_entry", 0) or 0
+        basis_n  = p.get("basis_now", 0) or 0
+        fund_e   = p.get("funding_earned", 0) or 0
+        upnl_p   = p.get("unrealized_pnl", 0) or 0
+        up_cls   = "pos" if upnl_p >= 0 else "neg"
+        fe_cls   = "pos" if fund_e >= 0 else "neg"
+        try:
+            ts = p.get("opened_at", "")
+            if ts.endswith("Z"): ts = ts[:-1] + "+00:00"
+            from datetime import datetime, timezone
+            age_h = (datetime.now(timezone.utc) - datetime.fromisoformat(ts)).total_seconds() / 3600
+        except Exception:
+            age_h = 0
+        open_rows += (
+            f'<tr>'
+            f'<td><b>{sym}</b></td>'
+            f'<td class="mono" style="font-size:11px">{strat}</td>'
+            f'<td class="mono" style="font-size:11px">{dirn}</td>'
+            f'<td class="pos">{ann:+.1f}%/yr</td>'
+            f'<td class="mono">{basis_e:+.3f}% → {basis_n:+.3f}%</td>'
+            f'<td class="{fe_cls}">${fund_e:+.2f}</td>'
+            f'<td class="{up_cls}">${upnl_p:+.2f}</td>'
+            f'<td class="act">{age_h:.0f}h</td>'
+            f'</tr>\n'
+        )
+
+    # Recent closed
+    closed_rows = ""
+    for r in (arb.get("recent_closed") or [])[:10]:
+        sym   = r.get("symbol", "?").replace("USDT", "")
+        strat = r.get("strategy", "")
+        rpnl  = r.get("realized_pnl", 0) or 0
+        fund  = r.get("funding_earned", 0) or 0
+        fees  = r.get("fees", 0) or 0
+        exit_ = r.get("exit_reason", "?")
+        rp_cl = "pos" if rpnl >= 0 else "neg"
+        closed_rows += (
+            f'<tr>'
+            f'<td><b>{sym}</b></td>'
+            f'<td class="mono" style="font-size:11px">{strat}</td>'
+            f'<td class="{rp_cl}">${rpnl:+.2f}</td>'
+            f'<td class="pos">${fund:+.2f}</td>'
+            f'<td class="neg">-${fees:.2f}</td>'
+            f'<td class="act" style="font-size:11px">{exit_}</td>'
+            f'</tr>\n'
+        )
+
+    return f'''
+<div class="arb-stats">
+  <div class="arb-stat"><div class="arb-label">Total Trades</div><div class="arb-val">{total}</div><div class="arb-sub">{n_open} open · {n_close} closed</div></div>
+  <div class="arb-stat"><div class="arb-label">Win Rate</div><div class="arb-val {wr_cls}">{wr:.1f}%</div><div class="arb-sub">{arb.get("wins",0)}W / {arb.get("losses",0)}L</div></div>
+  <div class="arb-stat"><div class="arb-label">Profit Factor</div><div class="arb-val {pf_cls}">{pf:.2f}×</div><div class="arb-sub">gains ÷ losses</div></div>
+  <div class="arb-stat"><div class="arb-label">Realized P&L</div><div class="arb-val {rp_cls}">${rpnl:+.2f}</div><div class="arb-sub">closed trades</div></div>
+  <div class="arb-stat"><div class="arb-label">Unrealized P&L</div><div class="arb-val {up_cls}">${upnl:+.2f}</div><div class="arb-sub">open positions</div></div>
+</div>
+
+{f"""<div class="arb-sub-title">By Strategy</div>
+<table class="data-table" style="margin-bottom:16px">
+<thead><tr><th>Strategy</th><th>Trades</th><th>Win Rate</th><th>P&L</th></tr></thead>
+<tbody>{strat_html}</tbody>
+</table>""" if strat_html else ""}
+
+{f"""<div class="arb-sub-title">Open Positions ({n_open})</div>
+<table class="data-table" style="margin-bottom:16px">
+<thead><tr><th>Symbol</th><th>Strategy</th><th>Direction</th><th>Ann Yield</th><th>Basis Entry→Now</th><th>Funding</th><th>Unrealized</th><th>Age</th></tr></thead>
+<tbody>{open_rows}</tbody>
+</table>""" if open_rows else '<div class="empty-state">No open positions yet — will open on next scan.</div>'}
+
+{f"""<div class="arb-sub-title">Recent Closed ({n_close})</div>
+<table class="data-table">
+<thead><tr><th>Symbol</th><th>Strategy</th><th>P&L</th><th>Funding</th><th>Fees</th><th>Exit Reason</th></tr></thead>
+<tbody>{closed_rows}</tbody>
+</table>""" if closed_rows else ""}
+'''
 
 
 def build_carry_table(scan):
@@ -539,6 +665,17 @@ a{color:#00d4aa;text-decoration:none}
 .footer{text-align:center;color:#8095a8;font-size:11px;margin-top:24px;padding-top:16px;
         border-top:1px solid rgba(255,255,255,0.06)}
 
+/* Perp Arb Panel */
+.arb-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.arb-stat{background:#111928;border-radius:8px;padding:12px 16px;border:1px solid rgba(255,255,255,0.06)}
+.arb-label{font-size:11px;color:#8095a8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+.arb-val{font-size:22px;font-weight:700;color:#fff}
+.arb-sub{font-size:11px;color:#8095a8;margin-top:2px}
+.arb-sub-title{font-size:11px;font-weight:700;color:#8095a8;text-transform:uppercase;
+               letter-spacing:0.8px;margin:12px 0 8px}
+@media(max-width:900px){.arb-stats{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.arb-stats{grid-template-columns:repeat(2,1fr)}}
+
 /* Watchlist */
 .watchlist-grid{display:flex;flex-direction:column;gap:6px}
 .wl-row{display:grid;grid-template-columns:72px 1fr 100px 180px;align-items:center;gap:12px;
@@ -577,10 +714,11 @@ a{color:#00d4aa;text-decoration:none}
 
 # ── MAIN BUILDER ─────────────────────────────────────────────────────────────
 
-def build_html(scan, signals, stats):
+def build_html(scan, signals, stats, arb=None):
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     scan_ts = scan.get("timestamp", "Never")
     n_online = scan.get("engines_online", 0)
+    arb = arb or {}
 
     # Win-rate colour
     wr = stats["win_rate"]
@@ -676,6 +814,12 @@ def build_html(scan, signals, stats):
   {build_risk_panel(scan)}
 </div>
 
+<!-- Perp Arb Paper Trading -->
+<div class="section">
+  <div class="section-title">Perpetual Arb — Paper Trading  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">sandbox · carry + basis + funding reversion · $1k per leg</span></div>
+  {build_perp_arb_panel(arb)}
+</div>
+
 <!-- Carry Arb -->
 <div class="section">
   <div class="section-title">Carry Arb Opportunities  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">long spot / short perp, passive 24/7</span></div>
@@ -721,11 +865,14 @@ def main():
     scan    = load_scan_json()
     signals = load_signals_db()
     stats   = compute_stats(signals)
+    arb     = load_perp_arb_json()
 
     print(f"  {len(signals)} signals in DB, {stats['resolved']} resolved, win_rate={stats['win_rate']}%")
     print(f"  Active signals in JSON: {len(scan.get('active_signals') or [])}")
+    print(f"  Perp arb trades: {arb.get('total_trades', 0)} total, "
+          f"{arb.get('open_trades', 0)} open")
 
-    html = build_html(scan, signals, stats)
+    html = build_html(scan, signals, stats, arb)
     with open(OUT_PATH, "w", encoding="utf-8") as f:
         f.write(html)
     print(f"Dashboard written → {OUT_PATH}")

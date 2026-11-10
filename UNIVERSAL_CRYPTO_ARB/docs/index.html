@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="refresh" content="600">
 <title>Global Quant System | Live Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',system-ui,sans-serif;background:#0a0e1a;color:#c0cfe0;font-size:14px;line-height:1.5}
@@ -124,6 +123,40 @@ a{color:#00d4aa;text-decoration:none}
 .footer{text-align:center;color:#8095a8;font-size:11px;margin-top:24px;padding-top:16px;
         border-top:1px solid rgba(255,255,255,0.06)}
 
+/* Perp Arb Panel */
+.arb-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.arb-stat{background:#111928;border-radius:8px;padding:12px 16px;border:1px solid rgba(255,255,255,0.06)}
+.arb-label{font-size:11px;color:#8095a8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+.arb-val{font-size:22px;font-weight:700;color:#fff}
+.arb-sub{font-size:11px;color:#8095a8;margin-top:2px}
+.arb-sub-title{font-size:11px;font-weight:700;color:#8095a8;text-transform:uppercase;
+               letter-spacing:0.8px;margin:12px 0 8px}
+@media(max-width:900px){.arb-stats{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.arb-stats{grid-template-columns:repeat(2,1fr)}}
+
+/* Watchlist */
+.watchlist-grid{display:flex;flex-direction:column;gap:6px}
+.wl-row{display:grid;grid-template-columns:72px 1fr 100px 180px;align-items:center;gap:12px;
+        padding:8px 10px;border-radius:7px;background:#111928;border:1px solid rgba(255,255,255,0.05)}
+.wl-row:hover{border-color:rgba(0,212,170,0.2)}
+.wl-sym{font-size:13px;font-weight:700;color:#fff}
+.wl-score-wrap{display:flex;align-items:center;gap:8px}
+.wl-track{flex:1;height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden}
+.wl-fill{height:100%;border-radius:3px}
+.wl-fill.bar-bull{background:#00d4aa}
+.wl-fill.bar-bear{background:#ff6b6b}
+.wl-val{font-size:13px;font-weight:700;width:38px;text-align:right}
+.wl-tier{text-align:center}
+.wl-engines{display:flex;gap:4px;align-items:center}
+.mini-bar-row{display:flex;align-items:center;gap:3px}
+.mini-label{font-size:9px;color:#8095a8;width:22px}
+.mini-track{width:36px;height:3px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden}
+.mini-fill{height:100%;border-radius:2px}
+.mini-val{font-size:9px;color:#8095a8;width:20px}
+.badge-monitor{background:rgba(255,160,60,0.12);color:#ff9f40;border:1px solid rgba(255,160,60,0.3)}
+
+@media(max-width:700px){.wl-row{grid-template-columns:60px 1fr 80px}.wl-engines{display:none}}
+
 @media(max-width:900px){
   .stats-bar{grid-template-columns:repeat(2,1fr)}
   .charts-grid{grid-template-columns:1fr}
@@ -192,16 +225,54 @@ a{color:#00d4aa;text-decoration:none}
 
 <!-- Active Signals -->
 <div class="section">
-  <div class="section-title">Active Signals  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">|score| ≥ 35</span></div>
+  <div class="section-title">Active Signals  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">|score| ≥ 35 (actionable)</span></div>
   <div class="cards-grid">
     <div class="empty-state">No active signals above threshold — market in distribution, wait for setup.</div>
   </div>
+</div>
+
+<!-- Market Watchlist -->
+<div class="section">
+  <div class="section-title">Market Watchlist  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">all 0 symbols — sorted by conviction</span></div>
+  <div class="empty-state">Watchlist data not yet available — will appear on next scan.</div>
 </div>
 
 <!-- Risk Dashboard -->
 <div class="section">
   <div class="section-title">Portfolio Risk Dashboard</div>
   <div class="empty-state">Risk data unavailable</div>
+</div>
+
+<!-- Perp Arb Paper Trading -->
+<div class="section">
+  <div class="section-title">Perpetual Arb — Paper Trading  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">sandbox · carry + basis + funding reversion · $1k per leg</span></div>
+  
+<div class="arb-stats">
+  <div class="arb-stat"><div class="arb-label">Total Trades</div><div class="arb-val">8</div><div class="arb-sub">8 open · 0 closed</div></div>
+  <div class="arb-stat"><div class="arb-label">Win Rate</div><div class="arb-val red">0.0%</div><div class="arb-sub">0W / 0L</div></div>
+  <div class="arb-stat"><div class="arb-label">Profit Factor</div><div class="arb-val red">0.00×</div><div class="arb-sub">gains ÷ losses</div></div>
+  <div class="arb-stat"><div class="arb-label">Realized P&L</div><div class="arb-val green">$+0.00</div><div class="arb-sub">closed trades</div></div>
+  <div class="arb-stat"><div class="arb-label">Unrealized P&L</div><div class="arb-val pos">$+0.00</div><div class="arb-sub">open positions</div></div>
+</div>
+
+
+
+<div class="arb-sub-title">Open Positions (8)</div>
+<table class="data-table" style="margin-bottom:16px">
+<thead><tr><th>Symbol</th><th>Strategy</th><th>Direction</th><th>Ann Yield</th><th>Basis Entry→Now</th><th>Funding</th><th>Unrealized</th><th>Age</th></tr></thead>
+<tbody><tr><td><b>OP</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">+0.211% → +0.211%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
+<tr><td><b>APT</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">-0.192% → -0.192%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
+<tr><td><b>SUI</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">-0.036% → -0.036%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
+<tr><td><b>NEAR</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">-0.052% → -0.052%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
+<tr><td><b>ADA</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">-0.057% → -0.057%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
+<tr><td><b>XRP</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">-0.027% → -0.027%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
+<tr><td><b>BNB</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">-0.050% → -0.050%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
+<tr><td><b>ETH</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">-0.044% → -0.044%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
+</tbody>
+</table>
+
+
+
 </div>
 
 <!-- Carry Arb -->
@@ -234,12 +305,13 @@ a{color:#00d4aa;text-decoration:none}
 </div>
 
 <div class="footer">
-  Generated at 2026-11-10 19:23 UTC &nbsp;·&nbsp;
-  GitHub Actions scan every 30 min &nbsp;·&nbsp;
+  Generated at 2026-11-10 23:52 UTC &nbsp;·&nbsp;
+  GitHub Actions scan every ~1 min &nbsp;·&nbsp; Tracking 0 symbols &nbsp;·&nbsp;
   <a href="https://github.com/YNW1606/UNIVERSAL_CRYPTO_ARB" target="_blank">Source Code</a>
 </div>
 
 </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 
 
