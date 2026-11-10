@@ -371,6 +371,75 @@ def compute_accuracy_report():
     }
 
 
+# ── JSON EXPORT ───────────────────────────────────────────────────────────────
+
+def save_scan_json(scan_results, extra):
+    """Save latest_scan.json for the dashboard generator."""
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+    active = []
+    for r in scan_results:
+        sc = r.get("unified_score", 0)
+        if abs(sc) < MIN_SCORE or r.get("direction") == "NEUTRAL":
+            continue
+        appr = r.get("approval") or {}
+        comp = r.get("components") or {}
+        active.append({
+            "symbol":        r.get("symbol"),
+            "direction":     r.get("direction"),
+            "unified_score": sc,
+            "tier":          r.get("tier", ""),
+            "components":    {k: round(float(v), 1) for k, v in comp.items()},
+            "approved":      bool(appr.get("approved")),
+            "size_usd":      round(float(appr.get("size_usd") or 0), 0),
+            "size_pct":      round(float(appr.get("size_pct") or 0), 2),
+        })
+
+    carry_raw = extra.get("carry_ops") or []
+    carry = []
+    for c in carry_raw:
+        carry.append({
+            "symbol":    c.get("symbol"),
+            "ann_pct":   round(float(c.get("ann_pct") or 0), 2),
+            "basis_pct": round(float(c.get("basis_pct") or 0), 4),
+            "action":    c.get("action"),
+        })
+
+    pairs = []
+    for p in (extra.get("pair_sigs") or []):
+        z = p.get("z_score")
+        pv = p.get("p_value")
+        pairs.append({
+            "pair":        p.get("pair"),
+            "z_score":     round(float(z), 3) if z is not None else None,
+            "action":      p.get("action", "HOLD"),
+            "half_life_h": p.get("half_life_h"),
+            "p_value":     round(float(pv), 4) if pv is not None else None,
+            "hedge_ratio": round(float(p.get("hedge_ratio") or 0), 3),
+        })
+
+    es = extra.get("engine_status") or {}
+    engines = {k: (v.startswith("✓")) for k, v in es.items()}
+
+    data = {
+        "timestamp":      now,
+        "engines_online": int(extra.get("engines_online") or 0),
+        "engines":        engines,
+        "active_signals": active,
+        "carry_arb":      carry,
+        "stat_arb_pairs": pairs,
+        "risk":           extra.get("risk_summary") or {},
+    }
+
+    json_path = os.path.join(DB_DIR, "latest_scan.json")
+    try:
+        with open(json_path, "w") as f:
+            json.dump(data, f, indent=2, default=str)
+        print(f"  Saved latest_scan.json ({len(active)} active signals)")
+    except Exception as e:
+        print(f"  JSON save error: {e}")
+
+
 # ── MAIN CYCLE ────────────────────────────────────────────────────────────────
 
 def run_cycle(portfolio_size=100_000.0, verbose=False):
@@ -383,18 +452,22 @@ def run_cycle(portfolio_size=100_000.0, verbose=False):
 
     # 2. Run global scan
     print("  Running global scan (all 5 engines)...")
+    scan_results = []
+    extra = {}
     try:
         import global_quant_system as gqs
-        scan_results = gqs.run_global_scan(portfolio_size=portfolio_size)
+        scan_results, extra = gqs.run_global_scan(portfolio_size=portfolio_size)
     except Exception as e:
         print(f"  Global scan error: {e}")
-        scan_results = []
 
     # 3. Log new signals
     logged = log_signals(scan_results)
     print(f"  Logged {logged} new signal(s) (|score| >= {MIN_SCORE}).")
 
-    # 4. Accuracy report
+    # 4. Save JSON for dashboard
+    save_scan_json(scan_results, extra)
+
+    # 5. Accuracy report
     compute_accuracy_report()
 
 

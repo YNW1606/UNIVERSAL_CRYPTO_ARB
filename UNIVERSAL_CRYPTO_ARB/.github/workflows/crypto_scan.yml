@@ -32,12 +32,15 @@ jobs:
     - name: Run accuracy tracker cycle
       run: python signal_accuracy_tracker.py --once
 
-    - name: Commit signal database
+    - name: Generate live dashboard
+      run: python generate_dashboard.py
+
+    - name: Commit results and dashboard
       run: |
         git config --global user.email "quant-bot@github.com"
         git config --global user.name "Quant Bot"
-        git add accuracy_db/
-        git diff --staged --quiet || git commit -m "Signal scan $(date -u '+%Y-%m-%d %H:%M UTC')"
+        git add accuracy_db/ docs/
+        git diff --staged --quiet || git commit -m "Scan $(date -u '+%Y-%m-%d %H:%M UTC')"
         git push || true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
