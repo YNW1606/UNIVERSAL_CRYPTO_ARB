@@ -518,6 +518,15 @@ def run_cycle(portfolio_size=100_000.0, verbose=False):
     # 5. Accuracy report
     compute_accuracy_report()
 
+    # 6. Perpetual arb paper trader (update + open + report)
+    try:
+        import perp_arb_paper as pap
+        pap.init_db()
+        pap.run_cycle(verbose=False)
+        print("  Perp arb paper cycle complete.")
+    except Exception as e:
+        print(f"  Perp arb error: {e}")
+
 
 def main():
     parser = argparse.ArgumentParser(description="Signal Accuracy Tracker")
