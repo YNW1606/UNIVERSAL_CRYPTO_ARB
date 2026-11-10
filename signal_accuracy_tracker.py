@@ -19,9 +19,10 @@ DB_DIR  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "accuracy_db"
 DB_PATH = os.path.join(DB_DIR, "signals.db")
 BINANCE = "https://api.binance.com"
 
-WIN_THRESHOLD  = 0.003   # 0.3% net of fees to call it a WIN
+WIN_THRESHOLD   = 0.003  # 0.3% net of fees to call it a WIN
 OUTCOME_AFTER_H = 4      # hours after signal → check price
-MIN_SCORE       = 35     # only track signals with |unified_score| >= this
+MIN_SCORE       = 15     # log all signals with |unified_score| >= this (was 35)
+ACTIONABLE_MIN  = 35     # "actionable" signals shown prominently in reports
 
 os.makedirs(DB_DIR, exist_ok=True)
 
@@ -172,7 +173,8 @@ def get_price_n_hours_ago(symbol, hours):
 def check_pending_outcomes():
     """
     For all PENDING signals older than OUTCOME_AFTER_H hours,
-    fetch the price at signal_time + OUTCOME_AFTER_H and resolve WIN / LOSS.
+    fetch the price AT signal_time + OUTCOME_AFTER_H (not current price).
+    Uses klines to look back the correct number of hours.
     """
     conn = get_conn()
     cutoff = (datetime.now(timezone.utc) - timedelta(hours=OUTCOME_AFTER_H)).isoformat()
@@ -182,25 +184,52 @@ def check_pending_outcomes():
     ).fetchall()
 
     resolved = 0
+    now_utc = datetime.now(timezone.utc)
     for row in pending:
         sym         = row["symbol"]
         direction   = row["direction"]
         entry_price = row["entry_price"]
-
-        # Try to get current price (best proxy for 4h-later price)
-        # For older signals we use the klines approach
-        exit_price = get_current_price(sym)
-        if exit_price is None or entry_price is None or entry_price == 0:
+        if entry_price is None or entry_price == 0:
             continue
 
-        # Compute return
+        # Determine how many hours ago the target exit time was.
+        # signal logged at T → exit price should be AT T + OUTCOME_AFTER_H
+        # from now that is (now - T) - OUTCOME_AFTER_H hours ago
+        try:
+            ts_str = row["timestamp"]
+            # Handle both naive ISO strings and timezone-aware ones
+            if ts_str.endswith("Z"):
+                ts_str = ts_str[:-1] + "+00:00"
+            if "+" in ts_str[10:] or ts_str.endswith("UTC"):
+                signal_time = datetime.fromisoformat(ts_str.replace(" UTC", "+00:00"))
+            else:
+                signal_time = datetime.fromisoformat(ts_str).replace(tzinfo=timezone.utc)
+            hours_since = (now_utc - signal_time).total_seconds() / 3600
+        except Exception:
+            hours_since = OUTCOME_AFTER_H + 0.5  # fallback: treat as just resolved
+
+        # hours_back = how many hours ago was T + OUTCOME_AFTER_H
+        hours_back = max(0, int(round(hours_since - OUTCOME_AFTER_H)))
+
+        if hours_back <= 1:
+            # Signal just became resolvable: use current price as good proxy
+            exit_price = get_current_price(sym)
+        else:
+            # Use historical kline at the correct point in time
+            exit_price = get_price_n_hours_ago(sym, hours_back)
+            if exit_price is None:
+                exit_price = get_current_price(sym)
+
+        if exit_price is None or exit_price == 0:
+            continue
+
         raw_ret = (exit_price - entry_price) / entry_price
         if direction == "SHORT":
             raw_ret = -raw_ret
 
         outcome    = "WIN" if raw_ret >= WIN_THRESHOLD else "LOSS"
         return_pct = round(raw_ret * 100, 4)
-        checked_at = datetime.now(timezone.utc).isoformat()
+        checked_at = now_utc.isoformat()
 
         conn.execute("""
             UPDATE signals SET outcome=?, exit_price=?, return_pct=?, checked_at=?
@@ -268,10 +297,11 @@ def compute_accuracy_report():
     else:
         pf_str = f"{pf:.2f}"
 
-    # Tier breakdown
+    # Tier breakdown (now includes MONITORING 15-34)
     n_perf, wr_perf, ret_perf = _tier_stats(rows, 65, 101)
     n_high, wr_high, ret_high = _tier_stats(rows, 50, 65)
     n_mod,  wr_mod,  ret_mod  = _tier_stats(rows, 35, 50)
+    n_mon,  wr_mon,  ret_mon  = _tier_stats(rows, 15, 35)
 
     # Engine ICs (using resolved signals only)
     ic_master = ic_hft = ic_factor = 0.0
@@ -340,9 +370,10 @@ def compute_accuracy_report():
                 return f"  {label}  no signals yet"
             return (f"  {label}  {n:3d} signals, "
                     f"{wr*100:5.1f}% WR,  {ret:+.3f}% avg")
-        print(tier_line("★★★ PERFECT  (≥65):  ", n_perf, wr_perf, ret_perf))
-        print(tier_line("★★  HIGH     (50-64):", n_high, wr_high, ret_high))
-        print(tier_line("★   MODERATE (35-49):", n_mod,  wr_mod,  ret_mod))
+        print(tier_line("★★★ PERFECT    (≥65): ", n_perf, wr_perf, ret_perf))
+        print(tier_line("★★  HIGH       (50-64):", n_high, wr_high, ret_high))
+        print(tier_line("★   MODERATE   (35-49):", n_mod,  wr_mod,  ret_mod))
+        print(tier_line("○   MONITORING (15-34):", n_mon,  wr_mon,  ret_mon))
 
         print(f"\n  BY ENGINE CONTRIBUTION (IC = Spearman rank corr with actual returns):")
         def ic_label(v):
@@ -392,13 +423,12 @@ def save_scan_json(scan_results, extra):
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     active = []
+    watchlist = []  # all symbols sorted by |score|, even below threshold
     for r in scan_results:
-        sc = r.get("unified_score", 0)
-        if abs(sc) < MIN_SCORE or r.get("direction") == "NEUTRAL":
-            continue
+        sc   = r.get("unified_score", 0)
         appr = r.get("approval") or {}
         comp = r.get("components") or {}
-        active.append({
+        entry = {
             "symbol":        r.get("symbol"),
             "direction":     r.get("direction"),
             "unified_score": sc,
@@ -407,7 +437,10 @@ def save_scan_json(scan_results, extra):
             "approved":      bool(appr.get("approved")),
             "size_usd":      round(float(appr.get("size_usd") or 0), 0),
             "size_pct":      round(float(appr.get("size_pct") or 0), 2),
-        })
+        }
+        watchlist.append(entry)
+        if abs(sc) >= ACTIONABLE_MIN and r.get("direction") != "NEUTRAL":
+            active.append(entry)
 
     carry_raw = extra.get("carry_ops") or []
     carry = []
@@ -440,6 +473,7 @@ def save_scan_json(scan_results, extra):
         "engines_online": int(extra.get("engines_online") or 0),
         "engines":        engines,
         "active_signals": active,
+        "watchlist":      watchlist,   # all symbols regardless of threshold
         "carry_arb":      carry,
         "stat_arb_pairs": pairs,
         "risk":           extra.get("risk_summary") or {},
@@ -449,7 +483,7 @@ def save_scan_json(scan_results, extra):
     try:
         with open(json_path, "w") as f:
             json.dump(data, f, indent=2, default=str)
-        print(f"  Saved latest_scan.json ({len(active)} active signals)")
+        print(f"  Saved latest_scan.json ({len(active)} active, {len(watchlist)} watchlist)")
     except Exception as e:
         print(f"  JSON save error: {e}")
 

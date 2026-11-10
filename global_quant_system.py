@@ -8,7 +8,16 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-SYMBOLS = ["BTCUSDT","ETHUSDT","SOLUSDT","BNBUSDT","XRPUSDT","DOGEUSDT","AVAXUSDT","ADAUSDT"]
+SYMBOLS = [
+    # Large-cap anchors
+    "BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT","XRPUSDT",
+    # Mid-cap momentum
+    "DOGEUSDT","ADAUSDT","AVAXUSDT","DOTUSDT","NEARUSDT",
+    # DeFi / ecosystem
+    "LINKUSDT","UNIUSDT","LTCUSDT","TRXUSDT","MATICUSDT",
+    # High-beta altcoins
+    "SUIUSDT","APTUSDT","ARBUSDT","OPUSDT","ATOMUSDT",
+]
 PORTFOLIO_SIZE = 100_000.0
 
 ENGINE_WEIGHTS = {
