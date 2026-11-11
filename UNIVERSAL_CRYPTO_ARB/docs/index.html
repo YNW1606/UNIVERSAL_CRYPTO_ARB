@@ -123,6 +123,26 @@ a{color:#00d4aa;text-decoration:none}
 .footer{text-align:center;color:#8095a8;font-size:11px;margin-top:24px;padding-top:16px;
         border-top:1px solid rgba(255,255,255,0.06)}
 
+/* Account Balance Bar */
+.acct-bar{display:grid;grid-template-columns:180px 1fr 220px;gap:20px;align-items:center;
+          background:linear-gradient(135deg,#0d1526,#121c35);border:1px solid rgba(0,212,170,0.25);
+          border-radius:12px;padding:18px 24px;margin-bottom:20px}
+.acct-label{font-size:10px;color:#8095a8;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px}
+.acct-opening{font-size:28px;font-weight:800;color:#fff}
+.acct-equity{font-size:26px;font-weight:800}
+.acct-equity.green{color:#00d4aa}
+.acct-equity.red{color:#ff6b6b}
+.acct-ret{font-size:13px;font-weight:400;color:#8095a8}
+.acct-deploy-wrap{margin-top:8px;display:flex;align-items:center;gap:8px}
+.acct-deploy-bar{width:160px;height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;flex-shrink:0}
+.acct-deploy-fill{height:100%;background:#00d4aa;border-radius:3px}
+.acct-deploy-lbl{font-size:11px;color:#8095a8;white-space:nowrap}
+.acct-pnl{font-size:20px;font-weight:700}
+.acct-pnl.green{color:#00d4aa}
+.acct-pnl.red{color:#ff6b6b}
+@media(max-width:900px){.acct-bar{grid-template-columns:1fr 1fr}.acct-mid{grid-column:span 2}}
+@media(max-width:600px){.acct-bar{grid-template-columns:1fr}.acct-deploy-wrap{flex-wrap:wrap}}
+
 /* Perp Arb Panel */
 .arb-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
 .arb-stat{background:#111928;border-radius:8px;padding:12px 16px;border:1px solid rgba(255,255,255,0.06)}
@@ -247,8 +267,29 @@ a{color:#00d4aa;text-decoration:none}
 <div class="section">
   <div class="section-title">Perpetual Arb — Paper Trading  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">sandbox · carry + basis + funding reversion · $1k per leg</span></div>
   
+<!-- Account Balance Bar -->
+<div class="acct-bar">
+  <div class="acct-left">
+    <div class="acct-label">Opening Balance</div>
+    <div class="acct-opening">$1,000,000</div>
+  </div>
+  <div class="acct-mid">
+    <div class="acct-label">Account Equity</div>
+    <div class="acct-equity green">$1,000,000.00 <span class="acct-ret">(+0.0000%)</span></div>
+    <div class="acct-deploy-wrap">
+      <div class="acct-deploy-bar"><div class="acct-deploy-fill" style="width:93.3%"></div></div>
+      <span class="acct-deploy-lbl">93.3% deployed — $933,333 in 7 positions · $66,667 available</span>
+    </div>
+  </div>
+  <div class="acct-right">
+    <div class="acct-label">Total P&L</div>
+    <div class="acct-pnl green">$+0.00 <span style="font-size:12px;color:#8095a8">realized</span></div>
+    <div class="acct-pnl pos" style="font-size:16px">$+0.00 <span style="font-size:12px;color:#8095a8">unrealized</span></div>
+  </div>
+</div>
+
 <div class="arb-stats">
-  <div class="arb-stat"><div class="arb-label">Total Trades</div><div class="arb-val">8</div><div class="arb-sub">8 open · 0 closed</div></div>
+  <div class="arb-stat"><div class="arb-label">Total Trades</div><div class="arb-val">7</div><div class="arb-sub">7 open · 0 closed</div></div>
   <div class="arb-stat"><div class="arb-label">Win Rate</div><div class="arb-val red">0.0%</div><div class="arb-sub">0W / 0L</div></div>
   <div class="arb-stat"><div class="arb-label">Profit Factor</div><div class="arb-val red">0.00×</div><div class="arb-sub">gains ÷ losses</div></div>
   <div class="arb-stat"><div class="arb-label">Realized P&L</div><div class="arb-val green">$+0.00</div><div class="arb-sub">closed trades</div></div>
@@ -257,17 +298,16 @@ a{color:#00d4aa;text-decoration:none}
 
 
 
-<div class="arb-sub-title">Open Positions (8)</div>
+<div class="arb-sub-title">Open Positions (7)</div>
 <table class="data-table" style="margin-bottom:16px">
 <thead><tr><th>Symbol</th><th>Strategy</th><th>Direction</th><th>Ann Yield</th><th>Basis Entry→Now</th><th>Funding</th><th>Unrealized</th><th>Age</th></tr></thead>
-<tbody><tr><td><b>OP</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">+0.211% → +0.211%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
-<tr><td><b>APT</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">-0.192% → -0.192%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
-<tr><td><b>SUI</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">-0.036% → -0.036%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
-<tr><td><b>NEAR</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">-0.052% → -0.052%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
+<tbody><tr><td><b>APT</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">+0.175% → +0.175%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
+<tr><td><b>SUI</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">-0.052% → -0.052%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
+<tr><td><b>NEAR</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">-0.071% → -0.071%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
 <tr><td><b>ADA</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">-0.057% → -0.057%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
-<tr><td><b>XRP</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">-0.027% → -0.027%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
-<tr><td><b>BNB</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">-0.050% → -0.050%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
-<tr><td><b>ETH</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">-0.044% → -0.044%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
+<tr><td><b>XRP</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">-0.010% → -0.010%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
+<tr><td><b>BNB</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">-0.045% → -0.045%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
+<tr><td><b>ETH</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">-0.042% → -0.042%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
 </tbody>
 </table>
 
@@ -305,7 +345,7 @@ a{color:#00d4aa;text-decoration:none}
 </div>
 
 <div class="footer">
-  Generated at 2026-11-10 23:52 UTC &nbsp;·&nbsp;
+  Generated at 2026-11-11 00:00 UTC &nbsp;·&nbsp;
   GitHub Actions scan every ~1 min &nbsp;·&nbsp; Tracking 0 symbols &nbsp;·&nbsp;
   <a href="https://github.com/YNW1606/UNIVERSAL_CRYPTO_ARB" target="_blank">Source Code</a>
 </div>
