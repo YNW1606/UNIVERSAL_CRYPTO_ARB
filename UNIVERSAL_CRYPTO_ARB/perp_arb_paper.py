@@ -29,29 +29,35 @@ from data_utils import (
 )
 
 # ── SYMBOLS ──────────────────────────────────────────────────────────────────
+# Large-cap anchors
 SYMBOLS = [
     "BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT","XRPUSDT",
+    # Mid-cap momentum
     "DOGEUSDT","ADAUSDT","AVAXUSDT","DOTUSDT","NEARUSDT",
+    # DeFi / ecosystem
     "LINKUSDT","UNIUSDT","LTCUSDT","TRXUSDT","ATOMUSDT",
-    "SUIUSDT","APTUSDT","ARBUSDT","OPUSDT",
+    # High-beta / high-funding altcoins
+    "SUIUSDT","APTUSDT","ARBUSDT","OPUSDT","INJUSDT",
+    "SEIUSDT","TIAUSDT","WLDUSDT","JUPUSDT","PYTHUSDT",
+    "ORDIUSDT","STXUSDT","RUNEUSDT","RENDERUSDT","FETUSDT",
     # Note: MATICUSDT is delisted on Bybit perps (renamed POL) — excluded
 ]
 
 # ── THRESHOLDS ────────────────────────────────────────────────────────────────
-CARRY_MIN_RATE      = 0.0001    # 0.01%/8h = ~11%/yr — min to open carry arb
-CARRY_EXIT_RATE     = 0.00004   # 0.004%/8h — close when funding drops here
-NEG_CARRY_MIN_RATE  = -0.0001   # negative funding threshold for neg-carry
-BASIS_MIN_PCT       = 0.25      # 0.25% basis premium/discount to enter
-BASIS_EXIT_PCT      = 0.05      # close when basis converges to this
-BASIS_STOP_PCT      = 0.60      # stop-loss if basis blows out this much more
-CARRY_MAX_DAYS      = 30        # max holding for carry arb (days)
-BASIS_MAX_HOURS     = 72        # max holding for basis arb (hours)
+CARRY_MIN_RATE      = 0.00007   # 0.007%/8h = ~7.7%/yr — cast a wider net
+CARRY_EXIT_RATE     = 0.00003   # close when funding drops below this
+NEG_CARRY_MIN_RATE  = -0.00007  # negative funding threshold
+BASIS_MIN_PCT       = 0.20      # 0.20% basis premium/discount to enter
+BASIS_EXIT_PCT      = 0.04      # close when basis converges
+BASIS_STOP_PCT      = 0.60      # stop-loss if basis blows out
+CARRY_MAX_DAYS      = 30        # max hold for carry arb
+BASIS_MAX_HOURS     = 72        # max hold for basis arb
 FEE_PER_LEG         = 0.0004    # 0.04% taker fee per leg
-ROUND_TRIP_FEES     = FEE_PER_LEG * 4  # open+close, 2 legs each = 0.16%
-STARTING_BALANCE    = 1_000_000.0       # paper account opening balance ($1M)
-MAX_OPEN_TRADES     = 15                # max simultaneous paper trades
+ROUND_TRIP_FEES     = FEE_PER_LEG * 4  # open+close, 2 legs = 0.16% total
+STARTING_BALANCE    = 1_000_000.0
+MAX_OPEN_TRADES     = 15
 POSITION_USD        = STARTING_BALANCE / MAX_OPEN_TRADES  # ~$66,667 per leg
-FUNDING_INTERVAL_H  = 8                 # hours between funding payments
+FUNDING_INTERVAL_H  = 8
 
 # ── DATABASE ──────────────────────────────────────────────────────────────────
 DB_DIR  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "accuracy_db")
@@ -490,11 +496,18 @@ def compute_report(verbose=True):
     total_pnl    = sum(r["realized_pnl"] or 0 for r in closed)
     total_unreal = sum(r["unrealized_pnl"] or 0 for r in open_)
 
-    # Account balance tracking
-    capital_deployed = sum(float(r["size_usd"] or 0) * 2 for r in open_)  # 2 legs
+    # Account balance — count only the cash-requiring spot leg (not margin leg)
+    capital_deployed = sum(float(r["size_usd"] or 0) for r in open_)
     account_equity   = STARTING_BALANCE + total_pnl + total_unreal
     available_cash   = STARTING_BALANCE + total_pnl - capital_deployed
     return_pct       = (account_equity - STARTING_BALANCE) / STARTING_BALANCE * 100
+
+    # Projected daily funding income from open positions
+    proj_daily_funding = 0.0
+    for r in open_:
+        fr = float(r["funding_at_open"] or 0)
+        sz = float(r["size_usd"] or 0)
+        proj_daily_funding += abs(fr) * 3 * sz  # 3 payments/day × size
 
     win_rate  = len(wins) / len(closed) * 100 if closed else 0.0
     gains     = sum(r["realized_pnl"] for r in wins)
@@ -534,6 +547,12 @@ def compute_report(verbose=True):
         print(f"  Capital Deployed: ${capital_deployed:>14,.2f}  ({capital_deployed/STARTING_BALANCE*100:.1f}% of balance)")
         print(f"  Available Cash:   ${available_cash:>14,.2f}")
         print(f"  Trades:           {len(all_):3d} total  ({len(open_)} open, {len(closed)} closed)")
+        if proj_daily_funding > 0:
+            print(f"\n  PROJECTED INCOME (from open carry positions):")
+            print(f"  Per 8h funding:  ${proj_daily_funding/3:>10,.2f}")
+            print(f"  Daily:           ${proj_daily_funding:>10,.2f}")
+            print(f"  Monthly (30d):   ${proj_daily_funding*30:>10,.2f}")
+            print(f"  Annual:          ${proj_daily_funding*365:>10,.2f}  ({proj_daily_funding*365/STARTING_BALANCE*100:.2f}%/yr)")
 
         if closed:
             pf_str = f"{pf:.2f}×" if pf != float("inf") else "∞"
@@ -584,11 +603,15 @@ def compute_report(verbose=True):
 
     return {
         # Account summary
-        "starting_balance":  STARTING_BALANCE,
-        "account_equity":    round(account_equity, 2),
-        "return_pct":        round(return_pct, 4),
-        "capital_deployed":  round(capital_deployed, 2),
-        "available_cash":    round(available_cash, 2),
+        "starting_balance":     STARTING_BALANCE,
+        "account_equity":       round(account_equity, 2),
+        "return_pct":           round(return_pct, 4),
+        "capital_deployed":     round(capital_deployed, 2),
+        "available_cash":       round(available_cash, 2),
+        "proj_daily_funding":   round(proj_daily_funding, 2),
+        "proj_monthly_funding": round(proj_daily_funding * 30, 2),
+        "proj_annual_funding":  round(proj_daily_funding * 365, 2),
+        "proj_annual_pct":      round(proj_daily_funding * 365 / STARTING_BALANCE * 100, 2),
         # Trade stats
         "total_trades":   len(all_),
         "open_trades":    len(open_),
@@ -617,9 +640,11 @@ def compute_report(verbose=True):
                 "spot_now":    r["spot_now"],
                 "perp_now":    r["perp_now"],
                 "basis_now":   r["basis_now_pct"],
-                "funding_earned": round(float(r["funding_total"] or 0), 4),
-                "unrealized_pnl": round(float(r["unrealized_pnl"] or 0), 4),
+                "funding_earned":  round(float(r["funding_total"] or 0), 4),
+                "unrealized_pnl":  round(float(r["unrealized_pnl"] or 0), 4),
                 "funding_periods": r["funding_periods"],
+                "fees_total":      round(float(r["fees_total"] or 0), 4),
+                "size_usd":        round(float(r["size_usd"] or 0), 2),
             }
             for r in sorted(open_, key=lambda x: x["unrealized_pnl"] or 0, reverse=True)
         ],
