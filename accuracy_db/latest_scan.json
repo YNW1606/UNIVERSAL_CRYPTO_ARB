@@ -1,0 +1,66 @@
+{
+  "timestamp": "2026-11-11 06:14 UTC",
+  "engines_online": 5,
+  "engines": {
+    "master": true,
+    "hft": true,
+    "stat_arb": true,
+    "factor": true,
+    "risk": true
+  },
+  "active_signals": [],
+  "carry_arb": [],
+  "stat_arb_pairs": [
+    {
+      "pair": "BTCUSDT/BNBUSDT",
+      "z_score": 0.07,
+      "action": "EXIT \u2014 spread has mean-reverted",
+      "half_life_h": 0.4,
+      "p_value": 0.05,
+      "hedge_ratio": 1.619
+    },
+    {
+      "pair": "BTCUSDT/ADAUSDT",
+      "z_score": 0.302,
+      "action": "EXIT \u2014 spread has mean-reverted",
+      "half_life_h": 0.6,
+      "p_value": 0.05,
+      "hedge_ratio": 0.335
+    },
+    {
+      "pair": "ETHUSDT/BNBUSDT",
+      "z_score": 0.33,
+      "action": "EXIT \u2014 spread has mean-reverted",
+      "half_life_h": 0.4,
+      "p_value": 0.05,
+      "hedge_ratio": 1.197
+    },
+    {
+      "pair": "BNBUSDT/XRPUSDT",
+      "z_score": -0.456,
+      "action": "EXIT \u2014 spread has mean-reverted",
+      "half_life_h": 1.3,
+      "p_value": 0.05,
+      "hedge_ratio": 0.449
+    },
+    {
+      "pair": "XRPUSDT/DOGEUSDT",
+      "z_score": 0.767,
+      "action": "HOLD \u2014 spread within neutral zone",
+      "half_life_h": 0.7,
+      "p_value": 0.05,
+      "hedge_ratio": 0.779
+    }
+  ],
+  "risk": {
+    "var_95": 5.0,
+    "cvar_95": 5.847,
+    "var_99": 6.974,
+    "cvar_99": 6.974,
+    "worst_day": 6.974,
+    "avg_correlation": 0.697,
+    "effective_positions": 3.1,
+    "high_corr_pairs": 3,
+    "corr_regime": "NORMAL"
+  }
+}
