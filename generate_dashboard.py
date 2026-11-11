@@ -299,6 +299,24 @@ def build_perp_arb_panel(arb):
             age_h = (datetime.now(timezone.utc) - datetime.fromisoformat(ts)).total_seconds() / 3600
         except Exception:
             age_h = 0
+        # Smart exit proximity indicators
+        size_usd_p  = p.get("size_usd", 66666) or 66666
+        tp_usd      = size_usd_p * 0.030
+        sl_usd      = -size_usd_p * 0.015
+        peak_p      = p.get("peak_pnl", 0) or 0
+        trail_act   = size_usd_p * 0.015
+        trail_drop  = size_usd_p * 0.008
+        trail_sl    = (peak_p - trail_drop) if peak_p >= trail_act else None
+        dist_tp     = tp_usd - upnl_p
+        dist_sl     = upnl_p - sl_usd
+        # Show closest threat/target
+        if trail_sl is not None:
+            smart_txt = f'TP ${tp_usd:,.0f} | Trail >{peak_p:+.0f}'
+            smart_cls = "pos"
+        else:
+            smart_txt = f'TP ${tp_usd:,.0f} | SL ${sl_usd:,.0f}'
+            smart_cls = "act"
+
         open_rows += (
             f'<tr data-trade="{trade_id}">'
             f'<td><b>{sym}</b></td>'
@@ -308,6 +326,7 @@ def build_perp_arb_panel(arb):
             f'<td class="mono">{basis_e:+.3f}% → <span class="live-basis">{basis_n:+.3f}%</span></td>'
             f'<td class="{fe_cls}">${fund_e:+.2f}</td>'
             f'<td class="live-unreal {up_cls}">${upnl_p:+.2f}</td>'
+            f'<td class="{smart_cls}" style="font-size:10px">{smart_txt}</td>'
             f'<td class="act">{age_h:.0f}h</td>'
             f'</tr>\n'
         )
@@ -394,7 +413,7 @@ window.PERP_SUMMARY   = {js_summary};
 
 {f"""<div class="arb-sub-title">Open Positions ({n_open})</div>
 <table class="data-table" style="margin-bottom:16px">
-<thead><tr><th>Symbol</th><th>Strategy</th><th>Direction</th><th>Ann Yield</th><th>Basis Entry→Now</th><th>Funding</th><th>Unrealized</th><th>Age</th></tr></thead>
+<thead><tr><th>Symbol</th><th>Strategy</th><th>Direction</th><th>Ann Yield</th><th>Basis Entry→Now</th><th>Funding</th><th>Unrealized</th><th>TP / SL</th><th>Age</th></tr></thead>
 <tbody>{open_rows}</tbody>
 </table>""" if open_rows else '<div class="empty-state">No open positions yet — will open on next scan.</div>'}
 

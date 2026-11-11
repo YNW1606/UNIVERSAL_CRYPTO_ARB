@@ -60,8 +60,16 @@ MIN_POSITION_USD    = 50_000
 MAX_POSITION_USD    = 200_000
 POSITION_USD        = STARTING_BALANCE / MAX_OPEN_TRADES  # $100k flat fallback
 FUNDING_INTERVAL_H  = 8
-MIN_VOLUME_24H      = 5_000_000  # $5M+ daily volume — liquid only
-MAX_ANN_RATE        = 500.0      # cap at 500%/yr — ignore manipulation/gaming
+MIN_VOLUME_24H      = 5_000_000
+MAX_ANN_RATE        = 500.0
+
+# ── SMART EXIT PARAMETERS ────────────────────────────────────────────────────
+PROFIT_TARGET_PCT   = 0.030   # +3.0% of position → take profit (e.g. +$3k on $100k)
+STOP_LOSS_PCT       = 0.015   # -1.5% of position → hard stop loss (e.g. -$1.5k on $100k)
+TRAIL_ACTIVATE_PCT  = 0.015   # trailing stop activates once up 1.5%
+TRAIL_DROP_PCT      = 0.008   # once active, close if drops 0.8% below peak (lock gains)
+FUNDING_ROI_MULT    = 8.0     # close when funding_income > 8× open_fees (redeploy to fresher opp)
+FUNDING_DECAY_PCT   = 0.50    # close if current funding < 50% of entry rate (edge fading fast)
 
 # ── DATABASE ──────────────────────────────────────────────────────────────────
 DB_DIR  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "accuracy_db")
@@ -104,6 +112,7 @@ def init_db():
         perp_now         REAL,
         basis_now_pct    REAL,
         unrealized_pnl   REAL DEFAULT 0,
+        peak_pnl         REAL DEFAULT 0,   -- highest unrealized P&L ever seen (for trailing stop)
 
         spot_exit        REAL,
         perp_exit        REAL,
@@ -120,6 +129,10 @@ def init_db():
         direction   TEXT
     );
     """)
+    # Migrate existing DB: add peak_pnl if missing
+    cols = [r[1] for r in c.execute("PRAGMA table_info(trades)").fetchall()]
+    if cols and "peak_pnl" not in cols:
+        c.execute("ALTER TABLE trades ADD COLUMN peak_pnl REAL DEFAULT 0")
     c.commit()
     c.close()
 
@@ -370,55 +383,92 @@ def _basis_pnl(trade, spot_now, perp_now):
 
 
 def _should_close(trade, spot_now, perp_now, fr):
-    """Return exit_reason string if trade should be closed, else None."""
-    strategy   = trade["strategy"]
-    opened_iso = trade["opened_at"]
+    """
+    Smart exit logic — checks in priority order:
+      1. Hard stop loss      (-1.5% of position)
+      2. Profit target       (+3.0% of position)
+      3. Trailing stop       (activates at +1.5%, drops 0.8% below peak)
+      4. Funding ROI met     (funding > 8× open fees → redeploy to fresh opp)
+      5. Funding dropped     (rate below exit threshold)
+      6. Funding decay       (rate < 50% of entry rate)
+      7. Basis stop loss     (basis blowout)
+      8. Max duration        (30d carry / 72h basis)
+    """
+    strategy    = trade["strategy"]
+    size_usd    = float(trade["size_usd"] or POSITION_USD)
+    unrealized  = float(trade["unrealized_pnl"] or 0)
+    peak_pnl    = float(trade["peak_pnl"] or 0)
+    funding_tot = float(trade["funding_total"] or 0)
+    fees_open   = float(trade["fees_total"] or 0)   # fees charged at open (half of RT)
+    fr_entry    = float(trade["funding_at_open"] or 0)
+
     try:
-        ts = opened_iso
+        ts = trade["opened_at"]
         if ts.endswith("Z"): ts = ts[:-1] + "+00:00"
-        opened_dt = datetime.fromisoformat(ts)
+        hours_open = (datetime.now(timezone.utc) - datetime.fromisoformat(ts)).total_seconds() / 3600
     except Exception:
-        opened_dt = datetime.now(timezone.utc)
+        hours_open = 0
 
-    hours_open = (datetime.now(timezone.utc) - opened_dt).total_seconds() / 3600
-    basis_now  = (perp_now - spot_now) / spot_now * 100 if spot_now > 0 else 0
+    basis_now   = (perp_now - spot_now) / spot_now * 100 if spot_now > 0 else 0
+    basis_entry = float(trade["basis_entry_pct"] or 0)
 
-    if strategy == "CARRY_ARB":
-        if fr <= CARRY_EXIT_RATE:
+    # ── 1. HARD STOP LOSS: total P&L < -1.5% of position ────────────────────
+    stop_usd = -size_usd * STOP_LOSS_PCT
+    if unrealized < stop_usd:
+        return f"STOP_LOSS_PNL"            # e.g. -$1,500 on $100k position
+
+    # ── 2. PROFIT TARGET: total P&L > +3.0% of position ─────────────────────
+    target_usd = size_usd * PROFIT_TARGET_PCT
+    if unrealized > target_usd:
+        return "PROFIT_TARGET"             # e.g. +$3,000 on $100k position
+
+    # ── 3. TRAILING STOP ─────────────────────────────────────────────────────
+    # Activates once up 1.5%, then closes if drops 0.8% below the peak
+    trail_activate = size_usd * TRAIL_ACTIVATE_PCT
+    trail_drop     = size_usd * TRAIL_DROP_PCT
+    if peak_pnl >= trail_activate and unrealized < (peak_pnl - trail_drop):
+        return "TRAILING_STOP"             # peak was $2k, dropped $800 → exit
+
+    # ── 4. FUNDING ROI MET: funding income > 8× open fees ───────────────────
+    if fees_open > 0 and funding_tot >= fees_open * FUNDING_ROI_MULT:
+        return "FUNDING_ROI_MET"           # paid for itself 8× — redeploy
+
+    # ── 5–8. Strategy-specific exits ─────────────────────────────────────────
+    if strategy in ("CARRY_ARB", "NEG_CARRY"):
+        # Funding dropped below exit threshold
+        if strategy == "CARRY_ARB" and fr <= CARRY_EXIT_RATE:
             return "FUNDING_DROPPED"
-        if hours_open >= CARRY_MAX_DAYS * 24:
-            return "MAX_DURATION"
-        # Stop-loss on basis blowout
-        basis_entry = float(trade["basis_entry_pct"])
-        if (basis_now - basis_entry) > BASIS_STOP_PCT:  # basis moved against long-spot
+        if strategy == "NEG_CARRY" and fr >= -CARRY_EXIT_RATE:
+            return "FUNDING_NORMALIZED"
+
+        # Funding decay: rate fell >50% from entry (edge is fading)
+        if fr_entry != 0 and abs(fr) < abs(fr_entry) * FUNDING_DECAY_PCT:
+            return "FUNDING_DECAY"
+
+        # Basis blowout stop (secondary safety net)
+        if strategy == "CARRY_ARB" and (basis_now - basis_entry) > BASIS_STOP_PCT:
+            return "STOP_LOSS_BASIS"
+        if strategy == "NEG_CARRY" and (basis_entry - basis_now) > BASIS_STOP_PCT:
             return "STOP_LOSS_BASIS"
 
-    elif strategy == "NEG_CARRY":
-        if fr >= -CARRY_EXIT_RATE:
-            return "FUNDING_NORMALIZED"
         if hours_open >= CARRY_MAX_DAYS * 24:
             return "MAX_DURATION"
-        basis_entry = float(trade["basis_entry_pct"])
-        if (basis_entry - basis_now) > BASIS_STOP_PCT:
-            return "STOP_LOSS_BASIS"
 
     elif strategy == "SPOT_PREMIUM":
         if basis_now <= BASIS_EXIT_PCT:
             return "BASIS_CONVERGED"
-        if hours_open >= BASIS_MAX_HOURS:
-            return "MAX_DURATION"
-        basis_entry = float(trade["basis_entry_pct"])
         if basis_now > basis_entry + BASIS_STOP_PCT:
             return "STOP_LOSS_BASIS"
+        if hours_open >= BASIS_MAX_HOURS:
+            return "MAX_DURATION"
 
     elif strategy == "SPOT_DISCOUNT":
         if basis_now >= -BASIS_EXIT_PCT:
             return "BASIS_CONVERGED"
-        if hours_open >= BASIS_MAX_HOURS:
-            return "MAX_DURATION"
-        basis_entry = float(trade["basis_entry_pct"])
         if basis_now < basis_entry - BASIS_STOP_PCT:
             return "STOP_LOSS_BASIS"
+        if hours_open >= BASIS_MAX_HOURS:
+            return "MAX_DURATION"
 
     return None
 
@@ -491,12 +541,16 @@ def update_positions():
         fees_so_far = float(trade["fees_total"])
         unrealized  = basis_pnl + funding_pnl - fees_so_far
 
-        # Update live prices + unrealized
+        # Track peak P&L for trailing stop
+        new_peak = max(float(trade["peak_pnl"] or 0), unrealized)
+
+        # Update live prices + unrealized + peak
         c3 = _conn()
         c3.execute("""
-            UPDATE trades SET spot_now=?, perp_now=?, basis_now_pct=?, unrealized_pnl=?
+            UPDATE trades SET spot_now=?, perp_now=?, basis_now_pct=?,
+                              unrealized_pnl=?, peak_pnl=?
             WHERE id=?
-        """, (spot_now, perp_now, basis_now, unrealized, trade["id"]))
+        """, (spot_now, perp_now, basis_now, unrealized, new_peak, trade["id"]))
         c3.commit()
         c3.close()
 
@@ -708,6 +762,7 @@ def compute_report(verbose=True):
                 "basis_now":   r["basis_now_pct"],
                 "funding_earned":  round(float(r["funding_total"] or 0), 4),
                 "unrealized_pnl":  round(float(r["unrealized_pnl"] or 0), 4),
+                "peak_pnl":        round(float(r["peak_pnl"] or 0), 4),
                 "funding_periods": r["funding_periods"],
                 "fees_total":      round(float(r["fees_total"] or 0), 4),
                 "size_usd":        round(float(r["size_usd"] or 0), 2),
