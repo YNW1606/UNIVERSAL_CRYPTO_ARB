@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-11 06:34 UTC",
+  "timestamp": "2026-11-11 06:39 UTC",
   "engines_online": 5,
   "engines": {
     "master": true,
@@ -8,53 +8,7 @@
     "factor": true,
     "risk": true
   },
-  "active_signals": [
-    {
-      "symbol": "BTCUSDT",
-      "direction": "SHORT",
-      "unified_score": -36,
-      "tier": "\u2605   MODERATE",
-      "components": {
-        "master": 0.0,
-        "hft": -58.0,
-        "factor": -100.0,
-        "stat_arb": 0.0
-      },
-      "approved": false,
-      "size_usd": 0.0,
-      "size_pct": 0.0
-    },
-    {
-      "symbol": "ETHUSDT",
-      "direction": "SHORT",
-      "unified_score": -36,
-      "tier": "\u2605   MODERATE",
-      "components": {
-        "master": 0.0,
-        "hft": -56.0,
-        "factor": -100.0,
-        "stat_arb": 0.0
-      },
-      "approved": false,
-      "size_usd": 0.0,
-      "size_pct": 0.0
-    },
-    {
-      "symbol": "SOLUSDT",
-      "direction": "SHORT",
-      "unified_score": -36,
-      "tier": "\u2605   MODERATE",
-      "components": {
-        "master": 0.0,
-        "hft": -58.0,
-        "factor": -100.0,
-        "stat_arb": 0.0
-      },
-      "approved": false,
-      "size_usd": 0.0,
-      "size_pct": 0.0
-    }
-  ],
+  "active_signals": [],
   "carry_arb": [],
   "stat_arb_pairs": [
     {
