@@ -446,6 +446,48 @@ def fetch_book_ticker(symbol):
 
 # ── PERP / FUNDING ────────────────────────────────────────────────────────────
 
+def fetch_all_funding_rates(min_volume_usd=500_000):
+    """
+    Fetch funding rates for ALL Bybit linear perpetuals in one API call.
+    Returns list of dicts sorted by |fundingRate| desc.
+    Filters: USDT-settled, turnover24h >= min_volume_usd, not stale tokens.
+    """
+    try:
+        r = requests.get(
+            f"{BYBIT_BASE}/v5/market/tickers",
+            params={"category": "linear"},
+            headers=HEADERS,
+            timeout=10,
+        )
+        r.raise_for_status()
+        resp = r.json()
+        if resp.get("retCode") != 0:
+            return []
+        results = []
+        for t in resp["result"]["list"]:
+            sym = t.get("symbol", "")
+            if not sym.endswith("USDT"):
+                continue
+            fr = float(t.get("fundingRate") or 0)
+            mark = float(t.get("markPrice") or 0)
+            vol = float(t.get("turnover24h") or 0)
+            if mark <= 0 or vol < min_volume_usd:
+                continue
+            results.append({
+                "symbol":          sym,
+                "fundingRate":     fr,
+                "markPrice":       mark,
+                "indexPrice":      float(t.get("indexPrice") or 0),
+                "nextFundingTime": int(t.get("nextFundingTime") or 0),
+                "volume24h":       vol,
+                "ann_pct":         fr * 3 * 365 * 100,
+            })
+        results.sort(key=lambda x: abs(x["fundingRate"]), reverse=True)
+        return results
+    except Exception:
+        return []
+
+
 def fetch_funding_rate(symbol):
     """Returns {lastFundingRate, nextFundingTime, markPrice, indexPrice}"""
     try:

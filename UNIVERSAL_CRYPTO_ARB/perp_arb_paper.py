@@ -25,7 +25,7 @@ from datetime import datetime, timezone, timedelta
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from data_utils import (
     fetch_ticker_price, fetch_perp_price, fetch_funding_rate,
-    fetch_funding_history,
+    fetch_funding_history, fetch_all_funding_rates,
 )
 
 # ── SYMBOLS ──────────────────────────────────────────────────────────────────
@@ -44,20 +44,24 @@ SYMBOLS = [
 ]
 
 # ── THRESHOLDS ────────────────────────────────────────────────────────────────
-CARRY_MIN_RATE      = 0.00007   # 0.007%/8h = ~7.7%/yr — cast a wider net
-CARRY_EXIT_RATE     = 0.00003   # close when funding drops below this
-NEG_CARRY_MIN_RATE  = -0.00007  # negative funding threshold
-BASIS_MIN_PCT       = 0.20      # 0.20% basis premium/discount to enter
-BASIS_EXIT_PCT      = 0.04      # close when basis converges
-BASIS_STOP_PCT      = 0.60      # stop-loss if basis blows out
-CARRY_MAX_DAYS      = 30        # max hold for carry arb
-BASIS_MAX_HOURS     = 72        # max hold for basis arb
-FEE_PER_LEG         = 0.0004    # 0.04% taker fee per leg
-ROUND_TRIP_FEES     = FEE_PER_LEG * 4  # open+close, 2 legs = 0.16% total
+CARRY_MIN_RATE      = 0.000137  # 0.0137%/8h = ~15%/yr minimum — quality bar
+CARRY_EXIT_RATE     = 0.00005
+NEG_CARRY_MIN_RATE  = -0.000137
+BASIS_MIN_PCT       = 0.20
+BASIS_EXIT_PCT      = 0.04
+BASIS_STOP_PCT      = 0.60
+CARRY_MAX_DAYS      = 30
+BASIS_MAX_HOURS     = 72
+FEE_PER_LEG         = 0.0004
+ROUND_TRIP_FEES     = FEE_PER_LEG * 4
 STARTING_BALANCE    = 1_000_000.0
-MAX_OPEN_TRADES     = 15
-POSITION_USD        = STARTING_BALANCE / MAX_OPEN_TRADES  # ~$66,667 per leg
+MAX_OPEN_TRADES     = 10        # focused: 10 best pairs, more capital per slot
+MIN_POSITION_USD    = 50_000
+MAX_POSITION_USD    = 200_000
+POSITION_USD        = STARTING_BALANCE / MAX_OPEN_TRADES  # $100k flat fallback
 FUNDING_INTERVAL_H  = 8
+MIN_VOLUME_24H      = 5_000_000  # $5M+ daily volume — liquid only
+MAX_ANN_RATE        = 500.0      # cap at 500%/yr — ignore manipulation/gaming
 
 # ── DATABASE ──────────────────────────────────────────────────────────────────
 DB_DIR  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "accuracy_db")
@@ -123,85 +127,133 @@ def init_db():
 # ── MARKET SCAN ───────────────────────────────────────────────────────────────
 
 def scan_opportunities():
-    """Return list of arb opportunities sorted by expected yield."""
+    """
+    Fetch ALL Bybit linear perps at once (single API call), score each one,
+    return opportunities sorted by yield desc.
+    Falls back to per-symbol fetch for the SYMBOLS watchlist if bulk fails.
+    """
+    all_tickers = fetch_all_funding_rates(min_volume_usd=MIN_VOLUME_24H)
+
+    # Fallback: scan fixed symbol list one-by-one
+    if not all_tickers:
+        all_tickers = []
+        for sym in SYMBOLS:
+            try:
+                fd = fetch_funding_rate(sym)
+                if fd:
+                    all_tickers.append({
+                        "symbol":      sym,
+                        "fundingRate": float(fd.get("lastFundingRate") or 0),
+                        "markPrice":   float(fd.get("markPrice") or 0),
+                        "ann_pct":     float(fd.get("lastFundingRate") or 0) * 3 * 365 * 100,
+                        "volume24h":   MIN_VOLUME_24H,
+                    })
+            except Exception:
+                pass
+
     opps = []
-    for sym in SYMBOLS:
+    for t in all_tickers:
+        sym  = t["symbol"]
+        fr   = float(t.get("fundingRate") or t.get("lastFundingRate") or 0)
+        perp = float(t.get("markPrice") or 0)
+        vol  = float(t.get("volume24h") or 0)
+        ann_pct = fr * 3 * 365 * 100
+
+        if not perp or perp <= 0:
+            continue
+
+        # Quality filter: skip tokens with extreme/unstable rates or low liquidity
+        if abs(ann_pct) > MAX_ANN_RATE:
+            continue
+        if vol < MIN_VOLUME_24H:
+            continue
+
+        # Fetch spot price
         try:
             spot = fetch_ticker_price(sym)
-            if not spot or spot <= 0:
-                continue
-            fund_data = fetch_funding_rate(sym)
-            if not fund_data:
-                continue
-            fr   = float(fund_data.get("lastFundingRate") or 0)
-            perp = float(fund_data.get("markPrice") or 0) or fetch_perp_price(sym)
-            if not perp or perp <= 0:
-                continue
+        except Exception:
+            spot = perp
+        if not spot or spot <= 0:
+            spot = perp
 
-            basis_pct = (perp - spot) / spot * 100
-            ann_pct   = fr * 3 * 365 * 100  # 3 payments/day × 365
+        basis_pct = (perp - spot) / spot * 100
 
-            # Strategy 1: Carry arb (positive funding)
-            if fr >= CARRY_MIN_RATE:
-                opps.append({
-                    "strategy":      "CARRY_ARB",
-                    "symbol":        sym,
-                    "direction":     "LONG_SPOT_SHORT_PERP",
-                    "funding_rate":  fr,
-                    "ann_pct":       ann_pct,
-                    "basis_pct":     basis_pct,
-                    "spot":          spot,
-                    "perp":          perp,
-                    "score":         ann_pct,
-                })
+        if fr >= CARRY_MIN_RATE:
+            opps.append({
+                "strategy":     "CARRY_ARB",
+                "symbol":       sym,
+                "direction":    "LONG_SPOT_SHORT_PERP",
+                "funding_rate": fr,
+                "ann_pct":      ann_pct,
+                "basis_pct":    basis_pct,
+                "spot":         spot,
+                "perp":         perp,
+                "volume24h":    vol,
+                "score":        ann_pct,
+            })
+        elif fr <= NEG_CARRY_MIN_RATE:
+            opps.append({
+                "strategy":     "NEG_CARRY",
+                "symbol":       sym,
+                "direction":    "LONG_PERP_SHORT_SPOT",
+                "funding_rate": fr,
+                "ann_pct":      abs(ann_pct),
+                "basis_pct":    basis_pct,
+                "spot":         spot,
+                "perp":         perp,
+                "volume24h":    vol,
+                "score":        abs(ann_pct),
+            })
 
-            # Strategy 2: Negative carry (negative funding)
-            if fr <= NEG_CARRY_MIN_RATE:
-                opps.append({
-                    "strategy":      "NEG_CARRY",
-                    "symbol":        sym,
-                    "direction":     "LONG_PERP_SHORT_SPOT",
-                    "funding_rate":  fr,
-                    "ann_pct":       abs(ann_pct),
-                    "basis_pct":     basis_pct,
-                    "spot":          spot,
-                    "perp":          perp,
-                    "score":         abs(ann_pct),
-                })
-
-            # Strategy 3: Spot premium (perp > spot significantly)
-            if basis_pct >= BASIS_MIN_PCT:
-                opps.append({
-                    "strategy":      "SPOT_PREMIUM",
-                    "symbol":        sym,
-                    "direction":     "LONG_SPOT_SHORT_PERP",
-                    "funding_rate":  fr,
-                    "ann_pct":       ann_pct,
-                    "basis_pct":     basis_pct,
-                    "spot":          spot,
-                    "perp":          perp,
-                    "score":         basis_pct * 10,  # basis convergence is the edge
-                })
-
-            # Strategy 4: Spot discount (perp < spot significantly)
-            if basis_pct <= -BASIS_MIN_PCT:
-                opps.append({
-                    "strategy":      "SPOT_DISCOUNT",
-                    "symbol":        sym,
-                    "direction":     "LONG_PERP_SHORT_SPOT",
-                    "funding_rate":  fr,
-                    "ann_pct":       ann_pct,
-                    "basis_pct":     basis_pct,
-                    "spot":          spot,
-                    "perp":          perp,
-                    "score":         abs(basis_pct) * 10,
-                })
-
-        except Exception as e:
-            pass
+        if basis_pct >= BASIS_MIN_PCT:
+            opps.append({
+                "strategy":     "SPOT_PREMIUM",
+                "symbol":       sym,
+                "direction":    "LONG_SPOT_SHORT_PERP",
+                "funding_rate": fr,
+                "ann_pct":      ann_pct,
+                "basis_pct":    basis_pct,
+                "spot":         spot,
+                "perp":         perp,
+                "volume24h":    vol,
+                "score":        basis_pct * 10,
+            })
+        elif basis_pct <= -BASIS_MIN_PCT:
+            opps.append({
+                "strategy":     "SPOT_DISCOUNT",
+                "symbol":       sym,
+                "direction":    "LONG_PERP_SHORT_SPOT",
+                "funding_rate": fr,
+                "ann_pct":      ann_pct,
+                "basis_pct":    basis_pct,
+                "spot":         spot,
+                "perp":         perp,
+                "volume24h":    vol,
+                "score":        abs(basis_pct) * 10,
+            })
 
     opps.sort(key=lambda x: x["score"], reverse=True)
     return opps
+
+
+def _yield_weighted_size(opps, n_slots, budget):
+    """
+    Allocate budget across n_slots opportunities using sqrt(yield) weighting
+    so higher-yield coins get more capital without extreme concentration.
+    Returns dict: (symbol, strategy) → size_usd
+    """
+    if not opps:
+        return {}
+    picks = opps[:n_slots]
+    yields = [max(abs(o["ann_pct"]), 1.0) for o in picks]
+    weights = [y ** 0.5 for y in yields]
+    total_w = sum(weights)
+    sizes = {}
+    for o, w in zip(picks, weights):
+        raw = budget * w / total_w
+        alloc = max(MIN_POSITION_USD, min(MAX_POSITION_USD, raw))
+        sizes[(o["symbol"], o["strategy"])] = alloc
+    return sizes
 
 
 # ── OPEN PAPER TRADE ──────────────────────────────────────────────────────────
@@ -217,11 +269,12 @@ def open_trade(opp):
         c.close()
         return None
 
-    now   = datetime.now(timezone.utc).isoformat()
-    tid   = f"{opp['strategy'][:4]}_{opp['symbol']}_{datetime.now(timezone.utc).strftime('%m%d_%H%M')}"
-    fees  = POSITION_USD * FEE_PER_LEG * 2  # open: 2 legs
-    fr    = opp["funding_rate"]
-    ann   = opp["ann_pct"]
+    now      = datetime.now(timezone.utc).isoformat()
+    tid      = f"{opp['strategy'][:4]}_{opp['symbol']}_{datetime.now(timezone.utc).strftime('%m%d_%H%M')}"
+    size_usd = float(opp.get("_size_usd") or POSITION_USD)
+    fees     = size_usd * FEE_PER_LEG * 2  # open: 2 legs
+    fr       = opp["funding_rate"]
+    ann      = opp["ann_pct"]
 
     c.execute("""
         INSERT INTO trades (
@@ -235,7 +288,7 @@ def open_trade(opp):
         tid, opp["strategy"], opp["symbol"], opp["direction"], now,
         opp["spot"], opp["perp"], opp["basis_pct"],
         fr, ann,
-        POSITION_USD, fees,
+        size_usd, fees,
         now, opp["spot"], opp["perp"], opp["basis_pct"],
     ))
     c.commit()
@@ -459,24 +512,37 @@ def update_positions():
 # ── OPEN NEW TRADES ───────────────────────────────────────────────────────────
 
 def open_new_trades():
-    """Scan for opportunities and open paper trades up to MAX_OPEN_TRADES."""
-    c    = _conn()
+    """Scan ALL Bybit perps, pick best yield-weighted opportunities, open up to MAX_OPEN_TRADES."""
+    c = _conn()
     n_open = c.execute("SELECT COUNT(*) FROM trades WHERE status='OPEN'").fetchone()[0]
     c.close()
 
     if n_open >= MAX_OPEN_TRADES:
         return []
 
-    opps   = scan_opportunities()
+    slots_free = MAX_OPEN_TRADES - n_open
+    opps       = scan_opportunities()
+
+    # Compute yield-weighted sizes for all candidates
+    sizes = _yield_weighted_size(opps, MAX_OPEN_TRADES, STARTING_BALANCE)
+
     opened = []
     for opp in opps:
-        if n_open >= MAX_OPEN_TRADES:
+        if len(opened) >= slots_free:
             break
+        # Look up yield-weighted size; fall back to flat
+        size = sizes.get((opp["symbol"], opp["strategy"]), POSITION_USD)
+        opp["_size_usd"] = size
         tid = open_trade(opp)
         if tid:
-            opened.append({"id": tid, "strategy": opp["strategy"],
-                           "symbol": opp["symbol"], "score": opp.get("score", 0)})
-            n_open += 1
+            opened.append({
+                "id":       tid,
+                "strategy": opp["strategy"],
+                "symbol":   opp["symbol"],
+                "score":    opp.get("score", 0),
+                "size_usd": size,
+                "ann_pct":  opp.get("ann_pct", 0),
+            })
     return opened
 
 
