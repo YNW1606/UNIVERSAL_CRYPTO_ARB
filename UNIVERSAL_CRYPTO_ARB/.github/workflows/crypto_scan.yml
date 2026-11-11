@@ -5,6 +5,9 @@ on:
     - cron: '*/30 * * * *'   # Every 30 minutes
   workflow_dispatch:           # Manual trigger from GitHub UI
 
+permissions:
+  contents: write
+
 jobs:
   scan:
     runs-on: ubuntu-latest
@@ -41,6 +44,6 @@ jobs:
         git config --global user.name "Quant Bot"
         git add accuracy_db/ docs/
         git diff --staged --quiet || git commit -m "Scan $(date -u '+%Y-%m-%d %H:%M UTC')"
-        git push || true
+        git push
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
