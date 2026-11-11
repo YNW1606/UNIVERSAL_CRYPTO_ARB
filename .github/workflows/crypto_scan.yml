@@ -2,8 +2,8 @@ name: Crypto Quant Scan
 
 on:
   schedule:
-    - cron: '*/30 * * * *'   # Every 30 minutes
-  workflow_dispatch:           # Manual trigger from GitHub UI
+    - cron: '0 * * * *'    # Trigger once per hour; loop runs every ~60s internally
+  workflow_dispatch:         # Manual trigger from GitHub UI
 
 permissions:
   contents: write
@@ -11,7 +11,7 @@ permissions:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 58     # Safety: kill before next hourly trigger
 
     steps:
     - uses: actions/checkout@v3
@@ -32,18 +32,32 @@ jobs:
     - name: Install dependencies
       run: pip install -r requirements.txt
 
-    - name: Run accuracy tracker cycle
-      run: python signal_accuracy_tracker.py --once
-
-    - name: Generate live dashboard
-      run: python generate_dashboard.py
-
-    - name: Commit results and dashboard
+    - name: Configure git
       run: |
         git config --global user.email "quant-bot@github.com"
         git config --global user.name "Quant Bot"
-        git add accuracy_db/ docs/
-        git diff --staged --quiet || git commit -m "Scan $(date -u '+%Y-%m-%d %H:%M UTC')"
-        git push
+
+    - name: Run 1-minute scan loop (55 iterations ≈ 55 min)
+      run: |
+        for i in $(seq 1 55); do
+          echo "=== Scan $i/55 at $(date -u '+%H:%M:%S UTC') ==="
+          START_TIME=$(date +%s)
+
+          python signal_accuracy_tracker.py --once
+
+          ELAPSED=$(( $(date +%s) - START_TIME ))
+          REMAINING=$(( 60 - ELAPSED ))
+          [ $REMAINING -gt 5 ] && sleep $REMAINING
+
+          # Commit + push every 5 scans (every ~5 min) and on final scan
+          if [ $(( i % 5 )) -eq 0 ] || [ $i -eq 55 ]; then
+            python generate_dashboard.py
+            git add accuracy_db/ docs/
+            if ! git diff --staged --quiet; then
+              git commit -m "Scans up to $(date -u '+%Y-%m-%d %H:%M UTC') [scan $i/55]"
+              git push || (git pull --rebase origin main && git push)
+            fi
+          fi
+        done
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

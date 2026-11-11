@@ -77,6 +77,13 @@ def init_db():
 
 def get_current_price(symbol):
     try:
+        from data_utils import fetch_ticker_price
+        px = fetch_ticker_price(symbol)
+        if px and px > 0:
+            return float(px)
+    except Exception:
+        pass
+    try:
         r = requests.get(f"{BINANCE}/api/v3/ticker/price",
                          params={"symbol": symbol}, timeout=5)
         return float(r.json()["price"])
@@ -103,10 +110,10 @@ def log_signals(scan_results):
         if direction == "NEUTRAL":
             continue
 
-        # Dedup: skip if same symbol already logged in last 30 min
+        # Dedup: skip if same symbol+direction already logged in last 30 min
         existing = conn.execute(
-            "SELECT id FROM signals WHERE symbol=? AND timestamp>?",
-            (sym, window_start)
+            "SELECT id FROM signals WHERE symbol=? AND direction=? AND timestamp>?",
+            (sym, direction, window_start)
         ).fetchone()
         if existing:
             continue
@@ -138,9 +145,18 @@ def log_signals(scan_results):
 # ── OUTCOME CHECKING ──────────────────────────────────────────────────────────
 
 def get_price_n_hours_ago(symbol, hours):
-    """Return the close price approximately `hours` ago from Binance 1h klines."""
+    """Return the close price approximately `hours` ago from 1h klines."""
     try:
-        # We need the candle that closed ~hours ago
+        from data_utils import fetch_klines
+        limit = hours + 3
+        klines = fetch_klines(symbol, "1h", limit)
+        if len(klines) < hours + 1:
+            return None
+        idx = -(hours + 1)
+        return float(klines[idx][4])   # close price
+    except Exception:
+        pass
+    try:
         limit = hours + 3
         r = requests.get(f"{BINANCE}/api/v3/klines",
                          params={"symbol": symbol, "interval": "1h", "limit": limit},
@@ -148,10 +164,8 @@ def get_price_n_hours_ago(symbol, hours):
         klines = r.json()
         if len(klines) < hours + 1:
             return None
-        # klines[-1] = current open candle, klines[-2] = last closed
-        # We want the close ~hours ago: index -(hours+1) gives close at that hour
         idx = -(hours + 1)
-        return float(klines[idx][4])   # close price
+        return float(klines[idx][4])
     except Exception:
         return None
 
