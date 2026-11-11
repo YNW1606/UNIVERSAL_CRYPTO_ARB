@@ -11,9 +11,8 @@ DEFAULT_SYMBOLS = ["BTCUSDT","ETHUSDT","SOLUSDT","BNBUSDT","XRPUSDT","DOGEUSDT",
 
 def fetch_orderbook(symbol, depth=20):
     """Returns bids=[[price,qty],...] asks=[[price,qty],...]"""
-    r = requests.get(f"{BINANCE_SPOT}/api/v3/depth",
-                     params={"symbol": symbol, "limit": depth}, timeout=5)
-    d = r.json()
+    from data_utils import fetch_orderbook as _fetch
+    d = _fetch(symbol, depth)
     bids = [[float(p), float(q)] for p, q in d.get("bids", [])]
     asks = [[float(p), float(q)] for p, q in d.get("asks", [])]
     return bids, asks
@@ -21,30 +20,19 @@ def fetch_orderbook(symbol, depth=20):
 
 def fetch_agg_trades(symbol, limit=1000):
     """Returns list of dicts: {price, qty, is_buyer_maker, time_ms}"""
-    r = requests.get(f"{BINANCE_SPOT}/api/v3/aggTrades",
-                     params={"symbol": symbol, "limit": limit}, timeout=5)
-    trades = []
-    for t in r.json():
-        trades.append({
-            "price": float(t["p"]),
-            "qty":   float(t["q"]),
-            "is_buyer_maker": bool(t["m"]),
-            "time_ms": int(t["T"])
-        })
-    return trades
+    from data_utils import fetch_agg_trades as _fetch
+    return _fetch(symbol, limit)
 
 
 def fetch_funding(symbol):
     """Returns {lastFundingRate, nextFundingTime, markPrice, indexPrice}"""
-    r = requests.get(f"{BINANCE_FAPI}/fapi/v1/premiumIndex",
-                     params={"symbol": symbol}, timeout=5)
-    return r.json()
+    from data_utils import fetch_funding_rate as _fetch
+    return _fetch(symbol)
 
 
 def fetch_perp_price(symbol):
-    r = requests.get(f"{BINANCE_FAPI}/fapi/v1/ticker/price",
-                     params={"symbol": symbol}, timeout=5)
-    return float(r.json().get("price", 0))
+    from data_utils import fetch_perp_price as _fetch
+    return _fetch(symbol)
 
 
 # ── OFI CALCULATOR ──────────────────────────────────────────────────────────

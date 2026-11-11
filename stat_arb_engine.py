@@ -48,13 +48,8 @@ def fetch_klines_df(symbol, interval="1h", limit=500):
             except Exception:
                 pass
 
-    r = requests.get(
-        f"{BINANCE_SPOT}/api/v3/klines",
-        params={"symbol": symbol, "interval": interval, "limit": limit},
-        timeout=15
-    )
-    r.raise_for_status()
-    data = r.json()
+    from data_utils import fetch_klines as _fetch
+    data = _fetch(symbol, interval, limit)
 
     df = pd.DataFrame(data, columns=[
         "open_time", "open", "high", "low", "close", "volume",
