@@ -3,7 +3,7 @@
   "account_equity": 1000000.0,
   "return_pct": 0.0,
   "capital_deployed": 1000000.0,
-  "available_cash": 0.0,
+  "available_cash": -0.0,
   "proj_daily_funding": 6583.94,
   "proj_monthly_funding": 197518.12,
   "proj_annual_funding": 2403137.07,
