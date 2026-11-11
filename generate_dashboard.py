@@ -14,6 +14,7 @@ OUT_DIR   = os.path.join(BASE, "docs")
 OUT_PATH  = os.path.join(OUT_DIR, "index.html")
 
 os.makedirs(OUT_DIR, exist_ok=True)
+MAX_OPEN_TRADES = 15
 
 
 # ── DATA LOADING ─────────────────────────────────────────────────────────────
@@ -233,18 +234,22 @@ def build_perp_arb_panel(arb):
     if not arb:
         return '<div class="empty-state">Perp arb data not yet available — will appear after first cycle.</div>'
 
-    total    = arb.get("total_trades", 0)
-    n_open   = arb.get("open_trades", 0)
-    n_close  = arb.get("closed_trades", 0)
-    wr       = arb.get("win_rate", 0)
-    pf       = arb.get("profit_factor", 0)
-    rpnl     = arb.get("realized_pnl", 0)
-    upnl     = arb.get("unrealized_pnl", 0)
+    total     = arb.get("total_trades", 0)
+    n_open    = arb.get("open_trades", 0)
+    n_close   = arb.get("closed_trades", 0)
+    wr        = arb.get("win_rate", 0)
+    pf        = arb.get("profit_factor", 0)
+    rpnl      = arb.get("realized_pnl", 0)
+    upnl      = arb.get("unrealized_pnl", 0)
     start_bal = arb.get("starting_balance", 1_000_000)
-    equity   = arb.get("account_equity", start_bal)
-    ret_pct  = arb.get("return_pct", 0)
-    deployed = arb.get("capital_deployed", 0)
-    avail    = arb.get("available_cash", start_bal)
+    equity    = arb.get("account_equity", start_bal)
+    ret_pct   = arb.get("return_pct", 0)
+    deployed  = arb.get("capital_deployed", 0)
+    avail     = arb.get("available_cash", start_bal)
+    proj_day  = arb.get("proj_daily_funding", 0)
+    proj_mon  = arb.get("proj_monthly_funding", 0)
+    proj_ann  = arb.get("proj_annual_funding", 0)
+    proj_pct  = arb.get("proj_annual_pct", 0)
 
     wr_cls   = "green" if wr >= 55 else ("yellow" if wr >= 45 else "red")
     pf_cls   = "green" if pf >= 1.5 else ("yellow" if pf >= 1.0 else "red")
@@ -374,11 +379,11 @@ window.PERP_SUMMARY   = {js_summary};
 </div>
 
 <div class="arb-stats">
-  <div class="arb-stat"><div class="arb-label">Total Trades</div><div class="arb-val">{total}</div><div class="arb-sub">{n_open} open · {n_close} closed</div></div>
-  <div class="arb-stat"><div class="arb-label">Win Rate</div><div class="arb-val {wr_cls}">{wr:.1f}%</div><div class="arb-sub">{arb.get("wins",0)}W / {arb.get("losses",0)}L</div></div>
-  <div class="arb-stat"><div class="arb-label">Profit Factor</div><div class="arb-val {pf_cls}">{pf:.2f}×</div><div class="arb-sub">gains ÷ losses</div></div>
+  <div class="arb-stat"><div class="arb-label">Open Positions</div><div class="arb-val">{n_open}/{MAX_OPEN_TRADES}</div><div class="arb-sub">${deployed:,.0f} deployed · ${avail:,.0f} free</div></div>
+  <div class="arb-stat"><div class="arb-label">Projected Daily</div><div class="arb-val green">${proj_day:,.2f}</div><div class="arb-sub">funding income / day</div></div>
+  <div class="arb-stat"><div class="arb-label">Projected Annual</div><div class="arb-val green">${proj_ann:,.0f} <span style="font-size:12px">({proj_pct:.1f}%/yr)</span></div><div class="arb-sub">on $1M account</div></div>
   <div class="arb-stat"><div class="arb-label">Realized P&L</div><div class="arb-val {rp_cls}">${rpnl:+,.2f}</div><div class="arb-sub">closed trades</div></div>
-  <div class="arb-stat"><div class="arb-label">Unrealized P&L</div><div class="arb-val {up_cls}">${upnl:+,.2f}</div><div class="arb-sub">open positions</div></div>
+  <div class="arb-stat"><div class="arb-label">Win Rate</div><div class="arb-val {wr_cls}">{wr:.1f}%</div><div class="arb-sub">{arb.get("wins",0)}W / {arb.get("losses",0)}L · PF {pf:.2f}×</div></div>
 </div>
 
 {f"""<div class="arb-sub-title">By Strategy</div>
