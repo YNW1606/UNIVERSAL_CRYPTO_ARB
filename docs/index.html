@@ -123,6 +123,60 @@ a{color:#00d4aa;text-decoration:none}
 .footer{text-align:center;color:#8095a8;font-size:11px;margin-top:24px;padding-top:16px;
         border-top:1px solid rgba(255,255,255,0.06)}
 
+/* Account Balance Bar */
+.acct-bar{display:grid;grid-template-columns:180px 1fr 220px;gap:20px;align-items:center;
+          background:linear-gradient(135deg,#0d1526,#121c35);border:1px solid rgba(0,212,170,0.25);
+          border-radius:12px;padding:18px 24px;margin-bottom:20px}
+.acct-label{font-size:10px;color:#8095a8;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px}
+.acct-opening{font-size:28px;font-weight:800;color:#fff}
+.acct-equity{font-size:26px;font-weight:800}
+.acct-equity.green{color:#00d4aa}
+.acct-equity.red{color:#ff6b6b}
+.acct-ret{font-size:13px;font-weight:400;color:#8095a8}
+.acct-deploy-wrap{margin-top:8px;display:flex;align-items:center;gap:8px}
+.acct-deploy-bar{width:160px;height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;flex-shrink:0}
+.acct-deploy-fill{height:100%;background:#00d4aa;border-radius:3px}
+.acct-deploy-lbl{font-size:11px;color:#8095a8;white-space:nowrap}
+.acct-pnl{font-size:20px;font-weight:700}
+.acct-pnl.green{color:#00d4aa}
+.acct-pnl.red{color:#ff6b6b}
+@media(max-width:900px){.acct-bar{grid-template-columns:1fr 1fr}.acct-mid{grid-column:span 2}}
+@media(max-width:600px){.acct-bar{grid-template-columns:1fr}.acct-deploy-wrap{flex-wrap:wrap}}
+
+/* Perp Arb Panel */
+.arb-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.arb-stat{background:#111928;border-radius:8px;padding:12px 16px;border:1px solid rgba(255,255,255,0.06)}
+.arb-label{font-size:11px;color:#8095a8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+.arb-val{font-size:22px;font-weight:700;color:#fff}
+.arb-sub{font-size:11px;color:#8095a8;margin-top:2px}
+.arb-sub-title{font-size:11px;font-weight:700;color:#8095a8;text-transform:uppercase;
+               letter-spacing:0.8px;margin:12px 0 8px}
+@media(max-width:900px){.arb-stats{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.arb-stats{grid-template-columns:repeat(2,1fr)}}
+
+/* Watchlist */
+.watchlist-grid{display:flex;flex-direction:column;gap:6px}
+.wl-row{display:grid;grid-template-columns:72px 1fr 100px 180px;align-items:center;gap:12px;
+        padding:8px 10px;border-radius:7px;background:#111928;border:1px solid rgba(255,255,255,0.05)}
+.wl-row:hover{border-color:rgba(0,212,170,0.2)}
+.wl-sym{font-size:13px;font-weight:700;color:#fff}
+.wl-score-wrap{display:flex;align-items:center;gap:8px}
+.wl-track{flex:1;height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden}
+.wl-fill{height:100%;border-radius:3px}
+.wl-fill.bar-bull{background:#00d4aa}
+.wl-fill.bar-bear{background:#ff6b6b}
+.wl-val{font-size:13px;font-weight:700;width:38px;text-align:right}
+.wl-tier{text-align:center}
+.wl-engines{display:flex;gap:4px;align-items:center}
+.mini-bar-row{display:flex;align-items:center;gap:3px}
+.mini-label{font-size:9px;color:#8095a8;width:22px}
+.mini-track{width:36px;height:3px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden}
+.mini-fill{height:100%;border-radius:2px}
+.mini-val{font-size:9px;color:#8095a8;width:20px}
+.badge-monitor{background:rgba(255,160,60,0.12);color:#ff9f40;border:1px solid rgba(255,160,60,0.3)}
+
+@media(max-width:700px){.wl-row{grid-template-columns:60px 1fr 80px}.wl-engines{display:none}}
+
 @media(max-width:900px){
   .stats-bar{grid-template-columns:repeat(2,1fr)}
   .charts-grid{grid-template-columns:1fr}
@@ -145,8 +199,8 @@ a{color:#00d4aa;text-decoration:none}
     <div class="subtitle">5-Engine Institutional Crypto Trading Dashboard</div>
   </div>
   <div class="header-right">
-    <div class="ts">2026-11-11 07:04 UTC</div>
-    <div class="sub">Last scan &nbsp;|&nbsp; <span class="engines-pill">5/5 Engines Online</span></div>
+    <div class="ts">Never</div>
+    <div class="sub">Last scan &nbsp;|&nbsp; <span class="engines-pill">0/5 Engines Online</span></div>
     <div class="sub" style="margin-top:4px;font-size:10px">Auto-refreshes every 10 min &nbsp;|&nbsp; <a href="https://github.com/YNW1606/UNIVERSAL_CRYPTO_ARB" target="_blank">GitHub ↗</a></div>
   </div>
 </div>
@@ -155,8 +209,8 @@ a{color:#00d4aa;text-decoration:none}
 <div class="stats-bar">
   <div class="stat-card">
     <div class="stat-label">Total Signals Logged</div>
-    <div class="stat-val">12</div>
-    <div class="stat-sub">0 resolved · 12 pending</div>
+    <div class="stat-val">0</div>
+    <div class="stat-sub">0 resolved · 0 pending</div>
   </div>
   <div class="stat-card">
     <div class="stat-label">Win Rate</div>
@@ -191,50 +245,74 @@ a{color:#00d4aa;text-decoration:none}
 
 <!-- Active Signals -->
 <div class="section">
-  <div class="section-title">Active Signals  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">|score| ≥ 35</span></div>
+  <div class="section-title">Active Signals  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">|score| ≥ 35 (actionable)</span></div>
   <div class="cards-grid">
     <div class="empty-state">No active signals above threshold — market in distribution, wait for setup.</div>
   </div>
 </div>
 
+<!-- Market Watchlist -->
+<div class="section">
+  <div class="section-title">Market Watchlist  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">all 0 symbols — sorted by conviction</span></div>
+  <div class="empty-state">Watchlist data not yet available — will appear on next scan.</div>
+</div>
+
 <!-- Risk Dashboard -->
 <div class="section">
   <div class="section-title">Portfolio Risk Dashboard</div>
+  <div class="empty-state">Risk data unavailable</div>
+</div>
+
+<!-- Perp Arb Paper Trading -->
+<div class="section">
+  <div class="section-title">Perpetual Arb — Paper Trading  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">sandbox · carry + basis + funding reversion · $1k per leg</span></div>
   
-<div class="risk-grid">
-  <div class="risk-item">
-    <div class="risk-label">VaR (95%)</div>
-    <div class="risk-val warn">5.0%<span class="risk-sub">/day</span></div>
+<!-- Account Balance Bar -->
+<div class="acct-bar">
+  <div class="acct-left">
+    <div class="acct-label">Opening Balance</div>
+    <div class="acct-opening">$1,000,000</div>
   </div>
-  <div class="risk-item">
-    <div class="risk-label">CVaR (95%)</div>
-    <div class="risk-val warn">5.847%<span class="risk-sub">/day</span></div>
+  <div class="acct-mid">
+    <div class="acct-label">Account Equity</div>
+    <div class="acct-equity green">$1,000,000.00 <span class="acct-ret">(+0.0000%)</span></div>
+    <div class="acct-deploy-wrap">
+      <div class="acct-deploy-bar"><div class="acct-deploy-fill" style="width:93.3%"></div></div>
+      <span class="acct-deploy-lbl">93.3% deployed — $933,333 in 7 positions · $66,667 available</span>
+    </div>
   </div>
-  <div class="risk-item">
-    <div class="risk-label">VaR (99%)</div>
-    <div class="risk-val">6.974%<span class="risk-sub">/day</span></div>
-  </div>
-  <div class="risk-item">
-    <div class="risk-label">Worst Day</div>
-    <div class="risk-val neg">6.974%</div>
-  </div>
-  <div class="risk-item">
-    <div class="risk-label">Avg Correlation</div>
-    <div class="risk-val ok">0.697</div>
-  </div>
-  <div class="risk-item">
-    <div class="risk-label">Eff. Positions</div>
-    <div class="risk-val">3.1 <span class="risk-sub">of 8</span></div>
-  </div>
-  <div class="risk-item">
-    <div class="risk-label">Corr Regime</div>
-    <div class="risk-val ok">NORMAL</div>
-  </div>
-  <div class="risk-item">
-    <div class="risk-label">High-Corr Pairs</div>
-    <div class="risk-val">3</div>
+  <div class="acct-right">
+    <div class="acct-label">Total P&L</div>
+    <div class="acct-pnl green">$+0.00 <span style="font-size:12px;color:#8095a8">realized</span></div>
+    <div class="acct-pnl pos" style="font-size:16px">$+0.00 <span style="font-size:12px;color:#8095a8">unrealized</span></div>
   </div>
 </div>
+
+<div class="arb-stats">
+  <div class="arb-stat"><div class="arb-label">Total Trades</div><div class="arb-val">7</div><div class="arb-sub">7 open · 0 closed</div></div>
+  <div class="arb-stat"><div class="arb-label">Win Rate</div><div class="arb-val red">0.0%</div><div class="arb-sub">0W / 0L</div></div>
+  <div class="arb-stat"><div class="arb-label">Profit Factor</div><div class="arb-val red">0.00×</div><div class="arb-sub">gains ÷ losses</div></div>
+  <div class="arb-stat"><div class="arb-label">Realized P&L</div><div class="arb-val green">$+0.00</div><div class="arb-sub">closed trades</div></div>
+  <div class="arb-stat"><div class="arb-label">Unrealized P&L</div><div class="arb-val pos">$+0.00</div><div class="arb-sub">open positions</div></div>
+</div>
+
+
+
+<div class="arb-sub-title">Open Positions (7)</div>
+<table class="data-table" style="margin-bottom:16px">
+<thead><tr><th>Symbol</th><th>Strategy</th><th>Direction</th><th>Ann Yield</th><th>Basis Entry→Now</th><th>Funding</th><th>Unrealized</th><th>Age</th></tr></thead>
+<tbody><tr><td><b>APT</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">+0.175% → +0.175%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
+<tr><td><b>SUI</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">-0.052% → -0.052%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
+<tr><td><b>NEAR</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">-0.071% → -0.071%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
+<tr><td><b>ADA</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">-0.057% → -0.057%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
+<tr><td><b>XRP</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">-0.010% → -0.010%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
+<tr><td><b>BNB</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">-0.045% → -0.045%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
+<tr><td><b>ETH</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+11.0%/yr</td><td class="mono">-0.042% → -0.042%</td><td class="pos">$+0.00</td><td class="pos">$+0.00</td><td class="act">0h</td></tr>
+</tbody>
+</table>
+
+
+
 </div>
 
 <!-- Carry Arb -->
@@ -246,54 +324,29 @@ a{color:#00d4aa;text-decoration:none}
 <!-- Stat Arb Pairs -->
 <div class="section">
   <div class="section-title">Stat Arb Pairs  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">market-neutral cointegrated pairs</span></div>
-  
-<table class="data-table">
-<thead><tr><th>Pair</th><th>Z-Score</th><th>β Hedge</th><th>Half-Life</th><th>p-value</th><th>Action</th></tr></thead>
-<tbody><tr><td><b>BTCUSDT/BNBUSDT</b></td><td class="pos">+0.070</td><td>1.619</td><td>0.4h</td><td>0.0500</td><td class="act">EXIT — spread has mean-reverted</td></tr>
-<tr><td><b>BTCUSDT/ADAUSDT</b></td><td class="pos">+0.302</td><td>0.335</td><td>0.6h</td><td>0.0500</td><td class="act">EXIT — spread has mean-reverted</td></tr>
-<tr><td><b>ETHUSDT/BNBUSDT</b></td><td class="pos">+0.330</td><td>1.197</td><td>0.4h</td><td>0.0500</td><td class="act">EXIT — spread has mean-reverted</td></tr>
-<tr><td><b>BNBUSDT/XRPUSDT</b></td><td class="neg">-0.456</td><td>0.449</td><td>1.3h</td><td>0.0500</td><td class="act">EXIT — spread has mean-reverted</td></tr>
-<tr><td><b>XRPUSDT/DOGEUSDT</b></td><td class="pos">+0.767</td><td>0.779</td><td>0.7h</td><td>0.0500</td><td class="act">HOLD — spread within neutral zone</td></tr>
-</tbody>
-</table>
+  <div class="empty-state">No cointegrated pairs found in current window</div>
 </div>
 
 <!-- Engine Status -->
 <div class="section">
   <div class="section-title">Engine Status</div>
-  <div class="engine-list"><div class="eng-row"><span class="dot dot-on"></span><span class="eng-label">Master Engine (8-layer structural)</span><span class="eng-status">ONLINE</span></div>
-<div class="eng-row"><span class="dot dot-on"></span><span class="eng-label">HFT Engine (OFI + microprice)</span><span class="eng-status">ONLINE</span></div>
-<div class="eng-row"><span class="dot dot-on"></span><span class="eng-label">Stat Arb (cointegration + Kalman)</span><span class="eng-status">ONLINE</span></div>
-<div class="eng-row"><span class="dot dot-on"></span><span class="eng-label">Factor Model (12-factor alpha)</span><span class="eng-status">ONLINE</span></div>
-<div class="eng-row"><span class="dot dot-on"></span><span class="eng-label">Risk Manager (VaR + Kelly)</span><span class="eng-status">ONLINE</span></div>
+  <div class="engine-list"><div class="eng-row"><span class="dot dot-off"></span><span class="eng-label">Master Engine (8-layer structural)</span><span class="eng-status">OFFLINE</span></div>
+<div class="eng-row"><span class="dot dot-off"></span><span class="eng-label">HFT Engine (OFI + microprice)</span><span class="eng-status">OFFLINE</span></div>
+<div class="eng-row"><span class="dot dot-off"></span><span class="eng-label">Stat Arb (cointegration + Kalman)</span><span class="eng-status">OFFLINE</span></div>
+<div class="eng-row"><span class="dot dot-off"></span><span class="eng-label">Factor Model (12-factor alpha)</span><span class="eng-status">OFFLINE</span></div>
+<div class="eng-row"><span class="dot dot-off"></span><span class="eng-label">Risk Manager (VaR + Kelly)</span><span class="eng-status">OFFLINE</span></div>
 </div>
 </div>
 
 <!-- Signal History -->
 <div class="section">
   <div class="section-title">Signal History  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">last 50 signals</span></div>
-  
-<table class="data-table history-table">
-<thead><tr><th>Timestamp</th><th>Symbol</th><th>Direction</th><th>Score</th><th>Outcome</th><th>Return</th></tr></thead>
-<tbody><tr><td class="mono">2026-11-11T06:56</td><td><b>DOGEUSDT</b></td><td class="short">SHORT</td><td class="mono">-35</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-11T06:52</td><td><b>ETHUSDT</b></td><td class="short">SHORT</td><td class="mono">-36</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-11T06:46</td><td><b>SOLUSDT</b></td><td class="short">SHORT</td><td class="mono">-35</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-11T06:44</td><td><b>XRPUSDT</b></td><td class="short">SHORT</td><td class="mono">-35</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-11T06:42</td><td><b>BTCUSDT</b></td><td class="short">SHORT</td><td class="mono">-40</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-11T06:42</td><td><b>BNBUSDT</b></td><td class="short">SHORT</td><td class="mono">-36</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-11T06:16</td><td><b>ETHUSDT</b></td><td class="short">SHORT</td><td class="mono">-39</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-11T06:16</td><td><b>SOLUSDT</b></td><td class="short">SHORT</td><td class="mono">-35</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-11T06:12</td><td><b>DOGEUSDT</b></td><td class="short">SHORT</td><td class="mono">-35</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-11T06:11</td><td><b>XRPUSDT</b></td><td class="short">SHORT</td><td class="mono">-38</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-11T06:11</td><td><b>BTCUSDT</b></td><td class="short">SHORT</td><td class="mono">-36</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-11T06:11</td><td><b>ADAUSDT</b></td><td class="short">SHORT</td><td class="mono">-35</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-</tbody>
-</table>
+  <div class="empty-state">No signal history yet — first scan pending.</div>
 </div>
 
 <div class="footer">
-  Generated at 2026-11-11 07:05 UTC &nbsp;·&nbsp;
-  GitHub Actions scan every 30 min &nbsp;·&nbsp;
+  Generated at 2026-11-11 00:00 UTC &nbsp;·&nbsp;
+  GitHub Actions scan every ~1 min &nbsp;·&nbsp; Tracking 0 symbols &nbsp;·&nbsp;
   <a href="https://github.com/YNW1606/UNIVERSAL_CRYPTO_ARB" target="_blank">Source Code</a>
 </div>
 

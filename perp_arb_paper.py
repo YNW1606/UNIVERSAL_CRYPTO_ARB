@@ -48,9 +48,10 @@ CARRY_MAX_DAYS      = 30        # max holding for carry arb (days)
 BASIS_MAX_HOURS     = 72        # max holding for basis arb (hours)
 FEE_PER_LEG         = 0.0004    # 0.04% taker fee per leg
 ROUND_TRIP_FEES     = FEE_PER_LEG * 4  # open+close, 2 legs each = 0.16%
-POSITION_USD        = 1000.0    # USD per leg (each trade commits 2× this)
-MAX_OPEN_TRADES     = 15        # max simultaneous paper trades
-FUNDING_INTERVAL_H  = 8         # hours between funding payments
+STARTING_BALANCE    = 1_000_000.0       # paper account opening balance ($1M)
+MAX_OPEN_TRADES     = 15                # max simultaneous paper trades
+POSITION_USD        = STARTING_BALANCE / MAX_OPEN_TRADES  # ~$66,667 per leg
+FUNDING_INTERVAL_H  = 8                 # hours between funding payments
 
 # ── DATABASE ──────────────────────────────────────────────────────────────────
 DB_DIR  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "accuracy_db")
@@ -489,6 +490,12 @@ def compute_report(verbose=True):
     total_pnl    = sum(r["realized_pnl"] or 0 for r in closed)
     total_unreal = sum(r["unrealized_pnl"] or 0 for r in open_)
 
+    # Account balance tracking
+    capital_deployed = sum(float(r["size_usd"] or 0) * 2 for r in open_)  # 2 legs
+    account_equity   = STARTING_BALANCE + total_pnl + total_unreal
+    available_cash   = STARTING_BALANCE + total_pnl - capital_deployed
+    return_pct       = (account_equity - STARTING_BALANCE) / STARTING_BALANCE * 100
+
     win_rate  = len(wins) / len(closed) * 100 if closed else 0.0
     gains     = sum(r["realized_pnl"] for r in wins)
     losses    = abs(sum(r["realized_pnl"] for r in loss))
@@ -514,14 +521,19 @@ def compute_report(verbose=True):
         exit_counts[reason] = exit_counts.get(reason, 0) + 1
 
     if verbose:
-        W  = 62
+        W  = 66
         ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        eq_cls = "▲" if account_equity >= STARTING_BALANCE else "▼"
         print("\n" + "═" * W)
         print(f"  PERP ARB PAPER TRADER  |  {ts}")
         print("═" * W)
-        print(f"  Total trades:  {len(all_):3d}  ({len(open_)} open, {len(closed)} closed)")
-        print(f"  Realized P&L:  ${total_pnl:+.2f}")
-        print(f"  Unrealized:    ${total_unreal:+.2f}  (open positions)")
+        print(f"  Opening Balance:  ${STARTING_BALANCE:>14,.2f}")
+        print(f"  Account Equity:   ${account_equity:>14,.2f}  {eq_cls}  ({return_pct:+.4f}%)")
+        print(f"  Realized P&L:     ${total_pnl:>+14,.2f}")
+        print(f"  Unrealized P&L:   ${total_unreal:>+14,.2f}  ({len(open_)} open positions)")
+        print(f"  Capital Deployed: ${capital_deployed:>14,.2f}  ({capital_deployed/STARTING_BALANCE*100:.1f}% of balance)")
+        print(f"  Available Cash:   ${available_cash:>14,.2f}")
+        print(f"  Trades:           {len(all_):3d} total  ({len(open_)} open, {len(closed)} closed)")
 
         if closed:
             pf_str = f"{pf:.2f}×" if pf != float("inf") else "∞"
@@ -571,6 +583,13 @@ def compute_report(verbose=True):
         print("═" * W + "\n")
 
     return {
+        # Account summary
+        "starting_balance":  STARTING_BALANCE,
+        "account_equity":    round(account_equity, 2),
+        "return_pct":        round(return_pct, 4),
+        "capital_deployed":  round(capital_deployed, 2),
+        "available_cash":    round(available_cash, 2),
+        # Trade stats
         "total_trades":   len(all_),
         "open_trades":    len(open_),
         "closed_trades":  len(closed),

@@ -233,18 +233,25 @@ def build_perp_arb_panel(arb):
     if not arb:
         return '<div class="empty-state">Perp arb data not yet available — will appear after first cycle.</div>'
 
-    total   = arb.get("total_trades", 0)
-    n_open  = arb.get("open_trades", 0)
-    n_close = arb.get("closed_trades", 0)
-    wr      = arb.get("win_rate", 0)
-    pf      = arb.get("profit_factor", 0)
-    rpnl    = arb.get("realized_pnl", 0)
-    upnl    = arb.get("unrealized_pnl", 0)
+    total    = arb.get("total_trades", 0)
+    n_open   = arb.get("open_trades", 0)
+    n_close  = arb.get("closed_trades", 0)
+    wr       = arb.get("win_rate", 0)
+    pf       = arb.get("profit_factor", 0)
+    rpnl     = arb.get("realized_pnl", 0)
+    upnl     = arb.get("unrealized_pnl", 0)
+    start_bal = arb.get("starting_balance", 1_000_000)
+    equity   = arb.get("account_equity", start_bal)
+    ret_pct  = arb.get("return_pct", 0)
+    deployed = arb.get("capital_deployed", 0)
+    avail    = arb.get("available_cash", start_bal)
 
-    wr_cls  = "green" if wr >= 55 else ("yellow" if wr >= 45 else "red")
-    pf_cls  = "green" if pf >= 1.5 else ("yellow" if pf >= 1.0 else "red")
-    rp_cls  = "green" if rpnl >= 0 else "red"
-    up_cls  = "green" if upnl >= 0 else "red"
+    wr_cls   = "green" if wr >= 55 else ("yellow" if wr >= 45 else "red")
+    pf_cls   = "green" if pf >= 1.5 else ("yellow" if pf >= 1.0 else "red")
+    rp_cls   = "green" if rpnl >= 0 else "red"
+    up_cls   = "green" if upnl >= 0 else "red"
+    eq_cls   = "green" if equity >= start_bal else "red"
+    dep_pct  = min(100, deployed / start_bal * 100) if start_bal else 0
 
     # Strategy breakdown
     strat_html = ""
@@ -315,12 +322,33 @@ def build_perp_arb_panel(arb):
         )
 
     return f'''
+<!-- Account Balance Bar -->
+<div class="acct-bar">
+  <div class="acct-left">
+    <div class="acct-label">Opening Balance</div>
+    <div class="acct-opening">${start_bal:,.0f}</div>
+  </div>
+  <div class="acct-mid">
+    <div class="acct-label">Account Equity</div>
+    <div class="acct-equity {eq_cls}">${equity:,.2f} <span class="acct-ret">({ret_pct:+.4f}%)</span></div>
+    <div class="acct-deploy-wrap">
+      <div class="acct-deploy-bar"><div class="acct-deploy-fill" style="width:{dep_pct:.1f}%"></div></div>
+      <span class="acct-deploy-lbl">{dep_pct:.1f}% deployed — ${deployed:,.0f} in {n_open} positions · ${avail:,.0f} available</span>
+    </div>
+  </div>
+  <div class="acct-right">
+    <div class="acct-label">Total P&L</div>
+    <div class="acct-pnl {rp_cls}">${rpnl:+,.2f} <span style="font-size:12px;color:#8095a8">realized</span></div>
+    <div class="acct-pnl {up_cls}" style="font-size:16px">${upnl:+,.2f} <span style="font-size:12px;color:#8095a8">unrealized</span></div>
+  </div>
+</div>
+
 <div class="arb-stats">
   <div class="arb-stat"><div class="arb-label">Total Trades</div><div class="arb-val">{total}</div><div class="arb-sub">{n_open} open · {n_close} closed</div></div>
   <div class="arb-stat"><div class="arb-label">Win Rate</div><div class="arb-val {wr_cls}">{wr:.1f}%</div><div class="arb-sub">{arb.get("wins",0)}W / {arb.get("losses",0)}L</div></div>
   <div class="arb-stat"><div class="arb-label">Profit Factor</div><div class="arb-val {pf_cls}">{pf:.2f}×</div><div class="arb-sub">gains ÷ losses</div></div>
-  <div class="arb-stat"><div class="arb-label">Realized P&L</div><div class="arb-val {rp_cls}">${rpnl:+.2f}</div><div class="arb-sub">closed trades</div></div>
-  <div class="arb-stat"><div class="arb-label">Unrealized P&L</div><div class="arb-val {up_cls}">${upnl:+.2f}</div><div class="arb-sub">open positions</div></div>
+  <div class="arb-stat"><div class="arb-label">Realized P&L</div><div class="arb-val {rp_cls}">${rpnl:+,.2f}</div><div class="arb-sub">closed trades</div></div>
+  <div class="arb-stat"><div class="arb-label">Unrealized P&L</div><div class="arb-val {up_cls}">${upnl:+,.2f}</div><div class="arb-sub">open positions</div></div>
 </div>
 
 {f"""<div class="arb-sub-title">By Strategy</div>
@@ -664,6 +692,26 @@ a{color:#00d4aa;text-decoration:none}
 /* Footer */
 .footer{text-align:center;color:#8095a8;font-size:11px;margin-top:24px;padding-top:16px;
         border-top:1px solid rgba(255,255,255,0.06)}
+
+/* Account Balance Bar */
+.acct-bar{display:grid;grid-template-columns:180px 1fr 220px;gap:20px;align-items:center;
+          background:linear-gradient(135deg,#0d1526,#121c35);border:1px solid rgba(0,212,170,0.25);
+          border-radius:12px;padding:18px 24px;margin-bottom:20px}
+.acct-label{font-size:10px;color:#8095a8;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px}
+.acct-opening{font-size:28px;font-weight:800;color:#fff}
+.acct-equity{font-size:26px;font-weight:800}
+.acct-equity.green{color:#00d4aa}
+.acct-equity.red{color:#ff6b6b}
+.acct-ret{font-size:13px;font-weight:400;color:#8095a8}
+.acct-deploy-wrap{margin-top:8px;display:flex;align-items:center;gap:8px}
+.acct-deploy-bar{width:160px;height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;flex-shrink:0}
+.acct-deploy-fill{height:100%;background:#00d4aa;border-radius:3px}
+.acct-deploy-lbl{font-size:11px;color:#8095a8;white-space:nowrap}
+.acct-pnl{font-size:20px;font-weight:700}
+.acct-pnl.green{color:#00d4aa}
+.acct-pnl.red{color:#ff6b6b}
+@media(max-width:900px){.acct-bar{grid-template-columns:1fr 1fr}.acct-mid{grid-column:span 2}}
+@media(max-width:600px){.acct-bar{grid-template-columns:1fr}.acct-deploy-wrap{flex-wrap:wrap}}
 
 /* Perp Arb Panel */
 .arb-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
