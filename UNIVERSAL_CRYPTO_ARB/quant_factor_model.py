@@ -31,20 +31,8 @@ FACTOR_NAMES = [
 
 def fetch_klines(symbol, interval, limit=500):
     """Fetch klines with 55-min file cache. Returns raw list."""
-    cache_key = os.path.join(CACHE_DIR, f"{symbol}_{interval}_{limit}.json")
-    if os.path.exists(cache_key):
-        if time.time() - os.path.getmtime(cache_key) < 3300:
-            with open(cache_key) as f:
-                return json.load(f)
-    r = requests.get(
-        f"{BINANCE_SPOT}/api/v3/klines",
-        params={"symbol": symbol, "interval": interval, "limit": limit},
-        timeout=10
-    )
-    data = r.json()
-    with open(cache_key, "w") as f:
-        json.dump(data, f)
-    return data
+    from data_utils import fetch_klines as _fetch
+    return _fetch(symbol, interval, limit, cache_dir=CACHE_DIR, cache_secs=3300)
 
 
 def klines_to_arrays(klines):
@@ -59,39 +47,21 @@ def klines_to_arrays(klines):
 
 def fetch_funding_history(symbol, limit=20):
     """Returns list of dicts with fundingRate key."""
-    try:
-        r = requests.get(
-            f"{BINANCE_FAPI}/fapi/v1/fundingRate",
-            params={"symbol": symbol, "limit": limit},
-            timeout=5
-        )
-        return r.json()
-    except Exception:
-        return []
+    from data_utils import fetch_funding_history as _fetch
+    return _fetch(symbol, limit)
 
 
 def fetch_oi_history(symbol, period="1h", limit=48):
     """Returns list of dicts with sumOpenInterest key."""
-    try:
-        r = requests.get(
-            f"{BINANCE_FAPI}/futures/data/openInterestHist",
-            params={"symbol": symbol, "period": period, "limit": limit},
-            timeout=5
-        )
-        return r.json()
-    except Exception:
-        return []
+    from data_utils import fetch_oi_history as _fetch
+    return _fetch(symbol, period, limit)
 
 
 def fetch_orderbook_spread(symbol):
     """Returns bid-ask spread in basis points."""
+    from data_utils import fetch_book_ticker as _fetch
     try:
-        r = requests.get(
-            f"{BINANCE_SPOT}/api/v3/ticker/bookTicker",
-            params={"symbol": symbol},
-            timeout=5
-        )
-        d = r.json()
+        d = _fetch(symbol)
         bid = float(d["bidPrice"])
         ask = float(d["askPrice"])
         return (ask - bid) / bid * 10000 if bid > 0 else 1.0

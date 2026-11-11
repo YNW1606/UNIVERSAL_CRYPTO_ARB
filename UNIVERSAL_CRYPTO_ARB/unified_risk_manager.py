@@ -20,19 +20,8 @@ os.makedirs(CACHE_DIR, exist_ok=True)
 # ── DATA FETCHING ─────────────────────────────────────────────────────────────
 
 def fetch_klines(symbol, interval="1d", limit=90):
-    cache_key = f"{CACHE_DIR}/{symbol}_{interval}_{limit}.json"
-    if os.path.exists(cache_key):
-        age = time.time() - os.path.getmtime(cache_key)
-        if age < 3600:
-            with open(cache_key) as f:
-                return json.load(f)
-    r = requests.get(f"{BINANCE_SPOT}/api/v3/klines",
-                     params={"symbol": symbol, "interval": interval, "limit": limit},
-                     timeout=10)
-    data = r.json()
-    with open(cache_key, "w") as f:
-        json.dump(data, f)
-    return data
+    from data_utils import fetch_klines as _fetch
+    return _fetch(symbol, interval, limit, cache_dir=CACHE_DIR, cache_secs=3600)
 
 
 def get_returns_matrix(symbols, interval="1d", limit=90):

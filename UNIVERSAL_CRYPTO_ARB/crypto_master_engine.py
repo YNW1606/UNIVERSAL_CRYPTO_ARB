@@ -187,11 +187,17 @@ def _fmt_usd(v):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def fetch_klines_raw(symbol, interval="1h", limit=300):
+    try:
+        from data_utils import fetch_klines as _fetch_universal
+        data = _fetch_universal(symbol, interval, limit)
+        if isinstance(data, list) and len(data) > 0:
+            return data
+    except Exception:
+        pass
     data = _get(f"{BINANCE_SPOT}/api/v3/klines",
                 {"symbol": symbol, "interval": interval, "limit": limit})
     if isinstance(data, list):
         return data
-    # fall back to futures
     data = _get(f"{BINANCE_FAPI}/fapi/v1/klines",
                 {"symbol": symbol, "interval": interval, "limit": limit})
     return data if isinstance(data, list) else []
@@ -215,6 +221,21 @@ def fetch_klines_dicts(symbol, interval="1h", limit=500):
     return bars
 
 def fetch_oi_history(symbol, period="1h", limit=100):
+    try:
+        from data_utils import fetch_oi_history as _fetch_oi
+        raw = _fetch_oi(symbol, period, limit)
+        if raw:
+            result = []
+            for d in raw:
+                try:
+                    result.append({"ts": int(d.get("timestamp", 0)),
+                                   "oi": float(d.get("sumOpenInterest", d.get("oi", 0)))})
+                except Exception:
+                    pass
+            if result:
+                return result
+    except Exception:
+        pass
     data = _get(f"{BINANCE_FAPI}/futures/data/openInterestHist",
                 {"symbol": symbol, "period": period, "limit": limit})
     if not isinstance(data, list):
@@ -228,6 +249,21 @@ def fetch_oi_history(symbol, period="1h", limit=100):
     return result
 
 def fetch_funding_hist(symbol, limit=100):
+    try:
+        from data_utils import fetch_funding_history as _fetch_fund
+        raw = _fetch_fund(symbol, limit)
+        if raw:
+            result = []
+            for d in raw:
+                try:
+                    result.append({"ts": int(d.get("fundingTime", 0)),
+                                   "rate": float(d.get("fundingRate", 0)) * 10000})
+                except Exception:
+                    pass
+            if result:
+                return result
+    except Exception:
+        pass
     data = _get(f"{BINANCE_FAPI}/fapi/v1/fundingRate",
                 {"symbol": symbol, "limit": limit})
     if not isinstance(data, list):
@@ -242,6 +278,13 @@ def fetch_funding_hist(symbol, limit=100):
     return result
 
 def fetch_order_book(symbol, depth=100):
+    try:
+        from data_utils import fetch_orderbook as _fetch_ob
+        data = _fetch_ob(symbol, min(depth, 200))
+        if data.get("bids") or data.get("asks"):
+            return data
+    except Exception:
+        pass
     data = _get(f"{BINANCE_FAPI}/fapi/v1/depth",
                 {"symbol": symbol, "limit": depth})
     if not isinstance(data, dict):
@@ -250,10 +293,27 @@ def fetch_order_book(symbol, depth=100):
     return data if isinstance(data, dict) else {"bids": [], "asks": []}
 
 def fetch_spot_price(symbol):
+    try:
+        from data_utils import fetch_ticker_price as _fetch_px
+        px = _fetch_px(symbol)
+        if px > 0:
+            return px
+    except Exception:
+        pass
     d = _get(f"{BINANCE_SPOT}/api/v3/ticker/price", {"symbol": symbol})
     return _safe(d.get("price", 0)) if isinstance(d, dict) else 0.0
 
 def fetch_agg_trades(symbol, limit=1500):
+    try:
+        from data_utils import fetch_agg_trades as _fetch_trades
+        raw = _fetch_trades(symbol, min(limit, 1000))
+        if raw:
+            return [{"price": t["price"], "qty": t["qty"],
+                     "usd": t["price"] * t["qty"],
+                     "is_maker": t["is_buyer_maker"],
+                     "time": t["time_ms"]} for t in raw]
+    except Exception:
+        pass
     data = _get(f"{BINANCE_FAPI}/fapi/v1/aggTrades",
                 {"symbol": symbol, "limit": limit})
     if not isinstance(data, list):
