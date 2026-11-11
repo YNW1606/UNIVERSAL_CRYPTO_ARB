@@ -527,7 +527,6 @@ def build_html(scan, signals, stats):
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="refresh" content="600">
 <title>Global Quant System | Live Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>{CSS}</style>
 </head>
 <body>
@@ -629,6 +628,7 @@ def build_html(scan, signals, stats):
 </div>
 
 </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 {eq_js}
 {wr_js}
