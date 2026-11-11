@@ -267,10 +267,13 @@ def build_perp_arb_panel(arb):
             f'<td class="{sp_cls}">${d["pnl"]:+.2f}</td></tr>\n'
         )
 
-    # Open positions
+    # Open positions — build rows + collect JS data
     open_rows = ""
+    js_positions = []
     for p in (arb.get("open_positions") or [])[:12]:
+        trade_id = p.get("id", "")
         sym      = p.get("symbol", "?").replace("USDT", "")
+        full_sym = p.get("symbol", "?")
         strat    = p.get("strategy", "")
         dirn     = "↑Spot↓Perp" if p.get("direction") == "LONG_SPOT_SHORT_PERP" else "↑Perp↓Spot"
         ann      = p.get("ann_yield", 0) or 0
@@ -280,6 +283,10 @@ def build_perp_arb_panel(arb):
         upnl_p   = p.get("unrealized_pnl", 0) or 0
         up_cls   = "pos" if upnl_p >= 0 else "neg"
         fe_cls   = "pos" if fund_e >= 0 else "neg"
+        spot_e   = p.get("spot_entry", 0) or 0
+        perp_e   = p.get("perp_entry", 0) or 0
+        size_usd = p.get("size_usd", 66666.67) or 66666.67
+        fees_tot = p.get("fees_total", 0) or 0
         try:
             ts = p.get("opened_at", "")
             if ts.endswith("Z"): ts = ts[:-1] + "+00:00"
@@ -288,17 +295,27 @@ def build_perp_arb_panel(arb):
         except Exception:
             age_h = 0
         open_rows += (
-            f'<tr>'
+            f'<tr data-trade="{trade_id}">'
             f'<td><b>{sym}</b></td>'
             f'<td class="mono" style="font-size:11px">{strat}</td>'
             f'<td class="mono" style="font-size:11px">{dirn}</td>'
             f'<td class="pos">{ann:+.1f}%/yr</td>'
-            f'<td class="mono">{basis_e:+.3f}% → {basis_n:+.3f}%</td>'
+            f'<td class="mono">{basis_e:+.3f}% → <span class="live-basis">{basis_n:+.3f}%</span></td>'
             f'<td class="{fe_cls}">${fund_e:+.2f}</td>'
-            f'<td class="{up_cls}">${upnl_p:+.2f}</td>'
+            f'<td class="live-unreal {up_cls}">${upnl_p:+.2f}</td>'
             f'<td class="act">{age_h:.0f}h</td>'
             f'</tr>\n'
         )
+        js_positions.append({
+            "id":        trade_id,
+            "symbol":    full_sym,
+            "direction": p.get("direction", ""),
+            "spot_entry": spot_e,
+            "perp_entry": perp_e,
+            "size_usd":   size_usd,
+            "funding_total": fund_e,
+            "fees_total":    fees_tot,
+        })
 
     # Recent closed
     closed_rows = ""
@@ -321,7 +338,20 @@ def build_perp_arb_panel(arb):
             f'</tr>\n'
         )
 
+    import json as _json
+    js_pos_json = _json.dumps(js_positions)
+    js_summary  = _json.dumps({
+        "starting_balance": start_bal,
+        "realized_pnl":     rpnl,
+        "capital_deployed": deployed,
+        "n_open":           n_open,
+    })
+
     return f'''
+<script>
+window.PERP_POSITIONS = {js_pos_json};
+window.PERP_SUMMARY   = {js_summary};
+</script>
 <!-- Account Balance Bar -->
 <div class="acct-bar">
   <div class="acct-left">
@@ -329,8 +359,8 @@ def build_perp_arb_panel(arb):
     <div class="acct-opening">${start_bal:,.0f}</div>
   </div>
   <div class="acct-mid">
-    <div class="acct-label">Account Equity</div>
-    <div class="acct-equity {eq_cls}">${equity:,.2f} <span class="acct-ret">({ret_pct:+.4f}%)</span></div>
+    <div class="acct-label">Account Equity &nbsp;<span id="live-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#8095a8;vertical-align:middle"></span></div>
+    <div id="live-equity" class="acct-equity {eq_cls}">${equity:,.2f} <span class="acct-ret">({ret_pct:+.4f}%)</span></div>
     <div class="acct-deploy-wrap">
       <div class="acct-deploy-bar"><div class="acct-deploy-fill" style="width:{dep_pct:.1f}%"></div></div>
       <span class="acct-deploy-lbl">{dep_pct:.1f}% deployed — ${deployed:,.0f} in {n_open} positions · ${avail:,.0f} available</span>
@@ -339,7 +369,7 @@ def build_perp_arb_panel(arb):
   <div class="acct-right">
     <div class="acct-label">Total P&L</div>
     <div class="acct-pnl {rp_cls}">${rpnl:+,.2f} <span style="font-size:12px;color:#8095a8">realized</span></div>
-    <div class="acct-pnl {up_cls}" style="font-size:16px">${upnl:+,.2f} <span style="font-size:12px;color:#8095a8">unrealized</span></div>
+    <div id="live-upnl" class="acct-pnl {up_cls}" style="font-size:16px">${upnl:+,.2f} <span style="font-size:12px;color:#8095a8">unrealized</span></div>
   </div>
 </div>
 
@@ -903,6 +933,113 @@ def build_html(scan, signals, stats, arb=None):
 <script>
 {eq_js}
 {wr_js}
+</script>
+<script>
+// ── LIVE P&L TICKER ───────────────────────────────────────────────────────
+(function() {{
+  const positions = window.PERP_POSITIONS || [];
+  const summary   = window.PERP_SUMMARY   || {{}};
+  if (!positions.length) return;
+
+  const startBal   = summary.starting_balance || 1000000;
+  const realizedPnl = summary.realized_pnl || 0;
+
+  let spotPrices = {{}};
+  let perpPrices = {{}};
+  let lastFetch  = 0;
+  let fetchPending = false;
+
+  async function fetchPrices() {{
+    if (fetchPending) return;
+    fetchPending = true;
+    try {{
+      const [sRes, pRes] = await Promise.all([
+        fetch('https://api.bybit.com/v5/market/tickers?category=spot'),
+        fetch('https://api.bybit.com/v5/market/tickers?category=linear')
+      ]);
+      const sData = await sRes.json();
+      const pData = await pRes.json();
+      for (const t of (sData?.result?.list || [])) spotPrices[t.symbol] = parseFloat(t.lastPrice);
+      for (const t of (pData?.result?.list || [])) perpPrices[t.symbol] = parseFloat(t.lastPrice);
+      lastFetch = Date.now();
+      setDot('#00d4aa');  // green = live
+    }} catch(e) {{
+      setDot('#ff6b6b');  // red = fetch error
+    }}
+    fetchPending = false;
+  }}
+
+  function setDot(color) {{
+    const d = document.getElementById('live-dot');
+    if (d) d.style.background = color;
+  }}
+
+  function fmt(v, sign=true) {{
+    const s = sign ? (v >= 0 ? '+' : '') : '';
+    return s + v.toLocaleString('en-US', {{minimumFractionDigits:2, maximumFractionDigits:2}});
+  }}
+
+  function recalcAndUpdate() {{
+    // Only update DOM if we have fresh prices (< 10s old)
+    if (!lastFetch || Date.now() - lastFetch > 10000) return;
+
+    let totalUnreal = 0;
+    for (const pos of positions) {{
+      const spotNow = spotPrices[pos.symbol];
+      const perpNow = perpPrices[pos.symbol];
+      if (!spotNow || !perpNow || !pos.spot_entry || !pos.perp_entry) continue;
+
+      const sz = pos.size_usd;
+      let pnl;
+      if (pos.direction === 'LONG_SPOT_SHORT_PERP') {{
+        pnl = sz * (spotNow - pos.spot_entry) / pos.spot_entry
+            - sz * (perpNow - pos.perp_entry) / pos.perp_entry;
+      }} else {{
+        pnl = -sz * (spotNow - pos.spot_entry) / pos.spot_entry
+            + sz * (perpNow - pos.perp_entry) / pos.perp_entry;
+      }}
+      pnl += (pos.funding_total || 0) - (pos.fees_total || 0);
+      totalUnreal += pnl;
+
+      const row = document.querySelector(`[data-trade="${{pos.id}}"]`);
+      if (!row) continue;
+
+      // Unrealized P&L cell
+      const uc = row.querySelector('.live-unreal');
+      if (uc) {{
+        uc.textContent = '$' + fmt(pnl);
+        uc.className = 'live-unreal ' + (pnl >= 0 ? 'pos' : 'neg');
+      }}
+
+      // Basis-now span
+      const bc = row.querySelector('.live-basis');
+      if (bc) {{
+        const basisNow = (perpNow - spotNow) / spotNow * 100;
+        bc.textContent = (basisNow >= 0 ? '+' : '') + basisNow.toFixed(3) + '%';
+      }}
+    }}
+
+    // Account equity bar
+    const equity = startBal + realizedPnl + totalUnreal;
+    const retPct = (equity - startBal) / startBal * 100;
+    const eqEl = document.getElementById('live-equity');
+    if (eqEl) {{
+      eqEl.textContent = '$' + equity.toLocaleString('en-US', {{minimumFractionDigits:2, maximumFractionDigits:2}})
+        + ' (' + (retPct >= 0 ? '+' : '') + retPct.toFixed(4) + '%)';
+      eqEl.className = 'acct-equity ' + (equity >= startBal ? 'green' : 'red');
+    }}
+    const upEl = document.getElementById('live-upnl');
+    if (upEl) {{
+      upEl.innerHTML = '$' + fmt(totalUnreal) + ' <span style="font-size:12px;color:#8095a8">unrealized</span>';
+      upEl.className = 'acct-pnl ' + (totalUnreal >= 0 ? 'pos' : 'neg');
+    }}
+  }}
+
+  // Fetch new prices every 3 seconds; recalc DOM every second
+  fetchPrices();
+  setInterval(fetchPrices, 3000);
+  setInterval(recalcAndUpdate, 1000);
+}})();
 </script>
 </body>
 </html>"""
