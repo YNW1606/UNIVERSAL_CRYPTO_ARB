@@ -151,6 +151,18 @@ a{color:#00d4aa;text-decoration:none}
 .arb-sub{font-size:11px;color:#8095a8;margin-top:2px}
 .arb-sub-title{font-size:11px;font-weight:700;color:#8095a8;text-transform:uppercase;
                letter-spacing:0.8px;margin:12px 0 8px}
+.arb-muted{color:#8095a8!important}
+/* Portfolio protection banner */
+.port-protect-bar{display:flex;gap:20px;background:linear-gradient(135deg,#0f1e2e,#0d2240);
+  border:1px solid rgba(59,130,246,0.25);border-radius:10px;padding:16px 20px;margin-bottom:16px;align-items:flex-start}
+.port-protect-left{flex:1;min-width:0}
+.port-protect-title{font-size:12px;font-weight:700;color:#3b82f6;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px}
+.port-protect-rule{font-size:12px;color:#94a3b8}
+.port-protect-stats{display:flex;gap:16px;flex-shrink:0}
+.port-protect-stat{min-width:120px;text-align:right}
+@media(max-width:900px){.port-protect-bar{flex-direction:column}
+  .port-protect-stats{flex-wrap:wrap;justify-content:flex-start}
+  .port-protect-stat{text-align:left}}
 @media(max-width:900px){.arb-stats{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:600px){.arb-stats{grid-template-columns:repeat(2,1fr)}}
 
@@ -492,8 +504,8 @@ a{color:#00d4aa;text-decoration:none}
   <div class="section-title">Perpetual Arb — Paper Trading  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">sandbox · carry + basis + funding reversion · $1k per leg</span></div>
   
 <script>
-window.PERP_POSITIONS = [{"id": "NEG__XOMUSDT_1111_0128", "symbol": "XOMUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 165.85, "perp_entry": 165.85, "size_usd": 52445.91, "funding_total": 0, "fees_total": 41.9567}, {"id": "NEG__UNITREEUSDT_1111_0128", "symbol": "UNITREEUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 112.2, "perp_entry": 112.2, "size_usd": 55978.07, "funding_total": 0, "fees_total": 44.7825}, {"id": "CARR_JCTUSDT_1111_0128", "symbol": "JCTUSDT", "direction": "LONG_SPOT_SHORT_PERP", "spot_entry": 0.00731, "perp_entry": 0.0072946, "size_usd": 68179.07, "funding_total": 0, "fees_total": 54.5433}, {"id": "NEG__CLUSDT_1111_0128", "symbol": "CLUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 86.461, "perp_entry": 86.461, "size_usd": 76660.44, "funding_total": 0, "fees_total": 61.3284}, {"id": "CARR_ARIAUSDT_1111_0128", "symbol": "ARIAUSDT", "direction": "LONG_SPOT_SHORT_PERP", "spot_entry": 0.27553, "perp_entry": 0.27673, "size_usd": 78196.47, "funding_total": 0, "fees_total": 62.5572}, {"id": "NEG__BZUSDT_1111_0128", "symbol": "BZUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 91.63, "perp_entry": 91.63, "size_usd": 102948.57, "funding_total": 0, "fees_total": 82.3589}, {"id": "NEG__CYBERUSDT_1111_0128", "symbol": "CYBERUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 0.264, "perp_entry": 0.2639, "size_usd": 130558.26, "funding_total": 0, "fees_total": 104.4466}, {"id": "NEG__XCNUSDT_1111_0128", "symbol": "XCNUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 0.0035756, "perp_entry": 0.003566, "size_usd": 136406.43, "funding_total": 0, "fees_total": 109.1251}, {"id": "NEG__WAVESUSDT_1111_0128", "symbol": "WAVESUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 0.1776, "perp_entry": 0.1766, "size_usd": 139363.19, "funding_total": 0, "fees_total": 111.4906}, {"id": "NEG__INITUSDT_1111_0128", "symbol": "INITUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 0.170508, "perp_entry": 0.1718, "size_usd": 159263.59, "funding_total": 0, "fees_total": 127.4109}];
-window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": 0, "capital_deployed": 1000000.0, "n_open": 10};
+window.PERP_POSITIONS = [{"id": "CARR_MXLUSDT_1112_1743", "symbol": "MXLUSDT", "direction": "LONG_SPOT_SHORT_PERP", "spot_entry": 59.78, "perp_entry": 59.78, "size_usd": 43983.99, "funding_total": 0, "fees_total": 35.1872}, {"id": "CARR_PIEVERSEUSDT_1112_1743", "symbol": "PIEVERSEUSDT", "direction": "LONG_SPOT_SHORT_PERP", "spot_entry": 1.6265, "perp_entry": 1.6285, "size_usd": 44012.5, "funding_total": 0, "fees_total": 35.21}, {"id": "NEG__SUIUSDT_1112_1743", "symbol": "SUIUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 0.7953, "perp_entry": 0.79441, "size_usd": 44673.25, "funding_total": 0, "fees_total": 35.7386}, {"id": "NEG__AMDSTOCKUSDT_1112_1743", "symbol": "AMDSTOCKUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 581.14, "perp_entry": 581.14, "size_usd": 45826.36, "funding_total": 0, "fees_total": 36.6611}, {"id": "NEG__JUPUSDT_1112_1743", "symbol": "JUPUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 0.2601, "perp_entry": 0.25944, "size_usd": 47021.63, "funding_total": 0, "fees_total": 37.6173}, {"id": "NEG__INJUSDT_1112_1743", "symbol": "INJUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 7.36, "perp_entry": 7.3356, "size_usd": 49414.77, "funding_total": 0, "fees_total": 39.5318}, {"id": "NEG__NIGHTUSDT_1112_1743", "symbol": "NIGHTUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 0.04603, "perp_entry": 0.04592, "size_usd": 51619.56, "funding_total": 0, "fees_total": 41.2956}, {"id": "CARR_NVDAUSDT_1112_1743", "symbol": "NVDAUSDT", "direction": "LONG_SPOT_SHORT_PERP", "spot_entry": 165.56, "perp_entry": 165.56, "size_usd": 52071.47, "funding_total": 0, "fees_total": 41.6572}, {"id": "NEG__CASHCATUSDT_1112_1743", "symbol": "CASHCATUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 0.0499, "perp_entry": 0.04977, "size_usd": 56263.54, "funding_total": 0, "fees_total": 45.0108}, {"id": "NEG__ERAUSDT_1112_1743", "symbol": "ERAUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 0.0907, "perp_entry": 0.09041, "size_usd": 61199.35, "funding_total": 0, "fees_total": 48.9595}, {"id": "NEG__SAMSUNGUSDT_1112_1743", "symbol": "SAMSUNGUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 155.78, "perp_entry": 155.78, "size_usd": 64567.83, "funding_total": 0, "fees_total": 51.6543}, {"id": "NEG__INITUSDT_1112_1743", "symbol": "INITUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 0.112097, "perp_entry": 0.11245, "size_usd": 78471.52, "funding_total": 0, "fees_total": 62.7772}];
+window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": 0, "capital_deployed": 1000000.01, "n_open": 15};
 </script>
 <!-- Account Balance Bar -->
 <div class="acct-bar">
@@ -506,7 +518,7 @@ window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": 0, "capi
     <div id="live-equity" class="acct-equity green">$1,000,000.00 <span class="acct-ret">(+0.0000%)</span></div>
     <div class="acct-deploy-wrap">
       <div class="acct-deploy-bar"><div class="acct-deploy-fill" style="width:100.0%"></div></div>
-      <span class="acct-deploy-lbl">100.0% deployed — $1,000,000 in 10 positions · $0 available</span>
+      <span class="acct-deploy-lbl">100.0% deployed — $1,000,000 in 15 positions · $-0 available</span>
     </div>
   </div>
   <div class="acct-right">
@@ -517,28 +529,66 @@ window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": 0, "capi
 </div>
 
 <div class="arb-stats">
-  <div class="arb-stat"><div class="arb-label">Open Positions</div><div class="arb-val">10/15</div><div class="arb-sub">$1,000,000 deployed · $0 free</div></div>
-  <div class="arb-stat"><div class="arb-label">Projected Daily</div><div class="arb-val green">$6,583.94</div><div class="arb-sub">funding income / day</div></div>
-  <div class="arb-stat"><div class="arb-label">Projected Annual</div><div class="arb-val green">$2,403,137 <span style="font-size:12px">(240.3%/yr)</span></div><div class="arb-sub">on $1M account</div></div>
+  <div class="arb-stat"><div class="arb-label">Open Positions</div><div class="arb-val">15/15</div><div class="arb-sub">$1,000,000 deployed · $-0 free</div></div>
+  <div class="arb-stat"><div class="arb-label">Projected Daily</div><div class="arb-val green">$2,397.51</div><div class="arb-sub">funding income / day</div></div>
+  <div class="arb-stat"><div class="arb-label">Projected Annual</div><div class="arb-val green">$875,092 <span style="font-size:12px">(87.5%/yr)</span></div><div class="arb-sub">on $1M account</div></div>
   <div class="arb-stat"><div class="arb-label">Realized P&L</div><div class="arb-val green">$+0.00</div><div class="arb-sub">closed trades</div></div>
   <div class="arb-stat"><div class="arb-label">Win Rate</div><div class="arb-val red">0.0%</div><div class="arb-sub">0W / 0L · PF 0.00×</div></div>
 </div>
 
+<!-- Portfolio Protection Banner -->
+<div class="port-protect-bar">
+  <div class="port-protect-left">
+    <div class="port-protect-title">Portfolio Protection</div>
+    <div class="port-protect-rule">Lock ALL when total P&L ≥ <b>$4,500</b> → 20 min cooldown → reopen fresh positions</div>
+    <div style="margin-top:6px">
+      <div style="font-size:11px;color:#8095a8;margin-bottom:3px">Progress to lock target (0%)</div>
+      <div style="background:#1e293b;border-radius:4px;height:8px;width:100%;overflow:hidden">
+        <div style="background:#3b82f6;height:100%;width:0.0%;border-radius:4px;transition:width 1s"></div>
+      </div>
+    </div>
+  </div>
+  <div class="port-protect-stats">
+    <div class="port-protect-stat">
+      <div class="arb-label">Booked Profit</div>
+      <div class="arb-val arb-muted">$+0.00</div>
+      <div class="arb-sub">no books yet</div>
+    </div>
+    <div class="port-protect-stat">
+      <div class="arb-label">Portfolio Peak</div>
+      <div class="arb-val">—</div>
+      <div class="arb-sub">highest unrealized reached</div>
+    </div>
+    <div class="port-protect-stat">
+      <div class="arb-label">Trail Floor</div>
+      <div class="arb-val arb-muted" style="font-size:11px">inactive (activates at $1,000 peak)</div>
+      <div class="arb-sub">30% drawdown from peak</div>
+    </div>
+    <div class="port-protect-stat">
+      <div class="arb-label">Last Event</div>
+      <div class="arb-val arb-muted" style="font-size:11px">waiting for first profit lock</div>
+      <div class="arb-sub">stop loss at −$2,500</div>
+    </div>
+  </div>
+</div>
 
 
-<div class="arb-sub-title">Open Positions (10)</div>
+
+<div class="arb-sub-title">Open Positions (15)</div>
 <table class="data-table" style="margin-bottom:16px">
 <thead><tr><th>Symbol</th><th>Strategy</th><th>Direction</th><th>Ann Yield</th><th>Basis Entry→Now</th><th>Funding</th><th>Unrealized</th><th>TP / SL</th><th>Age</th></tr></thead>
-<tbody><tr data-trade="NEG__XOMUSDT_1111_0128"><td><b>XOM</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+46.7%/yr</td><td class="mono">+0.000% → <span class="live-basis">+0.000%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $1,573 | SL $-787</td><td class="act">0h</td></tr>
-<tr data-trade="NEG__UNITREEUSDT_1111_0128"><td><b>UNITREE</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+53.2%/yr</td><td class="mono">+0.000% → <span class="live-basis">+0.000%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $1,679 | SL $-840</td><td class="act">0h</td></tr>
-<tr data-trade="CARR_JCTUSDT_1111_0128"><td><b>JCT</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+78.9%/yr</td><td class="mono">-0.211% → <span class="live-basis">-0.211%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $2,045 | SL $-1,023</td><td class="act">0h</td></tr>
-<tr data-trade="NEG__CLUSDT_1111_0128"><td><b>CL</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+99.7%/yr</td><td class="mono">+0.000% → <span class="live-basis">+0.000%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $2,300 | SL $-1,150</td><td class="act">0h</td></tr>
-<tr data-trade="CARR_ARIAUSDT_1111_0128"><td><b>ARIA</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+103.7%/yr</td><td class="mono">+0.436% → <span class="live-basis">+0.436%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $2,346 | SL $-1,173</td><td class="act">0h</td></tr>
-<tr data-trade="NEG__BZUSDT_1111_0128"><td><b>BZ</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+179.8%/yr</td><td class="mono">+0.000% → <span class="live-basis">+0.000%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $3,088 | SL $-1,544</td><td class="act">0h</td></tr>
-<tr data-trade="NEG__CYBERUSDT_1111_0128"><td><b>CYBER</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+289.2%/yr</td><td class="mono">-0.038% → <span class="live-basis">-0.038%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $3,917 | SL $-1,958</td><td class="act">0h</td></tr>
-<tr data-trade="NEG__XCNUSDT_1111_0128"><td><b>XCN</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+315.6%/yr</td><td class="mono">-0.268% → <span class="live-basis">-0.268%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $4,092 | SL $-2,046</td><td class="act">0h</td></tr>
-<tr data-trade="NEG__WAVESUSDT_1111_0128"><td><b>WAVES</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+329.5%/yr</td><td class="mono">-0.563% → <span class="live-basis">-0.563%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $4,181 | SL $-2,090</td><td class="act">0h</td></tr>
-<tr data-trade="NEG__INITUSDT_1111_0128"><td><b>INIT</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+430.3%/yr</td><td class="mono">+0.758% → <span class="live-basis">+0.758%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $4,778 | SL $-2,389</td><td class="act">0h</td></tr>
+<tbody><tr data-trade="CARR_MXLUSDT_1112_1743"><td><b>MXL</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+21.1%/yr</td><td class="mono">+0.000% → <span class="live-basis">+0.000%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $1,320 | SL $-660</td><td class="act">0h</td></tr>
+<tr data-trade="CARR_PIEVERSEUSDT_1112_1743"><td><b>PIEVERSE</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+21.1%/yr</td><td class="mono">+0.123% → <span class="live-basis">+0.123%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $1,320 | SL $-660</td><td class="act">0h</td></tr>
+<tr data-trade="NEG__SUIUSDT_1112_1743"><td><b>SUI</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+21.8%/yr</td><td class="mono">-0.112% → <span class="live-basis">-0.112%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $1,340 | SL $-670</td><td class="act">0h</td></tr>
+<tr data-trade="NEG__AMDSTOCKUSDT_1112_1743"><td><b>AMDSTOCK</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+22.9%/yr</td><td class="mono">+0.000% → <span class="live-basis">+0.000%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $1,375 | SL $-687</td><td class="act">0h</td></tr>
+<tr data-trade="NEG__JUPUSDT_1112_1743"><td><b>JUP</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+24.1%/yr</td><td class="mono">-0.254% → <span class="live-basis">-0.254%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $1,411 | SL $-705</td><td class="act">0h</td></tr>
+<tr data-trade="NEG__INJUSDT_1112_1743"><td><b>INJ</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+26.6%/yr</td><td class="mono">-0.332% → <span class="live-basis">-0.332%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $1,482 | SL $-741</td><td class="act">0h</td></tr>
+<tr data-trade="NEG__NIGHTUSDT_1112_1743"><td><b>NIGHT</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+29.1%/yr</td><td class="mono">-0.239% → <span class="live-basis">-0.239%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $1,549 | SL $-774</td><td class="act">0h</td></tr>
+<tr data-trade="CARR_NVDAUSDT_1112_1743"><td><b>NVDA</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="mono" style="font-size:11px">↑Spot↓Perp</td><td class="pos">+29.6%/yr</td><td class="mono">+0.000% → <span class="live-basis">+0.000%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $1,562 | SL $-781</td><td class="act">0h</td></tr>
+<tr data-trade="NEG__CASHCATUSDT_1112_1743"><td><b>CASHCAT</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+34.5%/yr</td><td class="mono">-0.261% → <span class="live-basis">-0.261%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $1,688 | SL $-844</td><td class="act">0h</td></tr>
+<tr data-trade="NEG__ERAUSDT_1112_1743"><td><b>ERA</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+40.9%/yr</td><td class="mono">-0.320% → <span class="live-basis">-0.320%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $1,836 | SL $-918</td><td class="act">0h</td></tr>
+<tr data-trade="NEG__SAMSUNGUSDT_1112_1743"><td><b>SAMSUNG</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+45.5%/yr</td><td class="mono">+0.000% → <span class="live-basis">+0.000%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $1,937 | SL $-969</td><td class="act">0h</td></tr>
+<tr data-trade="NEG__INITUSDT_1112_1743"><td><b>INIT</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+67.2%/yr</td><td class="mono">+0.315% → <span class="live-basis">+0.315%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $2,354 | SL $-1,177</td><td class="act">0h</td></tr>
 </tbody>
 </table>
 
@@ -619,7 +669,7 @@ window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": 0, "capi
 </div>
 
 <div class="footer">
-  Generated at 2026-11-11 01:28 UTC &nbsp;·&nbsp;
+  Generated at 2026-11-12 17:45 UTC &nbsp;·&nbsp;
   GitHub Actions scan every ~1 min &nbsp;·&nbsp; Tracking 20 symbols &nbsp;·&nbsp;
   <a href="https://github.com/YNW1606/UNIVERSAL_CRYPTO_ARB" target="_blank">Source Code</a>
 </div>

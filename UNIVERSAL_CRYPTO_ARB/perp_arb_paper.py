@@ -55,10 +55,10 @@ BASIS_MAX_HOURS     = 72
 FEE_PER_LEG         = 0.0004
 ROUND_TRIP_FEES     = FEE_PER_LEG * 4
 STARTING_BALANCE    = 1_000_000.0
-MAX_OPEN_TRADES     = 10        # focused: 10 best pairs, more capital per slot
-MIN_POSITION_USD    = 50_000
-MAX_POSITION_USD    = 200_000
-POSITION_USD        = STARTING_BALANCE / MAX_OPEN_TRADES  # $100k flat fallback
+MAX_OPEN_TRADES     = 15        # 15 best pairs — fills all $1M efficiently
+MIN_POSITION_USD    = 30_000
+MAX_POSITION_USD    = 250_000
+POSITION_USD        = STARTING_BALANCE / MAX_OPEN_TRADES  # $66.7k flat fallback
 FUNDING_INTERVAL_H  = 8
 MIN_VOLUME_24H      = 5_000_000
 MAX_ANN_RATE        = 500.0
@@ -268,22 +268,28 @@ def scan_opportunities():
 
 def _yield_weighted_size(opps, n_slots, budget):
     """
-    Allocate budget across n_slots opportunities using sqrt(yield) weighting
-    so higher-yield coins get more capital without extreme concentration.
-    Returns dict: (symbol, strategy) → size_usd
+    Allocate budget across n_slots using sqrt(yield) weighting.
+    Hard cap: total allocated never exceeds budget.
     """
-    if not opps:
+    if not opps or budget <= 0:
         return {}
     picks = opps[:n_slots]
-    yields = [max(abs(o["ann_pct"]), 1.0) for o in picks]
+    yields  = [max(abs(o["ann_pct"]), 1.0) for o in picks]
     weights = [y ** 0.5 for y in yields]
     total_w = sum(weights)
-    sizes = {}
-    for o, w in zip(picks, weights):
-        raw = budget * w / total_w
-        alloc = max(MIN_POSITION_USD, min(MAX_POSITION_USD, raw))
-        sizes[(o["symbol"], o["strategy"])] = alloc
-    return sizes
+
+    # First pass: proportional with per-position min/max caps
+    raw = [budget * w / total_w for w in weights]
+    capped = [max(MIN_POSITION_USD, min(MAX_POSITION_USD, r)) for r in raw]
+
+    # Second pass: if capped total exceeds budget, scale all down proportionally
+    total = sum(capped)
+    if total > budget:
+        scale = budget / total
+        capped = [s * scale for s in capped]
+
+    return {(o["symbol"], o["strategy"]): round(s, 2)
+            for o, s in zip(picks, capped)}
 
 
 # ── OPEN PAPER TRADE ──────────────────────────────────────────────────────────
@@ -585,17 +591,24 @@ def update_positions():
 def open_new_trades():
     """Scan ALL Bybit perps, pick best yield-weighted opportunities, open up to MAX_OPEN_TRADES."""
     c = _conn()
-    n_open = c.execute("SELECT COUNT(*) FROM trades WHERE status='OPEN'").fetchone()[0]
+    rows   = c.execute("SELECT size_usd FROM trades WHERE status='OPEN'").fetchall()
     c.close()
+    n_open = len(rows)
+    already_deployed = sum(float(r[0] or 0) for r in rows)
 
     if n_open >= MAX_OPEN_TRADES:
         return []
 
-    slots_free = MAX_OPEN_TRADES - n_open
-    opps       = scan_opportunities()
+    slots_free       = MAX_OPEN_TRADES - n_open
+    available_budget = max(0.0, STARTING_BALANCE - already_deployed)
 
-    # Compute yield-weighted sizes for all candidates
-    sizes = _yield_weighted_size(opps, MAX_OPEN_TRADES, STARTING_BALANCE)
+    if available_budget < MIN_POSITION_USD:
+        return []  # not enough cash left to open even a minimum slot
+
+    opps = scan_opportunities()
+
+    # Size positions only against REMAINING budget and REMAINING slot count
+    sizes = _yield_weighted_size(opps, slots_free, available_budget)
 
     opened = []
     for opp in opps:
@@ -998,6 +1011,27 @@ def run_cycle(verbose=True):
 
 # ── MAIN ─────────────────────────────────────────────────────────────────────
 
+LOCK_PATH = os.path.join(DB_DIR, "perp_arb.lock")
+
+
+def _acquire_lock():
+    """Return True if lock acquired, False if a fresh lock exists (< 10 min old)."""
+    if os.path.exists(LOCK_PATH):
+        age = time.time() - os.path.getmtime(LOCK_PATH)
+        if age < 600:   # 10-minute stale timeout
+            return False
+    with open(LOCK_PATH, "w") as f:
+        f.write(str(os.getpid()))
+    return True
+
+
+def _release_lock():
+    try:
+        os.remove(LOCK_PATH)
+    except Exception:
+        pass
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--once",   action="store_true", help="One cycle then exit")
@@ -1013,8 +1047,14 @@ def main():
         c = _conn()
         c.execute("DELETE FROM trades")
         c.execute("DELETE FROM funding_log")
+        c.execute("UPDATE portfolio_meta SET peak_total_pnl=0, total_booked_pnl=0, book_count=0, last_booked_at=NULL, last_book_reason=NULL WHERE id=1")
         c.commit()
         c.close()
+        # Also clear the JSON snapshot
+        json_path = os.path.join(DB_DIR, "perp_arb.json")
+        if os.path.exists(json_path):
+            os.remove(json_path)
+        _release_lock()
         print("All paper trades cleared.")
         return
 
@@ -1036,17 +1076,29 @@ def main():
         print(f"Watch mode: cycling every {args.watch}s. Ctrl+C to stop.")
         while True:
             try:
-                run_cycle()
+                if _acquire_lock():
+                    run_cycle()
+                    _release_lock()
+                else:
+                    print("  Another instance running — skipping cycle")
             except KeyboardInterrupt:
+                _release_lock()
                 print("\nStopped.")
                 break
             except Exception as e:
+                _release_lock()
                 print(f"  Cycle error: {e}")
             time.sleep(args.watch)
         return
 
-    # Default / --once
-    run_cycle()
+    # Default / --once — guard against concurrent GitHub Actions runs
+    if not _acquire_lock():
+        print("Another perp_arb instance is running — exiting to prevent duplicate positions.")
+        sys.exit(0)
+    try:
+        run_cycle()
+    finally:
+        _release_lock()
 
 
 if __name__ == "__main__":
