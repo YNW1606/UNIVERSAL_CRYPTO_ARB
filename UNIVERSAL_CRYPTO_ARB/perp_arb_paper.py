@@ -63,13 +63,20 @@ FUNDING_INTERVAL_H  = 8
 MIN_VOLUME_24H      = 5_000_000
 MAX_ANN_RATE        = 500.0
 
-# ── SMART EXIT PARAMETERS ────────────────────────────────────────────────────
-PROFIT_TARGET_PCT   = 0.030   # +3.0% of position → take profit (e.g. +$3k on $100k)
-STOP_LOSS_PCT       = 0.015   # -1.5% of position → hard stop loss (e.g. -$1.5k on $100k)
-TRAIL_ACTIVATE_PCT  = 0.015   # trailing stop activates once up 1.5%
-TRAIL_DROP_PCT      = 0.008   # once active, close if drops 0.8% below peak (lock gains)
-FUNDING_ROI_MULT    = 8.0     # close when funding_income > 8× open_fees (redeploy to fresher opp)
-FUNDING_DECAY_PCT   = 0.50    # close if current funding < 50% of entry rate (edge fading fast)
+# ── PER-POSITION SMART EXIT ───────────────────────────────────────────────────
+PROFIT_TARGET_PCT   = 0.030   # +3.0% per position
+STOP_LOSS_PCT       = 0.012   # -1.2% per position (tighter)
+TRAIL_ACTIVATE_PCT  = 0.015   # trailing activates at +1.5%
+TRAIL_DROP_PCT      = 0.007   # trails 0.7% below peak
+FUNDING_ROI_MULT    = 8.0     # close when funding > 8× open fees
+FUNDING_DECAY_PCT   = 0.50    # close if rate < 50% of entry rate
+
+# ── PORTFOLIO-LEVEL PROTECTION (the key layer that was missing) ────────────────
+PORT_TP_USD         = 4500.0  # lock ALL profit when portfolio hits +$4,500
+PORT_TRAIL_DROP_PCT = 0.30    # once peak > $1k, never give back more than 30%
+                               # e.g. peak $5k → close all if drops to $3,500
+PORT_SL_USD         = -2500.0 # close ALL if portfolio loses $2,500 total
+PORT_REOPEN_MINS    = 20      # wait 20 min after booking before reopening
 
 # ── DATABASE ──────────────────────────────────────────────────────────────────
 DB_DIR  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "accuracy_db")
@@ -128,8 +135,18 @@ def init_db():
         payment_usd  REAL,
         direction   TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS portfolio_meta (
+        id               INTEGER PRIMARY KEY CHECK (id = 1),  -- singleton row
+        peak_total_pnl   REAL    DEFAULT 0,   -- highest portfolio unrealized P&L ever seen
+        total_booked_pnl REAL    DEFAULT 0,   -- cumulative locked profit from all book events
+        book_count       INTEGER DEFAULT 0,   -- how many times we've booked profit
+        last_booked_at   TEXT,                -- ISO timestamp of last book event
+        last_book_reason TEXT                 -- e.g. PORT_TP / PORT_TRAIL / PORT_SL
+    );
+    INSERT OR IGNORE INTO portfolio_meta (id) VALUES (1);
     """)
-    # Migrate existing DB: add peak_pnl if missing
+    # Migrate: add peak_pnl to trades if missing
     cols = [r[1] for r in c.execute("PRAGMA table_info(trades)").fetchall()]
     if cols and "peak_pnl" not in cols:
         c.execute("ALTER TABLE trades ADD COLUMN peak_pnl REAL DEFAULT 0")
@@ -611,16 +628,26 @@ def compute_report(verbose=True):
     open_ = [r for r in all_ if r["status"] == "OPEN"]
     closed = [r for r in all_ if r["status"] == "CLOSED"]
 
+    # Portfolio meta (for display)
+    meta           = _get_meta()
+    total_booked   = float(meta.get("total_booked_pnl") or 0)
+    port_peak      = float(meta.get("peak_total_pnl") or 0)
+    book_count     = int(meta.get("book_count") or 0)
+    last_book_rsn  = meta.get("last_book_reason") or "-"
+
     wins  = [r for r in closed if (r["realized_pnl"] or 0) > 0]
     loss  = [r for r in closed if (r["realized_pnl"] or 0) <= 0]
     total_pnl    = sum(r["realized_pnl"] or 0 for r in closed)
     total_unreal = sum(r["unrealized_pnl"] or 0 for r in open_)
 
-    # Account balance — count only the cash-requiring spot leg (not margin leg)
     capital_deployed = sum(float(r["size_usd"] or 0) for r in open_)
-    account_equity   = STARTING_BALANCE + total_pnl + total_unreal
-    available_cash   = STARTING_BALANCE + total_pnl - capital_deployed
+    # True equity includes ALL realized (closed trades + booked profit events)
+    account_equity   = STARTING_BALANCE + total_booked + total_pnl + total_unreal
+    available_cash   = STARTING_BALANCE + total_booked + total_pnl - capital_deployed
     return_pct       = (account_equity - STARTING_BALANCE) / STARTING_BALANCE * 100
+
+    # Portfolio trailing stop floor (live display)
+    trail_floor = port_peak * (1 - PORT_TRAIL_DROP_PCT) if port_peak >= 1000 else None
 
     # Projected daily funding income from open positions
     proj_daily_funding = 0.0
@@ -662,8 +689,10 @@ def compute_report(verbose=True):
         print("═" * W)
         print(f"  Opening Balance:  ${STARTING_BALANCE:>14,.2f}")
         print(f"  Account Equity:   ${account_equity:>14,.2f}  {eq_cls}  ({return_pct:+.4f}%)")
+        print(f"  Booked Profit:    ${total_booked:>+14,.2f}  ({book_count} book events)")
         print(f"  Realized P&L:     ${total_pnl:>+14,.2f}")
         print(f"  Unrealized P&L:   ${total_unreal:>+14,.2f}  ({len(open_)} open positions)")
+        print(f"  Port Peak P&L:    ${port_peak:>+14,.2f}  (trail floor: ${trail_floor:,.2f})" if trail_floor else f"  Port Peak P&L:    ${port_peak:>+14,.2f}  (trail activates at $1,000)")
         print(f"  Capital Deployed: ${capital_deployed:>14,.2f}  ({capital_deployed/STARTING_BALANCE*100:.1f}% of balance)")
         print(f"  Available Cash:   ${available_cash:>14,.2f}")
         print(f"  Trades:           {len(all_):3d} total  ({len(open_)} open, {len(closed)} closed)")
@@ -745,6 +774,12 @@ def compute_report(verbose=True):
         "by_strategy":    {s: {"n": d["n"], "win_rate": round(d["wins"]/d["n"]*100,1) if d["n"] else 0,
                                "pnl": round(d["pnl"],2)} for s,d in strats.items()},
         "exit_reasons":   exit_counts,
+        # Portfolio protection
+        "total_booked_pnl":  round(total_booked, 2),
+        "book_count":        book_count,
+        "port_peak":         round(port_peak, 2),
+        "trail_floor":       round(trail_floor, 2) if trail_floor is not None else None,
+        "last_book_reason":  last_book_rsn,
         "open_positions": [
             {
                 "id":          r["id"],
@@ -798,30 +833,164 @@ def save_json(report):
         print(f"  JSON save error: {e}")
 
 
+# ── PORTFOLIO META ────────────────────────────────────────────────────────────
+
+def _get_meta():
+    c = _conn()
+    row = c.execute("SELECT * FROM portfolio_meta WHERE id=1").fetchone()
+    c.close()
+    return dict(row) if row else {}
+
+def _update_meta(**kwargs):
+    c = _conn()
+    sets = ", ".join(f"{k}=?" for k in kwargs)
+    c.execute(f"UPDATE portfolio_meta SET {sets} WHERE id=1", list(kwargs.values()))
+    c.commit()
+    c.close()
+
+def _book_all_positions(reason):
+    """Close every open position and lock the profit. Returns total realized from this book."""
+    c = _conn()
+    open_trades = c.execute("SELECT * FROM trades WHERE status='OPEN'").fetchall()
+    c.close()
+    total_booked = 0.0
+    for t in open_trades:
+        sym = t["symbol"]
+        try:
+            spot_now = fetch_ticker_price(sym)
+            fd       = fetch_funding_rate(sym)
+            perp_now = float(fd.get("markPrice") or 0) or fetch_perp_price(sym)
+        except Exception:
+            spot_now = float(t["spot_now"] or t["spot_entry"] or 0)
+            perp_now = float(t["perp_now"] or t["perp_entry"] or 0)
+        if spot_now and perp_now:
+            close_trade(t["id"], spot_now, perp_now, reason)
+            total_booked += float(t["unrealized_pnl"] or 0)
+    return total_booked
+
+def _can_reopen():
+    """Return True if enough time has passed since the last book event."""
+    meta = _get_meta()
+    last = meta.get("last_booked_at")
+    if not last:
+        return True
+    try:
+        if last.endswith("Z"): last = last[:-1] + "+00:00"
+        mins_ago = (datetime.now(timezone.utc) - datetime.fromisoformat(last)).total_seconds() / 60
+        return mins_ago >= PORT_REOPEN_MINS
+    except Exception:
+        return True
+
+def check_portfolio_protection():
+    """
+    Portfolio-level profit lock + stop loss. Runs every cycle.
+    Priority:
+      1. Portfolio stop loss  (total < -$2,500)
+      2. Portfolio TP         (total > +$4,500)
+      3. Portfolio trailing   (dropped >30% from peak)
+    Returns reason if positions were closed, else None.
+    """
+    c = _conn()
+    open_ = c.execute("SELECT unrealized_pnl FROM trades WHERE status='OPEN'").fetchall()
+    c.close()
+    if not open_:
+        return None
+
+    total_unreal = sum(float(r["unrealized_pnl"] or 0) for r in open_)
+    meta         = _get_meta()
+    peak         = float(meta.get("peak_total_pnl") or 0)
+    new_peak     = max(peak, total_unreal)
+
+    # Update peak in DB
+    if new_peak > peak:
+        _update_meta(peak_total_pnl=new_peak)
+
+    # 1. Portfolio hard stop loss
+    if total_unreal <= PORT_SL_USD:
+        booked = _book_all_positions("PORT_STOP_LOSS")
+        total_booked = float(meta.get("total_booked_pnl") or 0) + booked
+        _update_meta(
+            total_booked_pnl=total_booked,
+            book_count=int(meta.get("book_count") or 0) + 1,
+            last_booked_at=datetime.now(timezone.utc).isoformat(),
+            last_book_reason="PORT_STOP_LOSS",
+            peak_total_pnl=0.0,
+        )
+        print(f"  ⛔ PORTFOLIO STOP LOSS: total P&L ${total_unreal:+,.2f} → closing all")
+        return "PORT_STOP_LOSS"
+
+    # 2. Portfolio take profit
+    if total_unreal >= PORT_TP_USD:
+        booked = _book_all_positions("PORT_TAKE_PROFIT")
+        total_booked = float(meta.get("total_booked_pnl") or 0) + booked
+        _update_meta(
+            total_booked_pnl=total_booked,
+            book_count=int(meta.get("book_count") or 0) + 1,
+            last_booked_at=datetime.now(timezone.utc).isoformat(),
+            last_book_reason="PORT_TAKE_PROFIT",
+            peak_total_pnl=0.0,
+        )
+        print(f"  ✅ PORTFOLIO TP HIT: locked ${booked:+,.2f} (total booked: ${total_booked:+,.2f})")
+        return "PORT_TAKE_PROFIT"
+
+    # 3. Portfolio trailing stop (activates once peak > $1,000)
+    if new_peak >= 1000:
+        trail_floor = new_peak * (1 - PORT_TRAIL_DROP_PCT)
+        if total_unreal <= trail_floor:
+            booked = _book_all_positions("PORT_TRAILING_STOP")
+            total_booked = float(meta.get("total_booked_pnl") or 0) + booked
+            _update_meta(
+                total_booked_pnl=total_booked,
+                book_count=int(meta.get("book_count") or 0) + 1,
+                last_booked_at=datetime.now(timezone.utc).isoformat(),
+                last_book_reason="PORT_TRAILING_STOP",
+                peak_total_pnl=0.0,
+            )
+            print(f"  🔒 PORTFOLIO TRAIL STOP: peak was ${new_peak:+,.2f}, dropped to ${total_unreal:+,.2f} → locked ${booked:+,.2f}")
+            return "PORT_TRAILING_STOP"
+
+    return None
+
+
 # ── FULL CYCLE ────────────────────────────────────────────────────────────────
 
 def run_cycle(verbose=True):
     ts = datetime.now(timezone.utc).strftime("%H:%M:%S UTC")
     print(f"\n[{ts}] Perp Arb Cycle starting...")
 
-    # 1. Update existing positions (funding + exit checks)
+    # 1. Update existing positions (funding + per-position exits)
     upd = update_positions()
     print(f"  Updated positions — funding applied: {upd['funding_applied']}, "
           f"closed: {upd['closed']}")
 
-    # 2. Scan and open new trades
-    opened = open_new_trades()
-    if opened:
-        print(f"  Opened {len(opened)} new trade(s):")
-        for t in opened:
-            print(f"    {t['id']}  {t['strategy']}")
-    else:
-        c = _conn()
-        n_open = c.execute("SELECT COUNT(*) FROM trades WHERE status='OPEN'").fetchone()[0]
-        c.close()
-        print(f"  No new trades opened  ({n_open}/{MAX_OPEN_TRADES} slots used)")
+    # 2. Portfolio-level protection (TP / trailing / stop-loss)
+    port_action = check_portfolio_protection()
+    if port_action:
+        print(f"  Portfolio action: {port_action}")
 
-    # 3. Report + save JSON
+    # 3. Open new trades — but only if no cooldown after a book event
+    if _can_reopen():
+        opened = open_new_trades()
+        if opened:
+            print(f"  Opened {len(opened)} new trade(s):")
+            for t in opened:
+                print(f"    {t['id']}  {t['strategy']}  ann={t.get('ann_pct',0):.1f}%  ${t.get('size_usd',0):,.0f}")
+        else:
+            c = _conn()
+            n_open = c.execute("SELECT COUNT(*) FROM trades WHERE status='OPEN'").fetchone()[0]
+            c.close()
+            print(f"  No new trades opened  ({n_open}/{MAX_OPEN_TRADES} slots used)")
+    else:
+        meta = _get_meta()
+        last = meta.get("last_booked_at","")
+        try:
+            if last.endswith("Z"): last = last[:-1] + "+00:00"
+            mins = (datetime.now(timezone.utc) - datetime.fromisoformat(last)).total_seconds() / 60
+        except Exception:
+            mins = 0
+        print(f"  Cooldown after {meta.get('last_book_reason','book')} — {PORT_REOPEN_MINS-int(mins):.0f} min until reopen")
+
+    # 4. Report + save JSON
     report = compute_report(verbose=verbose)
     save_json(report)
     return report

@@ -229,6 +229,56 @@ def build_watchlist(scan):
     return f'<div class="watchlist-grid">{rows}</div>'
 
 
+def _port_protection_html(booked, book_count, port_peak, trail_floor, last_book_r, total_equity_gain):
+    """Render portfolio protection status banner."""
+    booked_cls  = "green" if booked > 0 else "arb-muted"
+    gain_cls    = "green" if total_equity_gain >= 0 else "red"
+    peak_txt    = f"${port_peak:+,.2f}" if port_peak else "—"
+    trail_txt   = f"${trail_floor:,.2f}" if trail_floor is not None else "inactive (activates at $1,000 peak)"
+    target_txt  = "$4,500"
+    book_events = f"{book_count} book event{'s' if book_count != 1 else ''}" if book_count > 0 else "no books yet"
+    last_txt    = last_book_r if book_count > 0 else "waiting for first profit lock"
+
+    # Progress bar: unrealized portfolio gain toward $4,500 target
+    progress_pct = min(100, max(0, total_equity_gain / 4500 * 100)) if total_equity_gain > 0 else 0
+    bar_color    = "#10b981" if progress_pct >= 80 else ("#f59e0b" if progress_pct >= 40 else "#3b82f6")
+
+    return f'''<div class="port-protect-bar">
+  <div class="port-protect-left">
+    <div class="port-protect-title">Portfolio Protection</div>
+    <div class="port-protect-rule">Lock ALL when total P&L ≥ <b>${4500:,}</b> → 20 min cooldown → reopen fresh positions</div>
+    <div style="margin-top:6px">
+      <div style="font-size:11px;color:#8095a8;margin-bottom:3px">Progress to lock target ({progress_pct:.0f}%)</div>
+      <div style="background:#1e293b;border-radius:4px;height:8px;width:100%;overflow:hidden">
+        <div style="background:{bar_color};height:100%;width:{progress_pct:.1f}%;border-radius:4px;transition:width 1s"></div>
+      </div>
+    </div>
+  </div>
+  <div class="port-protect-stats">
+    <div class="port-protect-stat">
+      <div class="arb-label">Booked Profit</div>
+      <div class="arb-val {booked_cls}">${booked:+,.2f}</div>
+      <div class="arb-sub">{book_events}</div>
+    </div>
+    <div class="port-protect-stat">
+      <div class="arb-label">Portfolio Peak</div>
+      <div class="arb-val">{peak_txt}</div>
+      <div class="arb-sub">highest unrealized reached</div>
+    </div>
+    <div class="port-protect-stat">
+      <div class="arb-label">Trail Floor</div>
+      <div class="arb-val {'yellow' if trail_floor else 'arb-muted'}" style="font-size:{'14px' if trail_floor else '11px'}">{trail_txt}</div>
+      <div class="arb-sub">30% drawdown from peak</div>
+    </div>
+    <div class="port-protect-stat">
+      <div class="arb-label">Last Event</div>
+      <div class="arb-val arb-muted" style="font-size:11px">{last_txt}</div>
+      <div class="arb-sub">stop loss at −$2,500</div>
+    </div>
+  </div>
+</div>'''
+
+
 def build_perp_arb_panel(arb):
     """Full perpetual arbitrage paper trading section."""
     if not arb:
@@ -250,6 +300,13 @@ def build_perp_arb_panel(arb):
     proj_mon  = arb.get("proj_monthly_funding", 0)
     proj_ann  = arb.get("proj_annual_funding", 0)
     proj_pct  = arb.get("proj_annual_pct", 0)
+    # Portfolio protection
+    booked      = arb.get("total_booked_pnl", 0) or 0
+    book_count  = arb.get("book_count", 0) or 0
+    port_peak   = arb.get("port_peak", 0) or 0
+    trail_floor = arb.get("trail_floor")
+    last_book_r = arb.get("last_book_reason", "-") or "-"
+    total_equity_gain = booked + (arb.get("realized_pnl", 0) or 0) + (arb.get("unrealized_pnl", 0) or 0)
 
     wr_cls   = "green" if wr >= 55 else ("yellow" if wr >= 45 else "red")
     pf_cls   = "green" if pf >= 1.5 else ("yellow" if pf >= 1.0 else "red")
@@ -404,6 +461,9 @@ window.PERP_SUMMARY   = {js_summary};
   <div class="arb-stat"><div class="arb-label">Realized P&L</div><div class="arb-val {rp_cls}">${rpnl:+,.2f}</div><div class="arb-sub">closed trades</div></div>
   <div class="arb-stat"><div class="arb-label">Win Rate</div><div class="arb-val {wr_cls}">{wr:.1f}%</div><div class="arb-sub">{arb.get("wins",0)}W / {arb.get("losses",0)}L · PF {pf:.2f}×</div></div>
 </div>
+
+<!-- Portfolio Protection Banner -->
+{_port_protection_html(booked, book_count, port_peak, trail_floor, last_book_r, total_equity_gain)}
 
 {f"""<div class="arb-sub-title">By Strategy</div>
 <table class="data-table" style="margin-bottom:16px">
@@ -775,6 +835,18 @@ a{color:#00d4aa;text-decoration:none}
 .arb-sub{font-size:11px;color:#8095a8;margin-top:2px}
 .arb-sub-title{font-size:11px;font-weight:700;color:#8095a8;text-transform:uppercase;
                letter-spacing:0.8px;margin:12px 0 8px}
+.arb-muted{color:#8095a8!important}
+/* Portfolio protection banner */
+.port-protect-bar{display:flex;gap:20px;background:linear-gradient(135deg,#0f1e2e,#0d2240);
+  border:1px solid rgba(59,130,246,0.25);border-radius:10px;padding:16px 20px;margin-bottom:16px;align-items:flex-start}
+.port-protect-left{flex:1;min-width:0}
+.port-protect-title{font-size:12px;font-weight:700;color:#3b82f6;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px}
+.port-protect-rule{font-size:12px;color:#94a3b8}
+.port-protect-stats{display:flex;gap:16px;flex-shrink:0}
+.port-protect-stat{min-width:120px;text-align:right}
+@media(max-width:900px){.port-protect-bar{flex-direction:column}
+  .port-protect-stats{flex-wrap:wrap;justify-content:flex-start}
+  .port-protect-stat{text-align:left}}
 @media(max-width:900px){.arb-stats{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:600px){.arb-stats{grid-template-columns:repeat(2,1fr)}}
 
