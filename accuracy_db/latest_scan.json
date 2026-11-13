@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-13 00:21 UTC",
+  "timestamp": "2026-11-13 00:26 UTC",
   "engines_online": 5,
   "engines": {
     "master": true,
@@ -8,47 +8,16 @@
     "factor": true,
     "risk": true
   },
-  "active_signals": [
-    {
-      "symbol": "BTCUSDT",
-      "direction": "SHORT",
-      "unified_score": -36,
-      "tier": "\u2605   MODERATE",
-      "components": {
-        "master": 0.0,
-        "hft": -57.0,
-        "factor": -100.0,
-        "stat_arb": 0.0
-      },
-      "approved": false,
-      "size_usd": 0.0,
-      "size_pct": 0.0
-    }
-  ],
+  "active_signals": [],
   "watchlist": [
     {
-      "symbol": "BTCUSDT",
+      "symbol": "NEARUSDT",
       "direction": "SHORT",
-      "unified_score": -36,
-      "tier": "\u2605   MODERATE",
-      "components": {
-        "master": 0.0,
-        "hft": -57.0,
-        "factor": -100.0,
-        "stat_arb": 0.0
-      },
-      "approved": false,
-      "size_usd": 0.0,
-      "size_pct": 0.0
-    },
-    {
-      "symbol": "SUIUSDT",
-      "direction": "SHORT",
-      "unified_score": -33,
+      "unified_score": -29,
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": -40.0,
+        "hft": -20.0,
         "factor": -100.0,
         "stat_arb": 0.0
       },
@@ -63,7 +32,7 @@
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": 13.0,
+        "hft": 14.0,
         "factor": 100.0,
         "stat_arb": 0.0
       },
@@ -72,13 +41,13 @@
       "size_pct": 0.0
     },
     {
-      "symbol": "NEARUSDT",
+      "symbol": "SUIUSDT",
       "direction": "SHORT",
-      "unified_score": -27,
+      "unified_score": -26,
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": -13.0,
+        "hft": -6.0,
         "factor": -100.0,
         "stat_arb": 0.0
       },
@@ -93,7 +62,7 @@
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": 3.0,
+        "hft": 1.0,
         "factor": 100.0,
         "stat_arb": 0.0
       },
@@ -117,28 +86,13 @@
       "size_pct": 0.0
     },
     {
-      "symbol": "LTCUSDT",
-      "direction": "SHORT",
-      "unified_score": -23,
-      "tier": "\u25cb   WAIT",
-      "components": {
-        "master": 0.0,
-        "hft": 4.0,
-        "factor": -95.5,
-        "stat_arb": 0.0
-      },
-      "approved": false,
-      "size_usd": 0.0,
-      "size_pct": 0.0
-    },
-    {
       "symbol": "ATOMUSDT",
       "direction": "LONG",
-      "unified_score": 23,
+      "unified_score": 22,
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": -6.0,
+        "hft": -12.0,
         "factor": 100.0,
         "stat_arb": 0.0
       },
@@ -147,14 +101,29 @@
       "size_pct": 0.0
     },
     {
-      "symbol": "UNIUSDT",
-      "direction": "SHORT",
-      "unified_score": -21,
+      "symbol": "ADAUSDT",
+      "direction": "LONG",
+      "unified_score": 19,
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": -46.0,
-        "factor": -48.8,
+        "hft": -30.0,
+        "factor": 100.0,
+        "stat_arb": 0.0
+      },
+      "approved": false,
+      "size_usd": 0.0,
+      "size_pct": 0.0
+    },
+    {
+      "symbol": "AVAXUSDT",
+      "direction": "SHORT",
+      "unified_score": -18,
+      "tier": "\u25cb   WAIT",
+      "components": {
+        "master": 0.0,
+        "hft": -10.0,
+        "factor": -65.1,
         "stat_arb": 0.0
       },
       "approved": false,
@@ -164,11 +133,11 @@
     {
       "symbol": "LINKUSDT",
       "direction": "LONG",
-      "unified_score": 20,
+      "unified_score": 17,
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": 0.0,
+        "hft": -13.0,
         "factor": 100.0,
         "stat_arb": -30.0
       },
@@ -179,11 +148,11 @@
     {
       "symbol": "TRXUSDT",
       "direction": "LONG",
-      "unified_score": 20,
+      "unified_score": 16,
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": -21.0,
+        "hft": -44.0,
         "factor": 100.0,
         "stat_arb": 0.0
       },
@@ -192,14 +161,14 @@
       "size_pct": 0.0
     },
     {
-      "symbol": "ETHUSDT",
+      "symbol": "LTCUSDT",
       "direction": "SHORT",
-      "unified_score": -15,
+      "unified_score": -14,
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": -23.0,
-        "factor": -44.1,
+        "hft": 49.0,
+        "factor": -95.5,
         "stat_arb": 0.0
       },
       "approved": false,
@@ -207,14 +176,14 @@
       "size_pct": 0.0
     },
     {
-      "symbol": "ADAUSDT",
-      "direction": "LONG",
-      "unified_score": 14,
+      "symbol": "BTCUSDT",
+      "direction": "SHORT",
+      "unified_score": -13,
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": -52.0,
-        "factor": 100.0,
+        "hft": 58.0,
+        "factor": -100.0,
         "stat_arb": 0.0
       },
       "approved": false,
@@ -224,11 +193,11 @@
     {
       "symbol": "APTUSDT",
       "direction": "SHORT",
-      "unified_score": -14,
+      "unified_score": -13,
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": 11.0,
+        "hft": 13.0,
         "factor": -64.8,
         "stat_arb": 0.0
       },
@@ -237,14 +206,14 @@
       "size_pct": 0.0
     },
     {
-      "symbol": "AVAXUSDT",
+      "symbol": "UNIUSDT",
       "direction": "SHORT",
-      "unified_score": -13,
+      "unified_score": -11,
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": 14.0,
-        "factor": -65.1,
+        "hft": 1.0,
+        "factor": -48.8,
         "stat_arb": 0.0
       },
       "approved": false,
@@ -258,7 +227,7 @@
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": 8.0,
+        "hft": 10.0,
         "factor": -9.3,
         "stat_arb": -45.8
       },
@@ -267,28 +236,13 @@
       "size_pct": 0.0
     },
     {
-      "symbol": "DOGEUSDT",
-      "direction": "LONG",
-      "unified_score": 7,
-      "tier": "\u25cb   WAIT",
-      "components": {
-        "master": 0.0,
-        "hft": -26.0,
-        "factor": 52.4,
-        "stat_arb": 0.0
-      },
-      "approved": false,
-      "size_usd": 0.0,
-      "size_pct": 0.0
-    },
-    {
       "symbol": "ARBUSDT",
       "direction": "LONG",
-      "unified_score": 7,
+      "unified_score": 6,
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": 0.0,
+        "hft": -5.0,
         "factor": 32.0,
         "stat_arb": 0.0
       },
@@ -299,12 +253,42 @@
     {
       "symbol": "SOLUSDT",
       "direction": "SHORT",
-      "unified_score": -6,
+      "unified_score": -5,
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": -30.0,
+        "hft": -27.0,
         "factor": -0.9,
+        "stat_arb": 0.0
+      },
+      "approved": false,
+      "size_usd": 0.0,
+      "size_pct": 0.0
+    },
+    {
+      "symbol": "DOGEUSDT",
+      "direction": "LONG",
+      "unified_score": 5,
+      "tier": "\u25cb   WAIT",
+      "components": {
+        "master": 0.0,
+        "hft": -37.0,
+        "factor": 52.4,
+        "stat_arb": 0.0
+      },
+      "approved": false,
+      "size_usd": 0.0,
+      "size_pct": 0.0
+    },
+    {
+      "symbol": "ETHUSDT",
+      "direction": "LONG",
+      "unified_score": 2,
+      "tier": "\u25cb   WAIT",
+      "components": {
+        "master": 0.0,
+        "hft": 66.0,
+        "factor": -44.1,
         "stat_arb": 0.0
       },
       "approved": false,
