@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-13 13:13 UTC",
+  "timestamp": "2026-11-13 13:20 UTC",
   "engines_online": 5,
   "engines": {
     "master": true,
@@ -12,11 +12,11 @@
     {
       "symbol": "ETHUSDT",
       "direction": "SHORT",
-      "unified_score": -40,
+      "unified_score": -36,
       "tier": "\u2605   MODERATE",
       "components": {
         "master": 0.0,
-        "hft": -75.0,
+        "hft": -57.0,
         "factor": -100.0,
         "stat_arb": 0.0
       },
@@ -29,11 +29,11 @@
     {
       "symbol": "ETHUSDT",
       "direction": "SHORT",
-      "unified_score": -40,
+      "unified_score": -36,
       "tier": "\u2605   MODERATE",
       "components": {
         "master": 0.0,
-        "hft": -75.0,
+        "hft": -57.0,
         "factor": -100.0,
         "stat_arb": 0.0
       },
@@ -42,14 +42,14 @@
       "size_pct": 0.0
     },
     {
-      "symbol": "UNIUSDT",
-      "direction": "SHORT",
-      "unified_score": -33,
+      "symbol": "TRXUSDT",
+      "direction": "LONG",
+      "unified_score": 33,
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": -44.0,
-        "factor": -100.0,
+        "hft": 43.0,
+        "factor": 100.0,
         "stat_arb": 0.0
       },
       "approved": false,
@@ -57,14 +57,14 @@
       "size_pct": 0.0
     },
     {
-      "symbol": "SOLUSDT",
-      "direction": "SHORT",
-      "unified_score": -30,
+      "symbol": "SUIUSDT",
+      "direction": "LONG",
+      "unified_score": 29,
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": -55.0,
-        "factor": -78.8,
+        "hft": 24.0,
+        "factor": 100.0,
         "stat_arb": 0.0
       },
       "approved": false,
@@ -74,11 +74,41 @@
     {
       "symbol": "ATOMUSDT",
       "direction": "LONG",
-      "unified_score": 25,
+      "unified_score": 28,
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": 2.0,
+        "hft": 15.0,
+        "factor": 100.0,
+        "stat_arb": 0.0
+      },
+      "approved": false,
+      "size_usd": 0.0,
+      "size_pct": 0.0
+    },
+    {
+      "symbol": "SOLUSDT",
+      "direction": "SHORT",
+      "unified_score": -27,
+      "tier": "\u25cb   WAIT",
+      "components": {
+        "master": 0.0,
+        "hft": -37.0,
+        "factor": -78.8,
+        "stat_arb": 0.0
+      },
+      "approved": false,
+      "size_usd": 0.0,
+      "size_pct": 0.0
+    },
+    {
+      "symbol": "LTCUSDT",
+      "direction": "LONG",
+      "unified_score": 26,
+      "tier": "\u25cb   WAIT",
+      "components": {
+        "master": 0.0,
+        "hft": 6.0,
         "factor": 100.0,
         "stat_arb": 0.0
       },
@@ -104,11 +134,11 @@
     {
       "symbol": "DOTUSDT",
       "direction": "LONG",
-      "unified_score": 23,
+      "unified_score": 21,
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": -6.0,
+        "hft": -20.0,
         "factor": 100.0,
         "stat_arb": 0.0
       },
@@ -117,14 +147,14 @@
       "size_pct": 0.0
     },
     {
-      "symbol": "LTCUSDT",
-      "direction": "LONG",
-      "unified_score": 19,
+      "symbol": "UNIUSDT",
+      "direction": "SHORT",
+      "unified_score": -20,
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": -26.0,
-        "factor": 100.0,
+        "hft": 22.0,
+        "factor": -100.0,
         "stat_arb": 0.0
       },
       "approved": false,
@@ -132,14 +162,14 @@
       "size_pct": 0.0
     },
     {
-      "symbol": "TRXUSDT",
-      "direction": "LONG",
-      "unified_score": 19,
+      "symbol": "LINKUSDT",
+      "direction": "SHORT",
+      "unified_score": -18,
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": -30.0,
-        "factor": 100.0,
+        "hft": -24.0,
+        "factor": -55.1,
         "stat_arb": 0.0
       },
       "approved": false,
@@ -149,11 +179,11 @@
     {
       "symbol": "BTCUSDT",
       "direction": "SHORT",
-      "unified_score": -17,
+      "unified_score": -16,
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": 39.0,
+        "hft": 42.0,
         "factor": -100.0,
         "stat_arb": 0.0
       },
@@ -164,42 +194,12 @@
     {
       "symbol": "DOGEUSDT",
       "direction": "SHORT",
-      "unified_score": -16,
-      "tier": "\u25cb   WAIT",
-      "components": {
-        "master": 0.0,
-        "hft": -15.0,
-        "factor": -55.1,
-        "stat_arb": 0.0
-      },
-      "approved": false,
-      "size_usd": 0.0,
-      "size_pct": 0.0
-    },
-    {
-      "symbol": "LINKUSDT",
-      "direction": "SHORT",
       "unified_score": -14,
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": -6.0,
+        "hft": -2.0,
         "factor": -55.1,
-        "stat_arb": 0.0
-      },
-      "approved": false,
-      "size_usd": 0.0,
-      "size_pct": 0.0
-    },
-    {
-      "symbol": "SUIUSDT",
-      "direction": "LONG",
-      "unified_score": 12,
-      "tier": "\u25cb   WAIT",
-      "components": {
-        "master": 0.0,
-        "hft": -62.0,
-        "factor": 100.0,
         "stat_arb": 0.0
       },
       "approved": false,
@@ -222,14 +222,44 @@
       "size_pct": 0.0
     },
     {
-      "symbol": "OPUSDT",
+      "symbol": "AVAXUSDT",
       "direction": "LONG",
-      "unified_score": 7,
+      "unified_score": 9,
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": -12.0,
-        "factor": 39.7,
+        "hft": 24.0,
+        "factor": 20.6,
+        "stat_arb": 0.0
+      },
+      "approved": false,
+      "size_usd": 0.0,
+      "size_pct": 0.0
+    },
+    {
+      "symbol": "ARBUSDT",
+      "direction": "LONG",
+      "unified_score": 9,
+      "tier": "\u25cb   WAIT",
+      "components": {
+        "master": 0.0,
+        "hft": 24.0,
+        "factor": 19.0,
+        "stat_arb": 0.0
+      },
+      "approved": false,
+      "size_usd": 0.0,
+      "size_pct": 0.0
+    },
+    {
+      "symbol": "NEARUSDT",
+      "direction": "SHORT",
+      "unified_score": -7,
+      "tier": "\u25cb   WAIT",
+      "components": {
+        "master": 0.0,
+        "hft": -59.0,
+        "factor": 16.4,
         "stat_arb": 0.0
       },
       "approved": false,
@@ -252,28 +282,13 @@
       "size_pct": 0.0
     },
     {
-      "symbol": "NEARUSDT",
-      "direction": "LONG",
-      "unified_score": 6,
-      "tier": "\u25cb   WAIT",
-      "components": {
-        "master": 0.0,
-        "hft": 14.0,
-        "factor": 16.4,
-        "stat_arb": 0.0
-      },
-      "approved": false,
-      "size_usd": 0.0,
-      "size_pct": 0.0
-    },
-    {
       "symbol": "APTUSDT",
       "direction": "LONG",
-      "unified_score": 6,
+      "unified_score": 4,
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": 20.0,
+        "hft": 10.0,
         "factor": 9.0,
         "stat_arb": 0.0
       },
@@ -282,29 +297,14 @@
       "size_pct": 0.0
     },
     {
-      "symbol": "AVAXUSDT",
+      "symbol": "OPUSDT",
       "direction": "LONG",
-      "unified_score": 5,
+      "unified_score": 3,
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": 0.0,
-        "factor": 20.6,
-        "stat_arb": 0.0
-      },
-      "approved": false,
-      "size_usd": 0.0,
-      "size_pct": 0.0
-    },
-    {
-      "symbol": "ARBUSDT",
-      "direction": "SHORT",
-      "unified_score": -1,
-      "tier": "\u25cb   WAIT",
-      "components": {
-        "master": 0.0,
-        "hft": -32.0,
-        "factor": 19.0,
+        "hft": -34.0,
+        "factor": 39.7,
         "stat_arb": 0.0
       },
       "approved": false,
@@ -313,12 +313,12 @@
     },
     {
       "symbol": "XRPUSDT",
-      "direction": "NEUTRAL",
-      "unified_score": 0,
+      "direction": "SHORT",
+      "unified_score": -1,
       "tier": "\u25cb   WAIT",
       "components": {
         "master": 0.0,
-        "hft": 4.0,
+        "hft": -4.0,
         "factor": -3.0,
         "stat_arb": 0.0
       },
@@ -330,20 +330,20 @@
   "carry_arb": [
     {
       "symbol": "ATOMUSDT",
-      "ann_pct": -16.9,
-      "basis_pct": -0.1848,
-      "action": "SHORT_SPOT_LONG_PERP"
-    },
-    {
-      "symbol": "UNIUSDT",
-      "ann_pct": -12.5,
-      "basis_pct": -0.086,
+      "ann_pct": -16.6,
+      "basis_pct": -0.2837,
       "action": "SHORT_SPOT_LONG_PERP"
     },
     {
       "symbol": "SOLUSDT",
       "ann_pct": -11.4,
-      "basis_pct": -0.057,
+      "basis_pct": -0.062,
+      "action": "SHORT_SPOT_LONG_PERP"
+    },
+    {
+      "symbol": "UNIUSDT",
+      "ann_pct": -11.2,
+      "basis_pct": -0.0515,
       "action": "SHORT_SPOT_LONG_PERP"
     },
     {
@@ -361,7 +361,7 @@
     {
       "symbol": "NEARUSDT",
       "ann_pct": 11.0,
-      "basis_pct": -0.0282,
+      "basis_pct": -0.0621,
       "action": "LONG_SPOT_SHORT_PERP"
     },
     {
@@ -373,37 +373,37 @@
     {
       "symbol": "ARBUSDT",
       "ann_pct": 11.0,
-      "basis_pct": -0.0272,
+      "basis_pct": -0.0611,
       "action": "LONG_SPOT_SHORT_PERP"
     },
     {
       "symbol": "SUIUSDT",
-      "ann_pct": -10.5,
-      "basis_pct": -0.0743,
+      "ann_pct": -10.4,
+      "basis_pct": -0.0866,
       "action": "SHORT_SPOT_LONG_PERP"
     },
     {
       "symbol": "DOTUSDT",
-      "ann_pct": 10.1,
-      "basis_pct": -0.1198,
+      "ann_pct": 9.7,
+      "basis_pct": -0.0959,
       "action": "LONG_SPOT_SHORT_PERP"
     },
     {
       "symbol": "XRPUSDT",
-      "ann_pct": 7.8,
-      "basis_pct": -0.0294,
+      "ann_pct": 7.9,
+      "basis_pct": -0.0196,
       "action": "LONG_SPOT_SHORT_PERP"
     },
     {
       "symbol": "APTUSDT",
-      "ann_pct": 5.7,
-      "basis_pct": -0.0549,
+      "ann_pct": 7.4,
+      "basis_pct": 0.0,
       "action": "LONG_SPOT_SHORT_PERP"
     },
     {
       "symbol": "DOGEUSDT",
-      "ann_pct": 5.5,
-      "basis_pct": -0.0459,
+      "ann_pct": 5.2,
+      "basis_pct": -0.0765,
       "action": "LONG_SPOT_SHORT_PERP"
     }
   ],
