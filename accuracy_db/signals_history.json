@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-14 20:00 UTC",
+  "generated_at": "2026-11-14 20:06 UTC",
   "signals": [
     {
       "timestamp": "2026-11-14T19:55",
@@ -511,8 +511,8 @@
       "direction": "SHORT",
       "score": -36,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 4.4461
     },
     {
       "timestamp": "2026-11-14T16:04",
@@ -520,8 +520,8 @@
       "direction": "SHORT",
       "score": -36,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 0.6324
     },
     {
       "timestamp": "2026-11-14T16:03",
@@ -529,8 +529,8 @@
       "direction": "SHORT",
       "score": -36,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 1.0996
     },
     {
       "timestamp": "2026-11-14T16:01",
@@ -538,8 +538,8 @@
       "direction": "SHORT",
       "score": -37,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -0.3285
     },
     {
       "timestamp": "2026-11-14T15:57",
