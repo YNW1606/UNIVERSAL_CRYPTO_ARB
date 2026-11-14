@@ -1,6 +1,24 @@
 {
-  "generated_at": "2026-11-14 13:51 UTC",
+  "generated_at": "2026-11-14 13:56 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-14T13:52",
+      "symbol": "SOLUSDT",
+      "direction": "SHORT",
+      "score": -36,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-14T13:51",
+      "symbol": "BTCUSDT",
+      "direction": "SHORT",
+      "score": -40,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-14T13:48",
       "symbol": "OPUSDT",
