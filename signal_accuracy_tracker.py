@@ -441,7 +441,7 @@ def _read_accuracy_stats():
             "resolved":      len(resolved),
             "pending":       len(pending),
             "profit_factor": round(pf, 3),
-            "avg_return":    round(avg_ret * 100, 4),
+            "avg_return":    round(avg_ret, 4),   # already in % form (e.g. 1.514 = 1.514%)
         }
     except Exception:
         return {}
