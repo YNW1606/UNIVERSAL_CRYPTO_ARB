@@ -1,6 +1,42 @@
 {
-  "generated_at": "2026-11-14 13:15 UTC",
+  "generated_at": "2026-11-14 13:20 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-14T13:19",
+      "symbol": "APTUSDT",
+      "direction": "SHORT",
+      "score": -37,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-14T13:18",
+      "symbol": "SOLUSDT",
+      "direction": "SHORT",
+      "score": -37,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-14T13:17",
+      "symbol": "BTCUSDT",
+      "direction": "SHORT",
+      "score": -40,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-14T13:16",
+      "symbol": "OPUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-14T13:15",
       "symbol": "ETHUSDT",
