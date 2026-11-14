@@ -217,29 +217,64 @@ a{color:#00d4aa;text-decoration:none}
   </div>
 </div>
 
-<!-- Stats Bar -->
+<!-- Stats Bar (ACTIONABLE signals only: |score| >= 35) -->
 <div class="stats-bar">
   <div class="stat-card">
-    <div class="stat-label">Total Signals Logged</div>
-    <div class="stat-val">200</div>
-    <div class="stat-sub">157 resolved · 43 pending</div>
+    <div class="stat-label">Actionable Signals <span style="font-size:10px;color:#8095a8">(score ≥35)</span></div>
+    <div class="stat-val">30</div>
+    <div class="stat-sub">28 resolved · 2 pending · 30 total logged</div>
   </div>
   <div class="stat-card">
-    <div class="stat-label">Win Rate</div>
-    <div class="stat-val yellow">52.2%</div>
-    <div class="stat-sub">82 wins / 157 resolved</div>
+    <div class="stat-label">Win Rate <span style="font-size:10px;color:#8095a8">(score ≥35)</span></div>
+    <div class="stat-val red">39.3%</div>
+    <div class="stat-sub">11 wins / 28 resolved</div>
   </div>
   <div class="stat-card">
     <div class="stat-label">Profit Factor</div>
-    <div class="stat-val yellow">1.13×</div>
+    <div class="stat-val green">1.76×</div>
     <div class="stat-sub">Gains ÷ Losses (need &gt;1.0)</div>
   </div>
   <div class="stat-card">
     <div class="stat-label">Avg Return / Signal</div>
-    <div class="stat-val green">+0.107%</div>
+    <div class="stat-val green">+0.248%</div>
     <div class="stat-sub">Net of 0.3% fee threshold</div>
   </div>
 </div>
+
+<!-- Score Tier Breakdown -->
+<div class="section tier-breakdown-section" style="margin-bottom:20px">
+  <div class="section-title">Signal Quality Breakdown
+    <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">
+      Win Rate / Avg Return per tier · only ★ ACTIONABLE tiers count toward main stats
+    </span>
+  </div>
+  <div class="tier-grid">
+<div class="tier-row" style="opacity:1">
+  <div class="tier-stars" style="color:#64a0ff">★</div>
+  <div class="tier-label">MODERATE (35-49)</div>
+  <div class="tier-n">30 signals</div>
+  <div class="tier-res">28 resolved</div>
+  <div class="tier-wr" style="color:#ff6b6b">39.3% WR</div>
+  <div class="tier-ret" style="color:#00d4aa">+0.248%</div>
+  <div class="tier-note" style="color:#8095a8;font-size:10px"></div>
+</div></div>
+  
+</div>
+<style>
+.tier-grid {display:flex;flex-direction:column;gap:6px}
+.tier-row {display:grid;grid-template-columns:28px 110px 90px 90px 80px 80px 1fr;
+           align-items:center;gap:10px;padding:8px 12px;border-radius:7px;
+           background:#111928;border:1px solid rgba(255,255,255,0.05)}
+.tier-stars {font-size:13px;text-align:center}
+.tier-label {font-size:12px;font-weight:700;color:#fff}
+.tier-n {font-size:12px;color:#8095a8}
+.tier-res {font-size:12px;color:#8095a8}
+.tier-wr {font-size:13px;font-weight:700}
+.tier-ret {font-size:12px;font-weight:600}
+.tier-note {font-size:10px}
+@media(max-width:700px){.tier-row{grid-template-columns:28px 1fr 60px 60px}
+  .tier-res,.tier-note{display:none}}
+</style>
 
 <!-- Charts -->
 <div class="charts-grid">
@@ -573,12 +608,12 @@ window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": -252.398
 <div class="arb-sub-title">Open Positions (6)</div>
 <table class="data-table" style="margin-bottom:16px">
 <thead><tr><th>Symbol</th><th>Strategy</th><th>Direction</th><th>Ann Yield</th><th>Basis Entry→Now</th><th>Funding</th><th>Unrealized</th><th>TP / SL</th><th>Age</th></tr></thead>
-<tbody><tr data-trade="NEG__MXLUSDT_1113_1322"><td><b>MXL</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+53.4%/yr</td><td class="mono">+0.000% → <span class="live-basis">+0.000%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $3,143 | SL $-1,571</td><td class="act">20h</td></tr>
-<tr data-trade="NEG__SAMSUNGUSDT_1113_1254"><td><b>SAMSUNG</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+56.4%/yr</td><td class="mono">+0.000% → <span class="live-basis">+0.000%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $2,956 | SL $-1,478</td><td class="act">20h</td></tr>
-<tr data-trade="NEG__XOMUSDT_1111_0128"><td><b>XOM</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+46.7%/yr</td><td class="mono">+0.000% → <span class="live-basis">+0.000%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $1,573 | SL $-787</td><td class="act">80h</td></tr>
-<tr data-trade="NEG__UNITREEUSDT_1111_0128"><td><b>UNITREE</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+53.2%/yr</td><td class="mono">+0.000% → <span class="live-basis">+0.000%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $1,679 | SL $-840</td><td class="act">80h</td></tr>
-<tr data-trade="NEG__CLUSDT_1111_0128"><td><b>CL</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+99.7%/yr</td><td class="mono">+0.000% → <span class="live-basis">+0.000%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $2,300 | SL $-1,150</td><td class="act">80h</td></tr>
-<tr data-trade="NEG__BZUSDT_1111_0128"><td><b>BZ</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+179.8%/yr</td><td class="mono">+0.000% → <span class="live-basis">+0.000%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $3,088 | SL $-1,544</td><td class="act">80h</td></tr>
+<tbody><tr data-trade="NEG__MXLUSDT_1113_1322"><td><b>MXL</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+53.4%/yr</td><td class="mono">+0.000% → <span class="live-basis">+0.000%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $3,143 | SL $-1,571</td><td class="act">21h</td></tr>
+<tr data-trade="NEG__SAMSUNGUSDT_1113_1254"><td><b>SAMSUNG</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+56.4%/yr</td><td class="mono">+0.000% → <span class="live-basis">+0.000%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $2,956 | SL $-1,478</td><td class="act">21h</td></tr>
+<tr data-trade="NEG__XOMUSDT_1111_0128"><td><b>XOM</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+46.7%/yr</td><td class="mono">+0.000% → <span class="live-basis">+0.000%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $1,573 | SL $-787</td><td class="act">81h</td></tr>
+<tr data-trade="NEG__UNITREEUSDT_1111_0128"><td><b>UNITREE</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+53.2%/yr</td><td class="mono">+0.000% → <span class="live-basis">+0.000%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $1,679 | SL $-840</td><td class="act">81h</td></tr>
+<tr data-trade="NEG__CLUSDT_1111_0128"><td><b>CL</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+99.7%/yr</td><td class="mono">+0.000% → <span class="live-basis">+0.000%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $2,300 | SL $-1,150</td><td class="act">81h</td></tr>
+<tr data-trade="NEG__BZUSDT_1111_0128"><td><b>BZ</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+179.8%/yr</td><td class="mono">+0.000% → <span class="live-basis">+0.000%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $3,088 | SL $-1,544</td><td class="act">81h</td></tr>
 </tbody>
 </table>
 
@@ -638,62 +673,42 @@ window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": -252.398
   
 <table class="data-table history-table">
 <thead><tr><th>Timestamp</th><th>Symbol</th><th>Direction</th><th>Score</th><th>Outcome</th><th>Return</th></tr></thead>
-<tbody><tr><td class="mono">2026-11-14T09:14</td><td><b>XRPUSDT</b></td><td class="short">SHORT</td><td class="mono">-16</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T09:06</td><td><b>ATOMUSDT</b></td><td class="short">SHORT</td><td class="mono">-15</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T09:00</td><td><b>ARBUSDT</b></td><td class="short">SHORT</td><td class="mono">-17</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:59</td><td><b>DOTUSDT</b></td><td class="short">SHORT</td><td class="mono">-22</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:58</td><td><b>BTCUSDT</b></td><td class="short">SHORT</td><td class="mono">-36</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:58</td><td><b>LINKUSDT</b></td><td class="short">SHORT</td><td class="mono">-17</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:58</td><td><b>UNIUSDT</b></td><td class="short">SHORT</td><td class="mono">-17</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:57</td><td><b>ETHUSDT</b></td><td class="short">SHORT</td><td class="mono">-32</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:57</td><td><b>BNBUSDT</b></td><td class="short">SHORT</td><td class="mono">-31</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:57</td><td><b>AVAXUSDT</b></td><td class="short">SHORT</td><td class="mono">-28</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:57</td><td><b>DOGEUSDT</b></td><td class="short">SHORT</td><td class="mono">-26</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:57</td><td><b>APTUSDT</b></td><td class="short">SHORT</td><td class="mono">-26</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:57</td><td><b>MATICUSDT</b></td><td class="long">LONG</td><td class="mono">+25</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:57</td><td><b>SOLUSDT</b></td><td class="short">SHORT</td><td class="mono">-21</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:57</td><td><b>LTCUSDT</b></td><td class="short">SHORT</td><td class="mono">-20</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:57</td><td><b>TRXUSDT</b></td><td class="long">LONG</td><td class="mono">+20</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:57</td><td><b>NEARUSDT</b></td><td class="short">SHORT</td><td class="mono">-17</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:57</td><td><b>OPUSDT</b></td><td class="short">SHORT</td><td class="mono">-16</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:27</td><td><b>LINKUSDT</b></td><td class="short">SHORT</td><td class="mono">-22</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:27</td><td><b>ARBUSDT</b></td><td class="short">SHORT</td><td class="mono">-17</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:27</td><td><b>UNIUSDT</b></td><td class="short">SHORT</td><td class="mono">-15</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
+<tbody><tr><td class="mono">2026-11-14T08:58</td><td><b>BTCUSDT</b></td><td class="short">SHORT</td><td class="mono">-36</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
 <tr><td class="mono">2026-11-14T08:26</td><td><b>BTCUSDT</b></td><td class="short">SHORT</td><td class="mono">-38</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:26</td><td><b>SOLUSDT</b></td><td class="short">SHORT</td><td class="mono">-34</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:26</td><td><b>OPUSDT</b></td><td class="short">SHORT</td><td class="mono">-32</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:26</td><td><b>BNBUSDT</b></td><td class="short">SHORT</td><td class="mono">-30</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:26</td><td><b>DOGEUSDT</b></td><td class="short">SHORT</td><td class="mono">-30</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:26</td><td><b>APTUSDT</b></td><td class="short">SHORT</td><td class="mono">-26</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:26</td><td><b>DOTUSDT</b></td><td class="short">SHORT</td><td class="mono">-25</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:26</td><td><b>TRXUSDT</b></td><td class="long">LONG</td><td class="mono">+25</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:26</td><td><b>MATICUSDT</b></td><td class="long">LONG</td><td class="mono">+25</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:26</td><td><b>AVAXUSDT</b></td><td class="short">SHORT</td><td class="mono">-23</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:26</td><td><b>NEARUSDT</b></td><td class="short">SHORT</td><td class="mono">-23</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:26</td><td><b>LTCUSDT</b></td><td class="short">SHORT</td><td class="mono">-20</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T08:26</td><td><b>ETHUSDT</b></td><td class="short">SHORT</td><td class="mono">-15</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T02:02</td><td><b>ATOMUSDT</b></td><td class="short">SHORT</td><td class="mono">-20</td><td><span class="outcome win">WIN</span></td><td class="pos mono">+0.87%</td></tr>
-<tr><td class="mono">2026-11-14T01:49</td><td><b>BTCUSDT</b></td><td class="short">SHORT</td><td class="mono">-20</td><td><span class="outcome win">WIN</span></td><td class="pos mono">+1.66%</td></tr>
-<tr><td class="mono">2026-11-14T01:43</td><td><b>DOGEUSDT</b></td><td class="short">SHORT</td><td class="mono">-24</td><td><span class="outcome win">WIN</span></td><td class="pos mono">+1.95%</td></tr>
 <tr><td class="mono">2026-11-14T01:42</td><td><b>SOLUSDT</b></td><td class="short">SHORT</td><td class="mono">-37</td><td><span class="outcome win">WIN</span></td><td class="pos mono">+1.87%</td></tr>
-<tr><td class="mono">2026-11-14T01:42</td><td><b>ADAUSDT</b></td><td class="short">SHORT</td><td class="mono">-34</td><td><span class="outcome win">WIN</span></td><td class="pos mono">+1.43%</td></tr>
-<tr><td class="mono">2026-11-14T01:42</td><td><b>LINKUSDT</b></td><td class="short">SHORT</td><td class="mono">-33</td><td><span class="outcome win">WIN</span></td><td class="pos mono">+1.18%</td></tr>
-<tr><td class="mono">2026-11-14T01:42</td><td><b>TRXUSDT</b></td><td class="short">SHORT</td><td class="mono">-31</td><td><span class="outcome loss">LOSS</span></td><td class="neg mono">-0.16%</td></tr>
-<tr><td class="mono">2026-11-14T01:42</td><td><b>NEARUSDT</b></td><td class="short">SHORT</td><td class="mono">-29</td><td><span class="outcome win">WIN</span></td><td class="pos mono">+1.81%</td></tr>
-<tr><td class="mono">2026-11-14T01:42</td><td><b>UNIUSDT</b></td><td class="short">SHORT</td><td class="mono">-29</td><td><span class="outcome win">WIN</span></td><td class="pos mono">+2.02%</td></tr>
-<tr><td class="mono">2026-11-14T01:42</td><td><b>XRPUSDT</b></td><td class="short">SHORT</td><td class="mono">-28</td><td><span class="outcome win">WIN</span></td><td class="pos mono">+1.19%</td></tr>
-<tr><td class="mono">2026-11-14T01:42</td><td><b>AVAXUSDT</b></td><td class="short">SHORT</td><td class="mono">-27</td><td><span class="outcome win">WIN</span></td><td class="pos mono">+1.13%</td></tr>
-<tr><td class="mono">2026-11-14T01:42</td><td><b>SUIUSDT</b></td><td class="short">SHORT</td><td class="mono">-26</td><td><span class="outcome win">WIN</span></td><td class="pos mono">+1.25%</td></tr>
-<tr><td class="mono">2026-11-14T01:42</td><td><b>ARBUSDT</b></td><td class="short">SHORT</td><td class="mono">-26</td><td><span class="outcome win">WIN</span></td><td class="pos mono">+1.11%</td></tr>
-<tr><td class="mono">2026-11-14T01:42</td><td><b>BNBUSDT</b></td><td class="short">SHORT</td><td class="mono">-25</td><td><span class="outcome win">WIN</span></td><td class="pos mono">+1.66%</td></tr>
-<tr><td class="mono">2026-11-14T01:42</td><td><b>MATICUSDT</b></td><td class="long">LONG</td><td class="mono">+25</td><td><span class="outcome pending">PENDING</span></td><td class=" mono">—</td></tr>
-<tr><td class="mono">2026-11-14T01:42</td><td><b>DOTUSDT</b></td><td class="short">SHORT</td><td class="mono">-24</td><td><span class="outcome win">WIN</span></td><td class="pos mono">+1.67%</td></tr>
+<tr><td class="mono">2026-11-14T01:11</td><td><b>ETHUSDT</b></td><td class="short">SHORT</td><td class="mono">-39</td><td><span class="outcome win">WIN</span></td><td class="pos mono">+1.27%</td></tr>
+<tr><td class="mono">2026-11-14T01:11</td><td><b>SOLUSDT</b></td><td class="short">SHORT</td><td class="mono">-36</td><td><span class="outcome win">WIN</span></td><td class="pos mono">+1.95%</td></tr>
+<tr><td class="mono">2026-11-13T20:14</td><td><b>BTCUSDT</b></td><td class="short">SHORT</td><td class="mono">-35</td><td><span class="outcome win">WIN</span></td><td class="pos mono">+1.16%</td></tr>
+<tr><td class="mono">2026-11-13T12:53</td><td><b>BTCUSDT</b></td><td class="short">SHORT</td><td class="mono">-40</td><td><span class="outcome win">WIN</span></td><td class="pos mono">+0.38%</td></tr>
+<tr><td class="mono">2026-11-13T05:28</td><td><b>SOLUSDT</b></td><td class="short">SHORT</td><td class="mono">-39</td><td><span class="outcome loss">LOSS</span></td><td class="neg mono">-1.77%</td></tr>
+<tr><td class="mono">2026-11-13T04:58</td><td><b>BTCUSDT</b></td><td class="short">SHORT</td><td class="mono">-40</td><td><span class="outcome loss">LOSS</span></td><td class="neg mono">-0.19%</td></tr>
+<tr><td class="mono">2026-11-12T23:57</td><td><b>BTCUSDT</b></td><td class="short">SHORT</td><td class="mono">-37</td><td><span class="outcome win">WIN</span></td><td class="pos mono">+3.87%</td></tr>
+<tr><td class="mono">2026-11-12T19:11</td><td><b>BTCUSDT</b></td><td class="short">SHORT</td><td class="mono">-39</td><td><span class="outcome loss">LOSS</span></td><td class="pos mono">+0.25%</td></tr>
+<tr><td class="mono">2026-11-12T18:41</td><td><b>BTCUSDT</b></td><td class="short">SHORT</td><td class="mono">-40</td><td><span class="outcome win">WIN</span></td><td class="pos mono">+0.70%</td></tr>
+<tr><td class="mono">2026-11-12T10:33</td><td><b>BTCUSDT</b></td><td class="short">SHORT</td><td class="mono">-37</td><td><span class="outcome win">WIN</span></td><td class="pos mono">+2.54%</td></tr>
+<tr><td class="mono">2026-11-12T03:13</td><td><b>BTCUSDT</b></td><td class="long">LONG</td><td class="mono">+37</td><td><span class="outcome loss">LOSS</span></td><td class="neg mono">-0.12%</td></tr>
+<tr><td class="mono">2026-11-12T02:40</td><td><b>BTCUSDT</b></td><td class="long">LONG</td><td class="mono">+40</td><td><span class="outcome loss">LOSS</span></td><td class="neg mono">-0.40%</td></tr>
+<tr><td class="mono">2026-11-11T21:32</td><td><b>BTCUSDT</b></td><td class="long">LONG</td><td class="mono">+36</td><td><span class="outcome loss">LOSS</span></td><td class="neg mono">-1.22%</td></tr>
+<tr><td class="mono">2026-11-11T13:53</td><td><b>BTCUSDT</b></td><td class="long">LONG</td><td class="mono">+36</td><td><span class="outcome win">WIN</span></td><td class="pos mono">+0.90%</td></tr>
+<tr><td class="mono">2026-11-11T13:23</td><td><b>BTCUSDT</b></td><td class="long">LONG</td><td class="mono">+39</td><td><span class="outcome win">WIN</span></td><td class="pos mono">+0.82%</td></tr>
+<tr><td class="mono">2026-11-11T06:56</td><td><b>DOGEUSDT</b></td><td class="short">SHORT</td><td class="mono">-35</td><td><span class="outcome loss">LOSS</span></td><td class="neg mono">-0.69%</td></tr>
+<tr><td class="mono">2026-11-11T06:52</td><td><b>ETHUSDT</b></td><td class="short">SHORT</td><td class="mono">-36</td><td><span class="outcome loss">LOSS</span></td><td class="neg mono">-0.12%</td></tr>
+<tr><td class="mono">2026-11-11T06:46</td><td><b>SOLUSDT</b></td><td class="short">SHORT</td><td class="mono">-35</td><td><span class="outcome loss">LOSS</span></td><td class="neg mono">-1.34%</td></tr>
+<tr><td class="mono">2026-11-11T06:44</td><td><b>XRPUSDT</b></td><td class="short">SHORT</td><td class="mono">-35</td><td><span class="outcome loss">LOSS</span></td><td class="neg mono">-0.61%</td></tr>
+<tr><td class="mono">2026-11-11T06:42</td><td><b>BTCUSDT</b></td><td class="short">SHORT</td><td class="mono">-40</td><td><span class="outcome loss">LOSS</span></td><td class="neg mono">-0.40%</td></tr>
+<tr><td class="mono">2026-11-11T06:42</td><td><b>BNBUSDT</b></td><td class="short">SHORT</td><td class="mono">-36</td><td><span class="outcome loss">LOSS</span></td><td class="neg mono">-0.44%</td></tr>
+<tr><td class="mono">2026-11-11T06:16</td><td><b>ETHUSDT</b></td><td class="short">SHORT</td><td class="mono">-39</td><td><span class="outcome win">WIN</span></td><td class="pos mono">+0.35%</td></tr>
+<tr><td class="mono">2026-11-11T06:16</td><td><b>SOLUSDT</b></td><td class="short">SHORT</td><td class="mono">-35</td><td><span class="outcome loss">LOSS</span></td><td class="neg mono">-0.84%</td></tr>
+<tr><td class="mono">2026-11-11T06:12</td><td><b>DOGEUSDT</b></td><td class="short">SHORT</td><td class="mono">-35</td><td><span class="outcome loss">LOSS</span></td><td class="pos mono">+0.04%</td></tr>
+<tr><td class="mono">2026-11-11T06:11</td><td><b>XRPUSDT</b></td><td class="short">SHORT</td><td class="mono">-38</td><td><span class="outcome loss">LOSS</span></td><td class="neg mono">-0.19%</td></tr>
+<tr><td class="mono">2026-11-11T06:11</td><td><b>BTCUSDT</b></td><td class="short">SHORT</td><td class="mono">-36</td><td><span class="outcome loss">LOSS</span></td><td class="neg mono">-0.24%</td></tr>
+<tr><td class="mono">2026-11-11T06:11</td><td><b>ADAUSDT</b></td><td class="short">SHORT</td><td class="mono">-35</td><td><span class="outcome loss">LOSS</span></td><td class="neg mono">-0.57%</td></tr>
 </tbody>
 </table>
 </div>
 
 <div class="footer">
-  Generated at 2026-11-14 09:21 UTC &nbsp;·&nbsp;
+  Generated at 2026-11-14 10:23 UTC &nbsp;·&nbsp;
   GitHub Actions scan every ~1 min &nbsp;·&nbsp; Tracking 20 symbols &nbsp;·&nbsp;
   <a href="https://github.com/YNW1606/UNIVERSAL_CRYPTO_ARB" target="_blank">Source Code</a>
 </div>
@@ -706,10 +721,10 @@ var eqCtx = document.getElementById('eqChart').getContext('2d');
 new Chart(eqCtx, {
   type: 'line',
   data: {
-    labels: ["2026-11-12", "2026-11-13", "2026-11-14"],
+    labels: ["2026-11-11", "2026-11-12", "2026-11-13", "2026-11-14"],
     datasets: [{
       label: 'Cumulative Return %',
-      data: [3.6814, 3.3179, 4.6867],
+      data: [-0.3042, 0.835, 0.7289, 2.4273],
       borderColor: '#00d4aa',
       backgroundColor: 'rgba(0,212,170,0.08)',
       fill: true,
@@ -732,11 +747,11 @@ var wrCtx = document.getElementById('wrChart').getContext('2d');
 new Chart(wrCtx, {
   type: 'bar',
   data: {
-    labels: ["ATOMUSDT", "BTCUSDT", "DOGEUSDT", "SOLUSDT", "ADAUSDT", "LINKUSDT", "TRXUSDT", "NEARUSDT", "UNIUSDT", "XRPUSDT", "AVAXUSDT", "SUIUSDT", "ARBUSDT", "BNBUSDT", "DOTUSDT", "APTUSDT", "LTCUSDT", "OPUSDT", "ETHUSDT"],
+    labels: ["SOLUSDT", "ETHUSDT", "BTCUSDT", "DOGEUSDT", "XRPUSDT", "BNBUSDT", "ADAUSDT"],
     datasets: [{
       label: 'Win Rate %',
-      data: [44.4, 80.0, 20.0, 75.0, 44.4, 57.1, 11.1, 42.9, 80.0, 57.1, 50.0, 33.3, 100.0, 71.4, 22.2, 71.4, 44.4, 44.4, 77.8],
-      backgroundColor: ["#ff6b6b", "#00d4aa", "#ff6b6b", "#00d4aa", "#ff6b6b", "#00d4aa", "#ff6b6b", "#ff6b6b", "#00d4aa", "#00d4aa", "#00d4aa", "#ff6b6b", "#00d4aa", "#00d4aa", "#ff6b6b", "#00d4aa", "#ff6b6b", "#ff6b6b", "#00d4aa"],
+      data: [40.0, 66.7, 50.0, 0.0, 0.0, 0.0, 0.0],
+      backgroundColor: ["#ff6b6b", "#00d4aa", "#00d4aa", "#ff6b6b", "#ff6b6b", "#ff6b6b", "#ff6b6b"],
       borderRadius: 4,
     }]
   },

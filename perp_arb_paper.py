@@ -6,6 +6,16 @@ Strategies:
   NEG_CARRY    — Long perp + Short spot; collect negative funding (earns when shorts pay longs)
   SPOT_PREMIUM — Short perp + Long spot when perp trades at premium (>0.25%); fade on convergence
   SPOT_DISCOUNT— Long perp + Short spot when perp trades at discount (<-0.25%); fade on convergence
+  FUNDING_SQUEEZE — funding at 30-day low for a historically high-carry coin;
+                    small LONG_PERP_SHORT_SPOT bet on rate/basis recovery (2% stop / 5% TP)
+
+Alpha layers (v2):
+  - Regime-adaptive carry floor (BTC 24h trend: bull=10.95%/yr, bear/sideways=21.9%/yr)
+  - Funding momentum score (current 8h rate vs 7-day avg: +20% boost / -30% penalty)
+  - Funding volatility gate (std of last 10 prints > 0.0003 → half size + 25%/yr floor)
+  - Cascading take-profit (bank 50% at +1.5%, trail rest 0.5% off peak, hard stop -1.0%)
+  - Smart re-entry after portfolio TP (best carry must exceed 20%/yr to redeploy)
+  - Yield-tiered capital deployment (>50%/yr→$100k, 25-50%→$80k, 15-25%→$55k)
 
 All trades are PAPER ONLY — no real money. Realistic simulation:
   - Taker fees: 0.04% per leg × 2 legs × open+close = 0.16% round-trip
@@ -25,8 +35,27 @@ from datetime import datetime, timezone, timedelta
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from data_utils import (
     fetch_ticker_price, fetch_perp_price, fetch_funding_rate,
-    fetch_funding_history, fetch_all_funding_rates,
+    fetch_funding_history, fetch_all_funding_rates, fetch_klines,
 )
+
+# Live institutional intelligence gate (OI velocity + top-trader flow + taker pressure)
+# Imported lazily in _apply_momentum_and_vol to avoid startup failures
+_INTEL_MOD = None
+def _get_intel_fn():
+    global _INTEL_MOD
+    if _INTEL_MOD is None:
+        try:
+            import live_intel_engine as _m
+            _INTEL_MOD = _m
+        except Exception:
+            pass
+    return getattr(_INTEL_MOD, "get_carry_intel", None) if _INTEL_MOD else None
+
+INTEL_GATE_ENABLED  = True    # set False to bypass intel gate entirely
+INTEL_MIN_SKIP      = 30      # score below this → skip carry entry
+INTEL_MIN_HALVE     = 50      # score below this → halve position size
+INTEL_EXIT_MIN_H    = 16      # don't trigger intel exit before 16h in trade
+INTEL_EXIT_OI_PCT   = -1.5    # OI falling > 1.5%/h AND fund decaying → warn
 
 # ── SYMBOLS ──────────────────────────────────────────────────────────────────
 # Large-cap anchors
@@ -43,11 +72,88 @@ SYMBOLS = [
     # Note: MATICUSDT is delisted on Bybit perps (renamed POL) — excluded
 ]
 
+# Whitelist: only trade carry arb on established crypto assets with reliable funding dynamics.
+# Excludes tokenized stocks (PLAYSOUT, SKHYNIX, SAMSUNG, NVDA) whose funding is set by the
+# exchange to maintain stock-price parity — not driven by real speculative demand.
+CARRY_WHITELIST = {
+    # Majors / L1
+    "BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT","XRPUSDT",
+    # Mid-cap crypto assets
+    "DOGEUSDT","ADAUSDT","AVAXUSDT","DOTUSDT","NEARUSDT",
+    # DeFi / ecosystem
+    "LINKUSDT","UNIUSDT","LTCUSDT","TRXUSDT","ATOMUSDT",
+    "SUIUSDT","APTUSDT","ARBUSDT","OPUSDT","INJUSDT",
+    "SEIUSDT","TIAUSDT","WLDUSDT","JUPUSDT","PYTHUSDT",
+    "ORDIUSDT","STXUSDT","RUNEUSDT","RENDERUSDT","FETUSDT",
+    "AAVEUSDT","LDOUSDT","SHIBUSDT","1000PEPEUSDT","WIFUSDT",
+    "BONKUSDT","JASMYUSDT","MINAUSDT","GALAUSDT","SANDUSDT",
+    "AXSUSDT","MANAUSDT","APEUSDT","GMTUSDT","FLOWUSDT",
+    # Additional established DeFi / infrastructure projects added 2026-11-14
+    "AKEUSDT",   # Akash Network — $400M+/day, cloud compute L1
+    "TRUMPUSDT", # TRUMP meme coin — $15M+/day, speculative carry
+    "BERAUSDT",  # Berachain — $30M+/day, new L1 w/ deep OI
+    # Intentionally excluded (exchange-set funding, not speculative demand):
+    # SOXLUSDT/SOXSUSDT/NVDAUSDT/MSTRUSDT/SKHYUSDT (tokenized stocks/ETFs)
+    # SNXXUSDT (possible leveraged token, unconfirmed)
+    # ERAUSDT (too new, insufficient track record)
+}
+
 # ── THRESHOLDS ────────────────────────────────────────────────────────────────
-CARRY_MIN_RATE      = 0.000137  # 0.0137%/8h = ~15%/yr minimum — quality bar
+CARRY_MIN_RATE      = 0.000229  # 0.0229%/8h = ~25%/yr base floor (raised: quality filter)
 CARRY_EXIT_RATE     = 0.00005
 NEG_CARRY_MIN_RATE  = -0.000137
-BASIS_MIN_PCT       = 0.20
+
+# Regime-adaptive carry floor
+# BEAR was 30%/yr but with INTEL GATE now live, lowered to 22%/yr — the OI velocity
+# + institutional flow analysis does the real quality filtering, not just the rate floor.
+CARRY_MIN_RATE_BULL = 0.000137  # 15%/yr — bull trend supports lower funding long-term
+CARRY_MIN_RATE_BEAR = 0.000201  # 22%/yr — intel gate replaces the strict floor
+REGIME_LOOKBACK_H   = 24        # BTC trend lookback (hours)
+REGIME_BULL_PCT     = 0.5       # BTC 24h change >= +0.5% → BULL
+REGIME_BEAR_PCT     = -0.5      # BTC 24h change <= -0.5% → BEAR (else SIDEWAYS)
+REGIME_CACHE_SECS   = 900       # refresh regime every 15 min
+
+# Funding-rate momentum (current 8h rate vs 7-day rolling avg = term structure)
+MOM_LOOKBACK        = 21        # 7 days × 3 funding prints/day
+MOM_UP_RATIO        = 1.3       # current > 1.3× avg → momentum up
+MOM_DOWN_RATIO      = 0.7       # current < 0.7× avg → edge fading
+MOM_UP_BONUS        = 0.20      # +20% score boost
+MOM_DOWN_PENALTY    = 0.30      # -30% score penalty
+MAX_ENRICH          = 30        # max candidates enriched with funding history per scan
+
+# Funding-rate volatility gate (unstable funding = unreliable carry)
+VOL_GATE_PERIODS    = 10        # std-dev over last 10 funding prints
+VOL_GATE_STD        = 0.0003    # above this = highly unstable
+VOL_GATE_MIN_ANN    = 25.0      # unstable symbols must yield > 25%/yr (vs 15%)
+VOL_GATE_SIZE_MULT  = 0.5       # and get only half size
+
+# Sustained funding entry filter (KEY FIX for 0% WR on CARRY_ARB)
+SUSTAINED_PERIODS   = 3         # last N funding prints must ALL be above floor
+SPIKE_RATIO         = 2.5       # current > 2.5× 7-day avg = spike → skip (will revert)
+SUSTAINED_FLOOR_PCT = 0.50      # each recent rate must be >= 50% of avg7 to be "sustained"
+
+# Smart re-entry after portfolio take-profit
+REENTRY_MIN_ANN_PCT = 20.0      # best carry must exceed 20%/yr before redeploying
+
+# Yield-tiered capital deployment (replaces flat $66k)
+TIER_HIGH_ANN       = 50.0      # ann_pct > 50%/yr
+TIER_HIGH_USD       = 100_000
+TIER_MID_ANN        = 25.0      # 25–50%/yr
+TIER_MID_USD        = 80_000
+TIER_BASE_USD       = 55_000    # 15–25%/yr
+
+# FUNDING_SQUEEZE strategy (rate at 30-day low on a historically high-carry coin)
+SQUEEZE_MAX_POSITIONS = 2       # exposure cap
+SQUEEZE_POSITION_USD  = 30_000  # small probe size
+SQUEEZE_CUR_ANN_MAX   = 3.0     # current carry must be < 3%/yr
+SQUEEZE_HIST_ANN_MIN  = 15.0    # 30-day avg carry must have been >= 15%/yr
+SQUEEZE_STOP_PCT      = 0.02    # tight 2% stop
+SQUEEZE_TP_PCT        = 0.05    # 5% take-profit
+SQUEEZE_RECOVER_ANN   = 10.0    # funding back above 10%/yr → thesis played out, exit
+SQUEEZE_MAX_HOURS     = 168     # 7 days max hold
+SQUEEZE_HIST_PERIODS  = 90      # 30 days × 3 prints/day
+BASIS_MIN_PCT       = 0.20   # min basis for SPOT_PREMIUM/DISCOUNT entry
+BASIS_MAX_PCT       = 2.00   # max basis — above this it's structural, not convergence play
 BASIS_EXIT_PCT      = 0.04
 BASIS_STOP_PCT      = 0.60
 CARRY_MAX_DAYS      = 30
@@ -55,21 +161,25 @@ BASIS_MAX_HOURS     = 72
 FEE_PER_LEG         = 0.0004
 ROUND_TRIP_FEES     = FEE_PER_LEG * 4
 STARTING_BALANCE    = 1_000_000.0
-MAX_OPEN_TRADES     = 10        # focused: 10 best pairs, more capital per slot
-MIN_POSITION_USD    = 50_000
-MAX_POSITION_USD    = 200_000
-POSITION_USD        = STARTING_BALANCE / MAX_OPEN_TRADES  # $100k flat fallback
+MAX_OPEN_TRADES     = 15        # 15 best pairs — fills all $1M efficiently
+MIN_POSITION_USD    = 30_000
+MAX_POSITION_USD    = 250_000
+POSITION_USD        = STARTING_BALANCE / MAX_OPEN_TRADES  # $66.7k flat fallback
 FUNDING_INTERVAL_H  = 8
 MIN_VOLUME_24H      = 5_000_000
 MAX_ANN_RATE        = 500.0
 
-# ── PER-POSITION SMART EXIT ───────────────────────────────────────────────────
-PROFIT_TARGET_PCT   = 0.030   # +3.0% per position
-STOP_LOSS_PCT       = 0.012   # -1.2% per position (tighter)
+# ── PER-POSITION SMART EXIT (cascading take-profit) ───────────────────────────
+PROFIT_TARGET_PCT   = 0.030   # +3.0% hard ceiling on the remainder
+STOP_LOSS_PCT       = 0.010   # -1.0% hard stop (was -1.2%)
 TRAIL_ACTIVATE_PCT  = 0.015   # trailing activates at +1.5%
-TRAIL_DROP_PCT      = 0.007   # trails 0.7% below peak
+TRAIL_DROP_PCT      = 0.005   # trails 0.5% below peak (was 0.7%)
+PARTIAL_TP_PCT      = 0.015   # first partial exit at +1.5%
+PARTIAL_EXIT_FRAC   = 0.50    # bank 50% of the position at the partial
 FUNDING_ROI_MULT    = 8.0     # close when funding > 8× open fees
-FUNDING_DECAY_PCT   = 0.50    # close if rate < 50% of entry rate
+FUNDING_DECAY_PCT   = 0.50    # candidate decay: rate < 50% of entry rate...
+FUNDING_DECAY_MIN_H = 24      # ...but never decay-exit in the first 24h (single prints are noise)
+FUNDING_DECAY_CONF  = 0.70    # ...and 7-day avg must ALSO be < 70% of entry rate (confirms real fade)
 
 # ── PORTFOLIO-LEVEL PROTECTION (the key layer that was missing) ────────────────
 PORT_TP_USD         = 4500.0  # lock ALL profit when portfolio hits +$4,500
@@ -120,6 +230,8 @@ def init_db():
         basis_now_pct    REAL,
         unrealized_pnl   REAL DEFAULT 0,
         peak_pnl         REAL DEFAULT 0,   -- highest unrealized P&L ever seen (for trailing stop)
+        partial_taken    INTEGER DEFAULT 0,-- 1 once the +1.5% partial exit has fired
+        partial_pnl      REAL DEFAULT 0,   -- realized P&L banked by partial exits
 
         spot_exit        REAL,
         perp_exit        REAL,
@@ -146,12 +258,96 @@ def init_db():
     );
     INSERT OR IGNORE INTO portfolio_meta (id) VALUES (1);
     """)
-    # Migrate: add peak_pnl to trades if missing
+    # Migrate: add new columns to trades if missing (backwards-compatible)
     cols = [r[1] for r in c.execute("PRAGMA table_info(trades)").fetchall()]
-    if cols and "peak_pnl" not in cols:
-        c.execute("ALTER TABLE trades ADD COLUMN peak_pnl REAL DEFAULT 0")
+    if cols:
+        for col, ddl in (("peak_pnl",      "REAL DEFAULT 0"),
+                         ("partial_taken", "INTEGER DEFAULT 0"),
+                         ("partial_pnl",   "REAL DEFAULT 0")):
+            if col not in cols:
+                c.execute(f"ALTER TABLE trades ADD COLUMN {col} {ddl}")
     c.commit()
     c.close()
+
+
+# ── ALPHA SIGNALS: MARKET REGIME + FUNDING TERM STRUCTURE ─────────────────────
+
+_REGIME_CACHE = {"ts": 0.0, "regime": "SIDEWAYS", "carry_min": CARRY_MIN_RATE_BEAR, "btc_24h_pct": 0.0}
+
+def get_market_regime():
+    """
+    Classify the market via BTC 24h trend and return the adaptive carry floor.
+    BULL  (BTC +0.5%+ over 24h) → carry floor 0.0001  (10.95%/yr)
+    BEAR / SIDEWAYS             → carry floor 0.0002  (21.90%/yr)
+    Cached for 15 min. Fail-safe: keeps last known regime on API errors.
+    """
+    now = time.time()
+    if now - _REGIME_CACHE["ts"] < REGIME_CACHE_SECS:
+        return dict(_REGIME_CACHE)
+    try:
+        kl = fetch_klines("BTCUSDT", "1h", REGIME_LOOKBACK_H + 2)
+        if kl and len(kl) > REGIME_LOOKBACK_H:
+            closes = [float(r[4]) for r in kl]
+            ref = closes[-(REGIME_LOOKBACK_H + 1)]
+            chg = (closes[-1] - ref) / ref * 100 if ref else 0.0
+            if chg >= REGIME_BULL_PCT:
+                regime, carry_min = "BULL", CARRY_MIN_RATE_BULL
+            elif chg <= REGIME_BEAR_PCT:
+                regime, carry_min = "BEAR", CARRY_MIN_RATE_BEAR
+            else:
+                regime, carry_min = "SIDEWAYS", CARRY_MIN_RATE_BEAR
+            _REGIME_CACHE.update(ts=now, regime=regime, carry_min=carry_min,
+                                 btc_24h_pct=round(chg, 2))
+    except Exception:
+        pass  # keep last known regime
+    return dict(_REGIME_CACHE)
+
+
+# Funding history cache: symbol → (fetched_at, [rates oldest→newest])
+_FUND_HIST_CACHE = {}
+_FUND_HIST_TTL   = 1800  # 30 min
+
+def _funding_hist(symbol):
+    """Last 30 days of 8h funding prints (oldest first), cached 30 min."""
+    now = time.time()
+    hit = _FUND_HIST_CACHE.get(symbol)
+    if hit and now - hit[0] < _FUND_HIST_TTL:
+        return hit[1]
+    rates = []
+    try:
+        rows = fetch_funding_history(symbol, limit=SQUEEZE_HIST_PERIODS)
+        rates = [float(r.get("fundingRate") or 0) for r in rows]
+    except Exception:
+        rates = hit[1] if hit else []
+    if rates:
+        _FUND_HIST_CACHE[symbol] = (now, rates)
+    return rates
+
+
+def _funding_stats(symbol):
+    """
+    Term-structure stats from cached funding history:
+      avg7  — 7-day rolling average rate (21 prints)
+      std10 — std-dev of last 10 prints (stability gate)
+      min30/max30/avg30 — 30-day range (squeeze detection)
+    Returns None if no history available.
+    """
+    rates = _funding_hist(symbol)
+    if not rates:
+        return None
+    recent7 = rates[-MOM_LOOKBACK:]
+    avg7    = sum(recent7) / len(recent7)
+    last10  = rates[-VOL_GATE_PERIODS:]
+    m       = sum(last10) / len(last10)
+    std10   = (sum((x - m) ** 2 for x in last10) / len(last10)) ** 0.5
+    return {
+        "avg7":  avg7,
+        "std10": std10,
+        "min30": min(rates),
+        "max30": max(rates),
+        "avg30": sum(rates) / len(rates),
+        "n":     len(rates),
+    }
 
 
 # ── MARKET SCAN ───────────────────────────────────────────────────────────────
@@ -160,8 +356,16 @@ def scan_opportunities():
     """
     Fetch ALL Bybit linear perps at once (single API call), score each one,
     return opportunities sorted by yield desc.
+    Carry floor adapts to market regime (BTC 24h trend).
+    Scores are adjusted for funding momentum; unstable-funding symbols are
+    gated; FUNDING_SQUEEZE candidates are appended from the watchlist.
     Falls back to per-symbol fetch for the SYMBOLS watchlist if bulk fails.
     """
+    regime    = get_market_regime()
+    carry_min = regime["carry_min"]
+    print(f"  Regime: {regime['regime']} (BTC 24h {regime['btc_24h_pct']:+.2f}%) → "
+          f"carry floor {carry_min*3*365*100:.1f}%/yr")
+
     all_tickers = fetch_all_funding_rates(min_volume_usd=MIN_VOLUME_24H)
 
     # Fallback: scan fixed symbol list one-by-one
@@ -208,7 +412,10 @@ def scan_opportunities():
 
         basis_pct = (perp - spot) / spot * 100
 
-        if fr >= CARRY_MIN_RATE:
+        if fr >= carry_min:
+            # Whitelist filter: skip tokenized stocks and other exotic assets
+            if sym not in CARRY_WHITELIST:
+                continue
             opps.append({
                 "strategy":     "CARRY_ARB",
                 "symbol":       sym,
@@ -221,7 +428,9 @@ def scan_opportunities():
                 "volume24h":    vol,
                 "score":        ann_pct,
             })
-        elif fr <= NEG_CARRY_MIN_RATE:
+        elif fr <= -carry_min:
+            if sym not in CARRY_WHITELIST:
+                continue
             opps.append({
                 "strategy":     "NEG_CARRY",
                 "symbol":       sym,
@@ -235,7 +444,11 @@ def scan_opportunities():
                 "score":        abs(ann_pct),
             })
 
-        if basis_pct >= BASIS_MIN_PCT:
+        # Whitelist check applies to ALL strategies — no junk tokens in any path
+        if sym not in CARRY_WHITELIST:
+            continue
+
+        if BASIS_MIN_PCT <= basis_pct <= BASIS_MAX_PCT:
             opps.append({
                 "strategy":     "SPOT_PREMIUM",
                 "symbol":       sym,
@@ -248,7 +461,7 @@ def scan_opportunities():
                 "volume24h":    vol,
                 "score":        basis_pct * 10,
             })
-        elif basis_pct <= -BASIS_MIN_PCT:
+        elif -BASIS_MAX_PCT <= basis_pct <= -BASIS_MIN_PCT:
             opps.append({
                 "strategy":     "SPOT_DISCOUNT",
                 "symbol":       sym,
@@ -263,27 +476,219 @@ def scan_opportunities():
             })
 
     opps.sort(key=lambda x: x["score"], reverse=True)
+
+    # Alpha layer 1: funding momentum score + volatility gate (top candidates only)
+    opps = _apply_momentum_and_vol(opps)
+
+    # Alpha layer 2: FUNDING_SQUEEZE candidates from the watchlist
+    try:
+        opps.extend(scan_squeeze_opportunities(all_tickers))
+    except Exception:
+        pass
+
+    opps.sort(key=lambda x: x["score"], reverse=True)
     return opps
 
 
-def _yield_weighted_size(opps, n_slots, budget):
+def _apply_momentum_and_vol(opps):
     """
-    Allocate budget across n_slots opportunities using sqrt(yield) weighting
-    so higher-yield coins get more capital without extreme concentration.
-    Returns dict: (symbol, strategy) → size_usd
+    Enrich the top carry candidates with funding term structure quality filters.
+
+    QUANT FILTERS (applied in order — each can drop the candidate entirely):
+      1. SPIKE FILTER: current rate > SPIKE_RATIO × 7-day avg → first-period spike,
+         will revert in next 8h print → DROP.  Root cause of 0% WR on CARRY_ARB.
+      2. SUSTAINED CHECK: last SUSTAINED_PERIODS prints must ALL be ≥ 50% of avg7
+         in the same direction → funding is structural, not noise → DROP if not.
+      3. SIGN FLIP: rate flipped sign vs avg → carry is flipping → DROP.
+      4. VOLATILITY GATE: std of last 10 prints > 0.0003 AND yield < 25%/yr → DROP.
+
+    After passing filters: apply momentum score boost/penalty and vol flag.
     """
-    if not opps:
+    out, enriched = [], 0
+    for o in opps:
+        if o["strategy"] in ("CARRY_ARB", "NEG_CARRY") and enriched < MAX_ENRICH:
+            enriched += 1
+            st = _funding_stats(o["symbol"])
+            if not st:
+                out.append(o)
+                continue
+
+            fr, avg7 = o["funding_rate"], st["avg7"]
+
+            # ── 1. SPIKE FILTER ──────────────────────────────────────────────
+            # If current rate is MUCH higher than the 7-day average, it's a one-period
+            # spike. The next 8h print will revert → we'd pay fees and collect nothing.
+            # EXCEPTION: OI growing > 5%/24h + top traders confirming + funding RISING
+            # = regime change (new structural carry forming) → allow at half size.
+            if abs(avg7) > 1e-9:
+                spike_ratio = abs(fr) / abs(avg7)
+                if spike_ratio > SPIKE_RATIO:
+                    # Check for regime-change exception before skipping
+                    _is_regime_change = False
+                    if INTEL_GATE_ENABLED:
+                        try:
+                            _ifn = _get_intel_fn()
+                            if _ifn:
+                                _ic = _ifn(o["symbol"])
+                                if _ic.get("oi_regime_change"):
+                                    _is_regime_change = True
+                                    o["_vol_flagged"]    = True  # half size for regime entries
+                                    o["_regime_change"]  = True
+                                    o["intel_score"]     = _ic.get("score", 50)
+                                    o["intel_gate"]      = "REGIME_CHANGE"
+                                    o["intel_notes"]     = _ic.get("notes", "")
+                        except Exception:
+                            pass
+                    if not _is_regime_change:
+                        continue   # spike entry — will revert — SKIP
+
+            # ── 2. SUSTAINED CHECK ───────────────────────────────────────────
+            # Require the last SUSTAINED_PERIODS prints to ALL be above a floor.
+            # This confirms the carry is structural (days-old), not a one-period event.
+            # EXEMPT: regime-change entries (OI growth is the confirmation, not history)
+            if not o.get("_regime_change"):
+                rates_hist = _funding_hist(o["symbol"])
+                if rates_hist and len(rates_hist) >= SUSTAINED_PERIODS:
+                    last_n    = rates_hist[-SUSTAINED_PERIODS:]
+                    min_floor = abs(avg7) * SUSTAINED_FLOOR_PCT
+                    if o["strategy"] == "CARRY_ARB":
+                        sustained = all(r >= min_floor for r in last_n)
+                    else:
+                        sustained = all(r <= -min_floor for r in last_n)
+                    if not sustained:
+                        continue   # inconsistent funding — not reliable carry — SKIP
+
+            # ── 3. SIGN FLIP ─────────────────────────────────────────────────
+            if avg7 != 0 and fr * avg7 <= 0:
+                continue   # rate flipped sign vs 7-day avg — carry regime ending — SKIP
+
+            # ── 4. MOMENTUM SCORE ────────────────────────────────────────────
+            ratio = abs(fr) / abs(avg7) if abs(avg7) > 1e-9 else 1.0
+            if ratio >= MOM_UP_RATIO:
+                o["score"] *= (1 + MOM_UP_BONUS)
+                o["momentum"] = "UP"
+            elif ratio <= MOM_DOWN_RATIO:
+                o["score"] *= (1 - MOM_DOWN_PENALTY)
+                o["momentum"] = "FADING"
+            else:
+                o["momentum"] = "FLAT"
+
+            # ── 5. VOLATILITY GATE ───────────────────────────────────────────
+            if st["std10"] > VOL_GATE_STD:
+                if abs(o["ann_pct"]) < VOL_GATE_MIN_ANN:
+                    continue
+                o["_vol_flagged"] = True
+
+            # ── 6. INSTITUTIONAL INTELLIGENCE GATE ──────────────────────────
+            # Uses live OI velocity, top-trader positioning, taker flow, basis
+            # alignment to decide if the carry is institutionally confirmed.
+            # Only blocks entries — never crashes (fail-open on API errors).
+            # SKIP for regime-change entries (already vetted in step 1).
+            if INTEL_GATE_ENABLED and not o.get("_regime_change"):
+                try:
+                    intel_fn = _get_intel_fn()
+                    if intel_fn:
+                        intel = intel_fn(o["symbol"])
+                        score = intel.get("score", 50)
+                        gate  = intel.get("gate", "MODERATE")
+                        if score < INTEL_MIN_SKIP:
+                            continue   # OI falling + wrong-side institutions + spiking → SKIP
+                        if score < INTEL_MIN_HALVE:
+                            o["_vol_flagged"] = True   # marginal conditions → half size
+                        o["intel_score"] = score
+                        o["intel_gate"]  = gate
+                        o["intel_notes"] = intel.get("notes", "")
+                        # Blend intel score into ranking: 70% carry yield, 30% intel
+                        o["score"] = o["score"] * 0.70 + score * 0.30
+                except Exception:
+                    pass   # intel failure → allow trade (fail-open)
+
+        out.append(o)
+    return out
+
+
+def scan_squeeze_opportunities(all_tickers):
+    """
+    FUNDING_SQUEEZE: coin whose funding sits at its 30-day LOW (< 3%/yr current)
+    but historically averaged >= 15%/yr → small LONG_PERP_SHORT_SPOT bet on
+    rate/basis recovery. Watchlist symbols only (bounded API usage).
+    """
+    tick_by_sym = {t["symbol"]: t for t in (all_tickers or [])}
+    opps = []
+    for sym in SYMBOLS:
+        t = tick_by_sym.get(sym)
+        if not t:
+            continue
+        fr  = float(t.get("fundingRate") or t.get("lastFundingRate") or 0)
+        ann = fr * 3 * 365 * 100
+        if abs(ann) >= SQUEEZE_CUR_ANN_MAX:
+            continue                                     # funding not depressed
+        st = _funding_stats(sym)
+        if not st or st["n"] < SQUEEZE_HIST_PERIODS * 0.6:
+            continue                                     # not enough history
+        hist_ann = st["avg30"] * 3 * 365 * 100
+        if hist_ann < SQUEEZE_HIST_ANN_MIN:
+            continue                                     # never was a high-carry coin
+        rng = st["max30"] - st["min30"]
+        if rng <= 0 or fr > st["min30"] + 0.10 * rng:
+            continue                                     # not in the bottom decile of 30d range
+        perp = float(t.get("markPrice") or 0)
+        if perp <= 0:
+            continue
+        try:
+            spot = fetch_ticker_price(sym) or perp
+        except Exception:
+            spot = perp
+        basis_pct = (perp - spot) / spot * 100
+        opps.append({
+            "strategy":     "FUNDING_SQUEEZE",
+            "symbol":       sym,
+            "direction":    "LONG_PERP_SHORT_SPOT",
+            "funding_rate": fr,
+            "ann_pct":      ann,
+            "basis_pct":    basis_pct,
+            "spot":         spot,
+            "perp":         perp,
+            "volume24h":    float(t.get("volume24h") or 0),
+            "score":        hist_ann,                    # recovery potential
+            "_size_usd":    SQUEEZE_POSITION_USD,
+        })
+    return opps
+
+
+def _tier_usd(opp):
+    """Yield-tier allocation for one opportunity (vol-flagged symbols get half)."""
+    if opp["strategy"] == "FUNDING_SQUEEZE":
+        return SQUEEZE_POSITION_USD
+    ann = abs(opp.get("ann_pct") or 0)
+    if ann > TIER_HIGH_ANN:
+        size = TIER_HIGH_USD
+    elif ann > TIER_MID_ANN:
+        size = TIER_MID_USD
+    else:
+        size = TIER_BASE_USD
+    if opp.get("_vol_flagged"):
+        size *= VOL_GATE_SIZE_MULT
+    return size
+
+
+def _tiered_size(opps, n_slots, budget):
+    """
+    Yield-tiered capital deployment:
+      ann > 50%/yr → $100k   |   25–50%/yr → $80k   |   15–25%/yr → $55k
+    FUNDING_SQUEEZE always gets the small probe size.
+    Hard cap: total allocated never exceeds budget (proportional scale-down).
+    """
+    if not opps or budget <= 0:
         return {}
     picks = opps[:n_slots]
-    yields = [max(abs(o["ann_pct"]), 1.0) for o in picks]
-    weights = [y ** 0.5 for y in yields]
-    total_w = sum(weights)
-    sizes = {}
-    for o, w in zip(picks, weights):
-        raw = budget * w / total_w
-        alloc = max(MIN_POSITION_USD, min(MAX_POSITION_USD, raw))
-        sizes[(o["symbol"], o["strategy"])] = alloc
-    return sizes
+    sizes = [_tier_usd(o) for o in picks]
+    total = sum(sizes)
+    if total > budget:
+        scale = budget / total
+        sizes = [s * scale for s in sizes]
+    return {(o["symbol"], o["strategy"]): round(s, 2)
+            for o, s in zip(picks, sizes)}
 
 
 # ── OPEN PAPER TRADE ──────────────────────────────────────────────────────────
@@ -305,6 +710,9 @@ def open_trade(opp):
     fees     = size_usd * FEE_PER_LEG * 2  # open: 2 legs
     fr       = opp["funding_rate"]
     ann      = opp["ann_pct"]
+    intel_sc = opp.get("intel_score", -1)
+    intel_gt = opp.get("intel_gate", "")
+    intel_nt = opp.get("intel_notes", "")[:120]
 
     c.execute("""
         INSERT INTO trades (
@@ -321,6 +729,9 @@ def open_trade(opp):
         size_usd, fees,
         now, opp["spot"], opp["perp"], opp["basis_pct"],
     ))
+    # Intel score annotation — printed at open but not persisted (exit_reason reserved for close)
+    if intel_sc >= 0:
+        print(f"    [intel] score={intel_sc} gate={intel_gt} {intel_nt[:60]}")
     c.commit()
     c.close()
     return tid
@@ -402,16 +813,23 @@ def _basis_pnl(trade, spot_now, perp_now):
 def _should_close(trade, spot_now, perp_now, fr):
     """
     Smart exit logic — checks in priority order:
-      1. Hard stop loss      (-1.5% of position)
-      2. Profit target       (+3.0% of position)
-      3. Trailing stop       (activates at +1.5%, drops 0.8% below peak)
+      -1. WHITELIST_EVICT    (symbol no longer on CARRY_WHITELIST — close immediately)
+      0. FUNDING_SQUEEZE own book (2% stop / 5% TP / rate recovered / 7d max)
+      1. Hard stop loss      (-1.0% of position)
+      2. Profit target       (+3.0% of the remainder)
+      3. Trailing stop       (activates at +1.5%, drops 0.5% below peak —
+                              the +1.5% partial exit is handled in update_positions)
       4. Funding ROI met     (funding > 8× open fees → redeploy to fresh opp)
       5. Funding dropped     (rate below exit threshold)
-      6. Funding decay       (rate < 50% of entry rate)
+      6. Funding decay       (rate < 50% of entry AND 7d avg < 70% of entry
+                              AND position > 24h old — confirmed fade only)
       7. Basis stop loss     (basis blowout)
       8. Max duration        (30d carry / 72h basis)
     """
     strategy    = trade["strategy"]
+    # Priority -1: evict tokenized stocks / junk tokens that slipped in before whitelist was enforced
+    if trade["symbol"] not in CARRY_WHITELIST:
+        return "WHITELIST_EVICT"
     size_usd    = float(trade["size_usd"] or POSITION_USD)
     unrealized  = float(trade["unrealized_pnl"] or 0)
     peak_pnl    = float(trade["peak_pnl"] or 0)
@@ -429,7 +847,19 @@ def _should_close(trade, spot_now, perp_now, fr):
     basis_now   = (perp_now - spot_now) / spot_now * 100 if spot_now > 0 else 0
     basis_entry = float(trade["basis_entry_pct"] or 0)
 
-    # ── 1. HARD STOP LOSS: total P&L < -1.5% of position ────────────────────
+    # ── 0. FUNDING_SQUEEZE has its own tight book ────────────────────────────
+    if strategy == "FUNDING_SQUEEZE":
+        if unrealized < -size_usd * SQUEEZE_STOP_PCT:
+            return "STOP_LOSS_PNL"
+        if unrealized > size_usd * SQUEEZE_TP_PCT:
+            return "PROFIT_TARGET"
+        if fr * 3 * 365 * 100 >= SQUEEZE_RECOVER_ANN:
+            return "SQUEEZE_RECOVERED"      # rate recovered — thesis played out
+        if hours_open >= SQUEEZE_MAX_HOURS:
+            return "MAX_DURATION"
+        return None
+
+    # ── 1. HARD STOP LOSS: total P&L < -1.0% of position ────────────────────
     stop_usd = -size_usd * STOP_LOSS_PCT
     if unrealized < stop_usd:
         return f"STOP_LOSS_PNL"            # e.g. -$1,500 on $100k position
@@ -450,7 +880,24 @@ def _should_close(trade, spot_now, perp_now, fr):
     if fees_open > 0 and funding_tot >= fees_open * FUNDING_ROI_MULT:
         return "FUNDING_ROI_MET"           # paid for itself 8× — redeploy
 
-    # ── 5–8. Strategy-specific exits ─────────────────────────────────────────
+    # ── 5. INSTITUTIONAL EXIT SIGNAL ────────────────────────────────────────
+    # If the live intel engine sees OI collapsing + funding decelerating, the
+    # carry is about to end. Exit early before the funding drops below threshold
+    # and we get zero return on remaining carry (or fund DROPS immediately).
+    # Only fires after 16h (let the trade mature) and only for carry strategies.
+    if (INTEL_GATE_ENABLED and strategy in ("CARRY_ARB", "NEG_CARRY")
+            and hours_open >= INTEL_EXIT_MIN_H):
+        try:
+            intel_fn = _get_intel_fn()
+            if intel_fn:
+                intel = intel_fn(trade["symbol"])
+                oi_pct = intel.get("oi_1h_pct", 0.0)
+                if intel.get("exit_warn") and oi_pct <= INTEL_EXIT_OI_PCT:
+                    return "INTEL_OI_EXIT"   # institutions exiting → close carry now
+        except Exception:
+            pass   # never block exit logic due to intel failure
+
+    # ── 6–9. Strategy-specific exits ─────────────────────────────────────────
     if strategy in ("CARRY_ARB", "NEG_CARRY"):
         # Funding dropped below exit threshold
         if strategy == "CARRY_ARB" and fr <= CARRY_EXIT_RATE:
@@ -458,9 +905,17 @@ def _should_close(trade, spot_now, perp_now, fr):
         if strategy == "NEG_CARRY" and fr >= -CARRY_EXIT_RATE:
             return "FUNDING_NORMALIZED"
 
-        # Funding decay: rate fell >50% from entry (edge is fading)
-        if fr_entry != 0 and abs(fr) < abs(fr_entry) * FUNDING_DECAY_PCT:
-            return "FUNDING_DECAY"
+        # Funding decay — CONFIRMED fade only (a single low print during a
+        # volatile stretch is noise; funding often snaps back next period):
+        #   a) position must be > 24h old,
+        #   b) current rate < 50% of entry rate,
+        #   c) 7-day rolling avg ALSO < 70% of entry rate (term structure agrees)
+        if (fr_entry != 0 and hours_open >= FUNDING_DECAY_MIN_H
+                and abs(fr) < abs(fr_entry) * FUNDING_DECAY_PCT):
+            st   = _funding_stats(trade["symbol"])
+            avg7 = st["avg7"] if st else fr
+            if abs(avg7) < abs(fr_entry) * FUNDING_DECAY_CONF:
+                return "FUNDING_DECAY"
 
         # Basis blowout stop (secondary safety net)
         if strategy == "CARRY_ARB" and (basis_now - basis_entry) > BASIS_STOP_PCT:
@@ -501,7 +956,12 @@ def close_trade(trade_id, spot_exit, perp_exit, reason):
     total_fees   = float(trade["fees_total"]) + close_fees
     basis_pnl    = _basis_pnl(trade, spot_exit, perp_exit)
     funding_pnl  = float(trade["funding_total"])
-    realized_pnl = basis_pnl + funding_pnl - total_fees
+    try:
+        partial_pnl = float(trade["partial_pnl"] or 0)
+    except (IndexError, KeyError):
+        partial_pnl = 0.0
+    # partial_pnl already accounts for the partial leg's share of fees/funding
+    realized_pnl = basis_pnl + funding_pnl + partial_pnl - total_fees
 
     basis_now    = (perp_exit - spot_exit) / spot_exit * 100 if spot_exit > 0 else 0
     now          = datetime.now(timezone.utc).isoformat()
@@ -523,8 +983,44 @@ def close_trade(trade_id, spot_exit, perp_exit, reason):
     c.close()
 
 
+def _partial_close(trade, spot_now, perp_now):
+    """
+    Cascading TP step 1: bank PARTIAL_EXIT_FRAC (50%) of the position.
+    Realizes the fraction's share of basis + funding - fees (+ its close fees),
+    halves the remaining size/funding/fees, and resets peak so the remainder
+    trails tightly (0.5% below its new peak) from here.
+    """
+    frac       = PARTIAL_EXIT_FRAC
+    sz         = float(trade["size_usd"] or 0)
+    basis_pnl  = _basis_pnl(trade, spot_now, perp_now)
+    funding    = float(trade["funding_total"] or 0)
+    fees_open  = float(trade["fees_total"] or 0)
+    close_fees = sz * frac * FEE_PER_LEG * 2
+    realized   = frac * (basis_pnl + funding - fees_open) - close_fees
+    remaining  = (1 - frac) * (basis_pnl + funding - fees_open)
+
+    c = _conn()
+    c.execute("""
+        UPDATE trades SET
+            size_usd       = ?,
+            funding_total  = ?,
+            fees_total     = ?,
+            partial_taken  = 1,
+            partial_pnl    = COALESCE(partial_pnl, 0) + ?,
+            unrealized_pnl = ?,
+            peak_pnl       = ?
+        WHERE id=?
+    """, (sz * (1 - frac), funding * (1 - frac), fees_open * (1 - frac),
+          realized, remaining, remaining, trade["id"]))
+    c.commit()
+    c.close()
+    print(f"  💰 PARTIAL TP {trade['id']}: banked ${realized:+,.2f} "
+          f"({frac*100:.0f}% of position) — remainder trails 0.5% off peak")
+    return realized
+
+
 def update_positions():
-    """Refresh prices, apply funding, check exits for all open trades."""
+    """Refresh prices, apply funding, check partial/full exits for all open trades."""
     c = _conn()
     open_trades = c.execute("SELECT * FROM trades WHERE status='OPEN'").fetchall()
     c.close()
@@ -532,6 +1028,13 @@ def update_positions():
     opened = closed = funding_applied = 0
     for trade in open_trades:
         sym = trade["symbol"]
+
+        # Evict non-whitelisted symbols immediately (no price fetch needed)
+        if sym not in CARRY_WHITELIST:
+            close_trade(trade["id"], 0.0, 0.0, "WHITELIST_EVICT")
+            closed += 1
+            continue
+
         try:
             spot_now  = fetch_ticker_price(sym)
             fund_data = fetch_funding_rate(sym)
@@ -558,6 +1061,23 @@ def update_positions():
         fees_so_far = float(trade["fees_total"])
         unrealized  = basis_pnl + funding_pnl - fees_so_far
 
+        # Cascading TP step 1: bank 50% at +1.5% (squeeze trades run their own book)
+        try:
+            partial_taken = int(trade["partial_taken"] or 0)
+        except (IndexError, KeyError):
+            partial_taken = 1
+        if (not partial_taken and trade["strategy"] != "FUNDING_SQUEEZE"
+                and unrealized >= float(trade["size_usd"] or 0) * PARTIAL_TP_PCT):
+            _partial_close(trade, spot_now, perp_now)
+            c2 = _conn()
+            trade = c2.execute("SELECT * FROM trades WHERE id=?", (trade["id"],)).fetchone()
+            c2.close()
+            # Recompute live numbers for the remaining half
+            basis_pnl   = _basis_pnl(trade, spot_now, perp_now)
+            funding_pnl = float(trade["funding_total"])
+            fees_so_far = float(trade["fees_total"])
+            unrealized  = basis_pnl + funding_pnl - fees_so_far
+
         # Track peak P&L for trailing stop
         new_peak = max(float(trade["peak_pnl"] or 0), unrealized)
 
@@ -583,36 +1103,69 @@ def update_positions():
 # ── OPEN NEW TRADES ───────────────────────────────────────────────────────────
 
 def open_new_trades():
-    """Scan ALL Bybit perps, pick best yield-weighted opportunities, open up to MAX_OPEN_TRADES."""
+    """Scan ALL Bybit perps, pick best yield-tiered opportunities, open up to MAX_OPEN_TRADES."""
     c = _conn()
-    n_open = c.execute("SELECT COUNT(*) FROM trades WHERE status='OPEN'").fetchone()[0]
+    rows   = c.execute("SELECT size_usd, strategy FROM trades WHERE status='OPEN'").fetchall()
     c.close()
+    n_open = len(rows)
+    already_deployed = sum(float(r["size_usd"] or 0) for r in rows)
+    n_squeeze_open   = sum(1 for r in rows if r["strategy"] == "FUNDING_SQUEEZE")
 
     if n_open >= MAX_OPEN_TRADES:
         return []
 
-    slots_free = MAX_OPEN_TRADES - n_open
-    opps       = scan_opportunities()
+    slots_free       = MAX_OPEN_TRADES - n_open
+    available_budget = max(0.0, STARTING_BALANCE - already_deployed)
 
-    # Compute yield-weighted sizes for all candidates
-    sizes = _yield_weighted_size(opps, MAX_OPEN_TRADES, STARTING_BALANCE)
+    if available_budget < MIN_POSITION_USD:
+        return []  # not enough cash left to open even a minimum slot
 
-    opened = []
+    opps = scan_opportunities()
+
+    # Smart re-entry after a portfolio TP: don't redeploy into a cooled market.
+    # Require the best available carry to exceed 20%/yr (not just the 15% floor).
+    meta = _get_meta()
+    if n_open == 0 and meta.get("last_book_reason") == "PORT_TAKE_PROFIT":
+        best_carry = max((abs(o.get("ann_pct") or 0) for o in opps
+                          if o["strategy"] in ("CARRY_ARB", "NEG_CARRY")), default=0.0)
+        if best_carry < REENTRY_MIN_ANN_PCT:
+            print(f"  Re-entry gate: best carry {best_carry:.1f}%/yr < "
+                  f"{REENTRY_MIN_ANN_PCT:.0f}%/yr required after PORT_TP — holding cash")
+            return []
+
+    # Yield-tiered sizing against REMAINING budget and REMAINING slot count
+    sizes = _tiered_size(opps, slots_free, available_budget)
+
+    opened          = []
+    squeeze_opened  = 0
+    remaining_budget = available_budget
     for opp in opps:
         if len(opened) >= slots_free:
             break
-        # Look up yield-weighted size; fall back to flat
-        size = sizes.get((opp["symbol"], opp["strategy"]), POSITION_USD)
-        opp["_size_usd"] = size
+        if remaining_budget < MIN_POSITION_USD * 0.4:
+            break  # effectively fully deployed
+        if (opp["strategy"] == "FUNDING_SQUEEZE"
+                and n_squeeze_open + squeeze_opened >= SQUEEZE_MAX_POSITIONS):
+            continue
+        # Tiered size; never exceed what's left of the budget
+        size = sizes.get((opp["symbol"], opp["strategy"])) or _tier_usd(opp)
+        size = min(size, remaining_budget)
+        if size < MIN_POSITION_USD * 0.4:
+            continue
+        opp["_size_usd"] = round(size, 2)
         tid = open_trade(opp)
         if tid:
+            remaining_budget -= size
+            if opp["strategy"] == "FUNDING_SQUEEZE":
+                squeeze_opened += 1
             opened.append({
                 "id":       tid,
                 "strategy": opp["strategy"],
                 "symbol":   opp["symbol"],
                 "score":    opp.get("score", 0),
-                "size_usd": size,
+                "size_usd": round(size, 2),
                 "ann_pct":  opp.get("ann_pct", 0),
+                "momentum": opp.get("momentum", "-"),
             })
     return opened
 
@@ -639,11 +1192,13 @@ def compute_report(verbose=True):
     loss  = [r for r in closed if (r["realized_pnl"] or 0) <= 0]
     total_pnl    = sum(r["realized_pnl"] or 0 for r in closed)
     total_unreal = sum(r["unrealized_pnl"] or 0 for r in open_)
+    # Profit already banked by partial exits on still-open positions
+    open_partials = sum(float(r.get("partial_pnl") or 0) for r in open_)
 
     capital_deployed = sum(float(r["size_usd"] or 0) for r in open_)
-    # True equity includes ALL realized (closed trades + booked profit events)
-    account_equity   = STARTING_BALANCE + total_booked + total_pnl + total_unreal
-    available_cash   = STARTING_BALANCE + total_booked + total_pnl - capital_deployed
+    # True equity includes ALL realized (closed trades + partials + booked profit events)
+    account_equity   = STARTING_BALANCE + total_booked + total_pnl + open_partials + total_unreal
+    available_cash   = STARTING_BALANCE + total_booked + total_pnl + open_partials - capital_deployed
     return_pct       = (account_equity - STARTING_BALANCE) / STARTING_BALANCE * 100
 
     # Portfolio trailing stop floor (live display)
@@ -691,6 +1246,8 @@ def compute_report(verbose=True):
         print(f"  Account Equity:   ${account_equity:>14,.2f}  {eq_cls}  ({return_pct:+.4f}%)")
         print(f"  Booked Profit:    ${total_booked:>+14,.2f}  ({book_count} book events)")
         print(f"  Realized P&L:     ${total_pnl:>+14,.2f}")
+        if open_partials:
+            print(f"  Partial Banked:   ${open_partials:>+14,.2f}  (from open positions)")
         print(f"  Unrealized P&L:   ${total_unreal:>+14,.2f}  ({len(open_)} open positions)")
         print(f"  Port Peak P&L:    ${port_peak:>+14,.2f}  (trail floor: ${trail_floor:,.2f})" if trail_floor else f"  Port Peak P&L:    ${port_peak:>+14,.2f}  (trail activates at $1,000)")
         print(f"  Capital Deployed: ${capital_deployed:>14,.2f}  ({capital_deployed/STARTING_BALANCE*100:.1f}% of balance)")
@@ -768,6 +1325,7 @@ def compute_report(verbose=True):
         "win_rate":       round(win_rate, 1),
         "profit_factor":  round(pf, 2) if pf != float("inf") else 999.0,
         "realized_pnl":   round(total_pnl, 2),
+        "open_partial_pnl": round(open_partials, 2),
         "unrealized_pnl": round(total_unreal, 2),
         "wins":           len(wins),
         "losses":         len(loss),
@@ -798,6 +1356,8 @@ def compute_report(verbose=True):
                 "funding_earned":  round(float(r["funding_total"] or 0), 4),
                 "unrealized_pnl":  round(float(r["unrealized_pnl"] or 0), 4),
                 "peak_pnl":        round(float(r["peak_pnl"] or 0), 4),
+                "partial_taken":   int(r.get("partial_taken") or 0),
+                "partial_pnl":     round(float(r.get("partial_pnl") or 0), 4),
                 "funding_periods": r["funding_periods"],
                 "fees_total":      round(float(r["fees_total"] or 0), 4),
                 "size_usd":        round(float(r["size_usd"] or 0), 2),
@@ -974,7 +1534,8 @@ def run_cycle(verbose=True):
         if opened:
             print(f"  Opened {len(opened)} new trade(s):")
             for t in opened:
-                print(f"    {t['id']}  {t['strategy']}  ann={t.get('ann_pct',0):.1f}%  ${t.get('size_usd',0):,.0f}")
+                print(f"    {t['id']}  {t['strategy']}  ann={t.get('ann_pct',0):.1f}%  "
+                      f"${t.get('size_usd',0):,.0f}  mom={t.get('momentum','-')}")
         else:
             c = _conn()
             n_open = c.execute("SELECT COUNT(*) FROM trades WHERE status='OPEN'").fetchone()[0]
@@ -998,6 +1559,27 @@ def run_cycle(verbose=True):
 
 # ── MAIN ─────────────────────────────────────────────────────────────────────
 
+LOCK_PATH = os.path.join(DB_DIR, "perp_arb.lock")
+
+
+def _acquire_lock():
+    """Return True if lock acquired, False if a fresh lock exists (< 10 min old)."""
+    if os.path.exists(LOCK_PATH):
+        age = time.time() - os.path.getmtime(LOCK_PATH)
+        if age < 600:   # 10-minute stale timeout
+            return False
+    with open(LOCK_PATH, "w") as f:
+        f.write(str(os.getpid()))
+    return True
+
+
+def _release_lock():
+    try:
+        os.remove(LOCK_PATH)
+    except Exception:
+        pass
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--once",   action="store_true", help="One cycle then exit")
@@ -1013,8 +1595,14 @@ def main():
         c = _conn()
         c.execute("DELETE FROM trades")
         c.execute("DELETE FROM funding_log")
+        c.execute("UPDATE portfolio_meta SET peak_total_pnl=0, total_booked_pnl=0, book_count=0, last_booked_at=NULL, last_book_reason=NULL WHERE id=1")
         c.commit()
         c.close()
+        # Also clear the JSON snapshot
+        json_path = os.path.join(DB_DIR, "perp_arb.json")
+        if os.path.exists(json_path):
+            os.remove(json_path)
+        _release_lock()
         print("All paper trades cleared.")
         return
 
@@ -1036,17 +1624,29 @@ def main():
         print(f"Watch mode: cycling every {args.watch}s. Ctrl+C to stop.")
         while True:
             try:
-                run_cycle()
+                if _acquire_lock():
+                    run_cycle()
+                    _release_lock()
+                else:
+                    print("  Another instance running — skipping cycle")
             except KeyboardInterrupt:
+                _release_lock()
                 print("\nStopped.")
                 break
             except Exception as e:
+                _release_lock()
                 print(f"  Cycle error: {e}")
             time.sleep(args.watch)
         return
 
-    # Default / --once
-    run_cycle()
+    # Default / --once — guard against concurrent GitHub Actions runs
+    if not _acquire_lock():
+        print("Another perp_arb instance is running — exiting to prevent duplicate positions.")
+        sys.exit(0)
+    try:
+        run_cycle()
+    finally:
+        _release_lock()
 
 
 if __name__ == "__main__":

@@ -21,7 +21,7 @@ BINANCE = "https://api.binance.com"
 
 WIN_THRESHOLD   = 0.003  # 0.3% net of fees to call it a WIN
 OUTCOME_AFTER_H = 4      # hours after signal → check price
-MIN_SCORE       = 15     # log all signals with |unified_score| >= this (was 35)
+MIN_SCORE       = 35     # only log ACTIONABLE signals (score 35+); monitoring tier (15-34) had 27% WR noise
 ACTIONABLE_MIN  = 35     # "actionable" signals shown prominently in reports
 
 os.makedirs(DB_DIR, exist_ok=True)
@@ -418,6 +418,35 @@ def compute_accuracy_report():
 
 # ── JSON EXPORT ───────────────────────────────────────────────────────────────
 
+def _read_accuracy_stats():
+    """Read the latest accuracy summary from DB for embedding in latest_scan.json."""
+    try:
+        conn = get_conn()
+        rows = conn.execute("SELECT * FROM signals ORDER BY timestamp").fetchall()
+        conn.close()
+        actionable = [r for r in rows if abs(r["unified_score"] or 0) >= ACTIONABLE_MIN]
+        resolved   = [r for r in actionable if r["outcome"] != "PENDING"]
+        pending    = [r for r in actionable if r["outcome"] == "PENDING"]
+        wins       = [r for r in resolved if r["outcome"] == "WIN"]
+        wr = (len(wins) / len(resolved) * 100) if resolved else 0.0
+        returns = [r["return_pct"] or 0 for r in resolved]
+        avg_ret = sum(returns) / len(returns) if returns else 0.0
+        gains  = sum(r for r in returns if r > 0)
+        losses = abs(sum(r for r in returns if r < 0))
+        pf = gains / losses if losses > 0 else (999.0 if gains > 0 else 0.0)
+        return {
+            "win_rate":      round(wr, 2),
+            "wins":          len(wins),
+            "losses":        len(resolved) - len(wins),
+            "resolved":      len(resolved),
+            "pending":       len(pending),
+            "profit_factor": round(pf, 3),
+            "avg_return":    round(avg_ret * 100, 4),
+        }
+    except Exception:
+        return {}
+
+
 def save_scan_json(scan_results, extra):
     """Save latest_scan.json for the dashboard generator."""
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -472,6 +501,7 @@ def save_scan_json(scan_results, extra):
         "timestamp":      now,
         "engines_online": int(extra.get("engines_online") or 0),
         "engines":        engines,
+        "accuracy":       _read_accuracy_stats(),
         "active_signals": active,
         "watchlist":      watchlist,   # all symbols regardless of threshold
         "carry_arb":      carry,
@@ -512,11 +542,11 @@ def run_cycle(portfolio_size=100_000.0, verbose=False):
     logged = log_signals(scan_results)
     print(f"  Logged {logged} new signal(s) (|score| >= {MIN_SCORE}).")
 
-    # 4. Save JSON for dashboard
-    save_scan_json(scan_results, extra)
-
-    # 5. Accuracy report
+    # 4. Accuracy report (must run before JSON so accuracy block is populated)
     compute_accuracy_report()
+
+    # 5. Save JSON for dashboard (accuracy block reads from DB computed above)
+    save_scan_json(scan_results, extra)
 
     # 6. Perpetual arb paper trader (update + open + report)
     try:
@@ -534,6 +564,7 @@ def main():
     parser.add_argument("--watch",     type=int, metavar="SECONDS", help="Repeat every N seconds")
     parser.add_argument("--report",    action="store_true", help="Show report only, no scan")
     parser.add_argument("--clear",     action="store_true", help="Delete the signals database and start fresh")
+    parser.add_argument("--prune",     action="store_true", help="Delete MONITORING tier signals (|score|<35) — keeps ACTIONABLE signals intact")
     parser.add_argument("--portfolio", type=float, default=100_000.0, help="Portfolio size USD")
     args = parser.parse_args()
 
@@ -546,6 +577,17 @@ def main():
         conn.commit()
         conn.close()
         print("Database cleared.")
+        return
+
+    if args.prune:
+        conn = get_conn()
+        before = conn.execute("SELECT COUNT(*) FROM signals").fetchone()[0]
+        conn.execute("DELETE FROM signals WHERE ABS(unified_score) < 35")
+        conn.execute("DELETE FROM accuracy_summary")
+        after = conn.execute("SELECT COUNT(*) FROM signals").fetchone()[0]
+        conn.commit()
+        conn.close()
+        print(f"Pruned {before - after} MONITORING tier signals (|score|<35). {after} ACTIONABLE signals remain.")
         return
 
     if args.report:

@@ -54,10 +54,16 @@ def load_signals_db():
         return []
 
 
+ACTIONABLE_SCORE = 35  # Only score >= this counts toward WR/PF stats
+
+
 def compute_stats(signals):
-    resolved = [s for s in signals if s.get("outcome") != "PENDING"]
-    pending  = [s for s in signals if s.get("outcome") == "PENDING"]
-    wins     = [s for s in resolved if s.get("outcome") == "WIN"]
+    # Main KPIs use ACTIONABLE signals only (|score| >= 35)
+    # Monitoring tier (15-34) has ~27% WR by noise — excluded from performance stats
+    actionable = [s for s in signals if abs(s.get("unified_score", 0)) >= ACTIONABLE_SCORE]
+    resolved   = [s for s in actionable if s.get("outcome") != "PENDING"]
+    pending    = [s for s in signals if s.get("outcome") == "PENDING"]
+    wins       = [s for s in resolved if s.get("outcome") == "WIN"]
 
     win_rate = len(wins) / len(resolved) if resolved else 0.0
     returns  = [s.get("return_pct") or 0 for s in resolved]
@@ -67,7 +73,7 @@ def compute_stats(signals):
     losses = abs(sum(r for r in returns if r < 0))
     pf     = gains / losses if losses > 0 else (99.0 if gains > 0 else 0.0)
 
-    # Equity curve: cumulative avg return per day
+    # Equity curve: cumulative avg return per day (actionable only)
     daily = {}
     for s in sorted(resolved, key=lambda x: x.get("timestamp", "")):
         day = str(s.get("timestamp", ""))[:10]
@@ -81,7 +87,7 @@ def compute_stats(signals):
         cum += avg
         equity.append({"date": day, "cum": round(cum, 4)})
 
-    # Per-symbol win rates
+    # Per-symbol win rates (actionable only)
     sym_stats = {}
     for s in resolved:
         sym = s.get("symbol", "?")
@@ -92,16 +98,36 @@ def compute_stats(signals):
             sym_stats[sym]["wins"] += 1
     sym_wrs = {k: round(v["wins"] / v["n"] * 100, 1) for k, v in sym_stats.items() if v["n"] > 0}
 
+    # Score tier breakdown for display
+    tiers = {}
+    for label, lo, hi in [("PERFECT", 65, 101), ("HIGH", 50, 65), ("MODERATE", 35, 50), ("MONITOR", 15, 35)]:
+        tier_sigs = [s for s in signals if lo <= abs(s.get("unified_score", 0)) < hi]
+        tier_res  = [s for s in tier_sigs if s.get("outcome") != "PENDING"]
+        tier_wins = [s for s in tier_res if s.get("outcome") == "WIN"]
+        tier_rets = [s.get("return_pct") or 0 for s in tier_res]
+        tiers[label] = {
+            "n":       len(tier_sigs),
+            "res":     len(tier_res),
+            "wr":      round(len(tier_wins) / len(tier_res) * 100, 1) if tier_res else 0,
+            "avg_ret": round(sum(tier_rets) / len(tier_rets), 3) if tier_rets else 0,
+        }
+
+    # Count monitoring-only signals (excluded from main stats)
+    monitoring_count = len([s for s in signals if abs(s.get("unified_score", 0)) < ACTIONABLE_SCORE])
+
     return {
-        "total":     len(signals),
-        "resolved":  len(resolved),
-        "pending":   len(pending),
-        "wins":      len(wins),
-        "win_rate":  round(win_rate * 100, 1),
-        "avg_ret":   round(avg_ret, 3),
-        "pf":        round(pf, 2),
-        "equity":    equity,
-        "sym_wrs":   sym_wrs,
+        "total":             len(signals),
+        "actionable":        len(actionable),
+        "monitoring_only":   monitoring_count,
+        "resolved":          len(resolved),
+        "pending":           len(pending),
+        "wins":              len(wins),
+        "win_rate":          round(win_rate * 100, 1),
+        "avg_ret":           round(avg_ret, 3),
+        "pf":                round(pf, 2),
+        "equity":            equity,
+        "sym_wrs":           sym_wrs,
+        "tiers":             tiers,
     }
 
 
@@ -886,6 +912,67 @@ a{color:#00d4aa;text-decoration:none}
 """
 
 
+def _build_tier_breakdown(tiers, monitoring_count):
+    """Score tier breakdown bar shown below the main stats."""
+    rows = ""
+    tier_config = [
+        ("PERFECT",  "★★★",  "#ffd700", "≥65"),
+        ("HIGH",     "★★",   "#00d4aa", "50-64"),
+        ("MODERATE", "★",    "#64a0ff", "35-49"),
+        ("MONITOR",  "○",    "#ff9f40", "15-34"),
+    ]
+    for key, stars, color, rng in tier_config:
+        t = tiers.get(key, {})
+        n   = t.get("n", 0)
+        res = t.get("res", 0)
+        wr  = t.get("wr", 0)
+        avg = t.get("avg_ret", 0)
+        if n == 0:
+            continue
+        wr_color = "#00d4aa" if wr >= 55 else ("#ffd060" if wr >= 40 else "#ff6b6b")
+        is_monitor = key == "MONITOR"
+        note = " — excluded from main stats (noise)" if is_monitor else ""
+        opacity = "0.5" if is_monitor else "1"
+        rows += f'''
+<div class="tier-row" style="opacity:{opacity}">
+  <div class="tier-stars" style="color:{color}">{stars}</div>
+  <div class="tier-label">{key} ({rng})</div>
+  <div class="tier-n">{n} signals</div>
+  <div class="tier-res">{res} resolved</div>
+  <div class="tier-wr" style="color:{wr_color}">{wr:.1f}% WR</div>
+  <div class="tier-ret" style="color:{'#00d4aa' if avg > 0 else '#ff6b6b'}">{avg:+.3f}%</div>
+  <div class="tier-note" style="color:#8095a8;font-size:10px">{note}</div>
+</div>'''
+
+    if not rows:
+        return ""
+
+    return f'''<div class="section tier-breakdown-section" style="margin-bottom:20px">
+  <div class="section-title">Signal Quality Breakdown
+    <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">
+      Win Rate / Avg Return per tier · only ★ ACTIONABLE tiers count toward main stats
+    </span>
+  </div>
+  <div class="tier-grid">{rows}</div>
+  {'<div style="font-size:11px;color:#ff9f40;margin-top:8px">⚠ ' + str(monitoring_count) + ' MONITORING signals (score 15-34) excluded from Win Rate — these had ~27% WR and represent noise, not trades.</div>' if monitoring_count > 0 else ''}
+</div>
+<style>
+.tier-grid {{display:flex;flex-direction:column;gap:6px}}
+.tier-row {{display:grid;grid-template-columns:28px 110px 90px 90px 80px 80px 1fr;
+           align-items:center;gap:10px;padding:8px 12px;border-radius:7px;
+           background:#111928;border:1px solid rgba(255,255,255,0.05)}}
+.tier-stars {{font-size:13px;text-align:center}}
+.tier-label {{font-size:12px;font-weight:700;color:#fff}}
+.tier-n {{font-size:12px;color:#8095a8}}
+.tier-res {{font-size:12px;color:#8095a8}}
+.tier-wr {{font-size:13px;font-weight:700}}
+.tier-ret {{font-size:12px;font-weight:600}}
+.tier-note {{font-size:10px}}
+@media(max-width:700px){{.tier-row{{grid-template-columns:28px 1fr 60px 60px}}
+  .tier-res,.tier-note{{display:none}}}}
+</style>'''
+
+
 # ── MAIN BUILDER ─────────────────────────────────────────────────────────────
 
 def build_html(scan, signals, stats, arb=None):
@@ -930,15 +1017,15 @@ def build_html(scan, signals, stats, arb=None):
   </div>
 </div>
 
-<!-- Stats Bar -->
+<!-- Stats Bar (ACTIONABLE signals only: |score| >= 35) -->
 <div class="stats-bar">
   <div class="stat-card">
-    <div class="stat-label">Total Signals Logged</div>
-    <div class="stat-val">{stats['total']}</div>
-    <div class="stat-sub">{stats['resolved']} resolved · {stats['pending']} pending</div>
+    <div class="stat-label">Actionable Signals <span style="font-size:10px;color:#8095a8">(score ≥35)</span></div>
+    <div class="stat-val">{stats['actionable']}</div>
+    <div class="stat-sub">{stats['resolved']} resolved · {stats['pending']} pending · {stats['total']} total logged</div>
   </div>
   <div class="stat-card">
-    <div class="stat-label">Win Rate</div>
+    <div class="stat-label">Win Rate <span style="font-size:10px;color:#8095a8">(score ≥35)</span></div>
     <div class="stat-val {wr_cls}">{wr}%</div>
     <div class="stat-sub">{stats['wins']} wins / {stats['resolved']} resolved</div>
   </div>
@@ -953,6 +1040,9 @@ def build_html(scan, signals, stats, arb=None):
     <div class="stat-sub">Net of 0.3% fee threshold</div>
   </div>
 </div>
+
+<!-- Score Tier Breakdown -->
+{_build_tier_breakdown(stats['tiers'], stats['monitoring_only'])}
 
 <!-- Charts -->
 <div class="charts-grid">
