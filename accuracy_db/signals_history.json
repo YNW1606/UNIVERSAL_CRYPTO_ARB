@@ -1,6 +1,15 @@
 {
-  "generated_at": "2026-11-14 19:50 UTC",
+  "generated_at": "2026-11-14 19:55 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-14T19:55",
+      "symbol": "XRPUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-14T19:46",
       "symbol": "BTCUSDT",
@@ -556,8 +565,8 @@
       "direction": "SHORT",
       "score": -36,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 0.5163
     },
     {
       "timestamp": "2026-11-14T15:49",
@@ -891,15 +900,6 @@
       "tier": "MODERATE",
       "outcome": "WIN",
       "return_pct": 3.0255
-    },
-    {
-      "timestamp": "2026-11-14T11:27",
-      "symbol": "OPUSDT",
-      "direction": "SHORT",
-      "score": -35,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 3.9548
     }
   ]
 }
