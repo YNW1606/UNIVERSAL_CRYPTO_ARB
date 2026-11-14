@@ -1,6 +1,15 @@
 {
-  "generated_at": "2026-11-14 20:21 UTC",
+  "generated_at": "2026-11-14 20:26 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-14T20:25",
+      "symbol": "OPUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-14T20:18",
       "symbol": "LINKUSDT",
@@ -493,8 +502,8 @@
       "direction": "SHORT",
       "score": -43,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": 0.259
     },
     {
       "timestamp": "2026-11-14T16:19",
@@ -891,15 +900,6 @@
       "tier": "MODERATE",
       "outcome": "WIN",
       "return_pct": 4.0111
-    },
-    {
-      "timestamp": "2026-11-14T13:17",
-      "symbol": "BTCUSDT",
-      "direction": "SHORT",
-      "score": -40,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 2.1924
     }
   ]
 }
