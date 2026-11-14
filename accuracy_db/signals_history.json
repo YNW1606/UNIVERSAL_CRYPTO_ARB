@@ -1,6 +1,15 @@
 {
-  "generated_at": "2026-11-14 14:27 UTC",
+  "generated_at": "2026-11-14 14:32 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-14T14:28",
+      "symbol": "BTCUSDT",
+      "direction": "SHORT",
+      "score": -37,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-14T14:25",
       "symbol": "AVAXUSDT",
