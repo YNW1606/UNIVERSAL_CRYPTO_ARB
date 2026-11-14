@@ -1,6 +1,15 @@
 {
-  "generated_at": "2026-11-14 19:25 UTC",
+  "generated_at": "2026-11-14 19:30 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-14T19:27",
+      "symbol": "APTUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-14T19:25",
       "symbol": "SOLUSDT",
@@ -529,8 +538,8 @@
       "direction": "SHORT",
       "score": -40,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -0.5644
     },
     {
       "timestamp": "2026-11-14T15:20",
@@ -891,15 +900,6 @@
       "tier": "MODERATE",
       "outcome": "WIN",
       "return_pct": 3.706
-    },
-    {
-      "timestamp": "2026-11-14T10:55",
-      "symbol": "ATOMUSDT",
-      "direction": "SHORT",
-      "score": -35,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 1.0559
     }
   ]
 }
