@@ -152,7 +152,8 @@ SQUEEZE_TP_PCT        = 0.05    # 5% take-profit
 SQUEEZE_RECOVER_ANN   = 10.0    # funding back above 10%/yr → thesis played out, exit
 SQUEEZE_MAX_HOURS     = 168     # 7 days max hold
 SQUEEZE_HIST_PERIODS  = 90      # 30 days × 3 prints/day
-BASIS_MIN_PCT       = 0.20
+BASIS_MIN_PCT       = 0.20   # min basis for SPOT_PREMIUM/DISCOUNT entry
+BASIS_MAX_PCT       = 2.00   # max basis — above this it's structural, not convergence play
 BASIS_EXIT_PCT      = 0.04
 BASIS_STOP_PCT      = 0.60
 CARRY_MAX_DAYS      = 30
@@ -443,7 +444,11 @@ def scan_opportunities():
                 "score":        abs(ann_pct),
             })
 
-        if basis_pct >= BASIS_MIN_PCT:
+        # Whitelist check applies to ALL strategies — no junk tokens in any path
+        if sym not in CARRY_WHITELIST:
+            continue
+
+        if BASIS_MIN_PCT <= basis_pct <= BASIS_MAX_PCT:
             opps.append({
                 "strategy":     "SPOT_PREMIUM",
                 "symbol":       sym,
@@ -456,7 +461,7 @@ def scan_opportunities():
                 "volume24h":    vol,
                 "score":        basis_pct * 10,
             })
-        elif basis_pct <= -BASIS_MIN_PCT:
+        elif -BASIS_MAX_PCT <= basis_pct <= -BASIS_MIN_PCT:
             opps.append({
                 "strategy":     "SPOT_DISCOUNT",
                 "symbol":       sym,
@@ -808,6 +813,7 @@ def _basis_pnl(trade, spot_now, perp_now):
 def _should_close(trade, spot_now, perp_now, fr):
     """
     Smart exit logic — checks in priority order:
+      -1. WHITELIST_EVICT    (symbol no longer on CARRY_WHITELIST — close immediately)
       0. FUNDING_SQUEEZE own book (2% stop / 5% TP / rate recovered / 7d max)
       1. Hard stop loss      (-1.0% of position)
       2. Profit target       (+3.0% of the remainder)
@@ -821,6 +827,9 @@ def _should_close(trade, spot_now, perp_now, fr):
       8. Max duration        (30d carry / 72h basis)
     """
     strategy    = trade["strategy"]
+    # Priority -1: evict tokenized stocks / junk tokens that slipped in before whitelist was enforced
+    if trade["symbol"] not in CARRY_WHITELIST:
+        return "WHITELIST_EVICT"
     size_usd    = float(trade["size_usd"] or POSITION_USD)
     unrealized  = float(trade["unrealized_pnl"] or 0)
     peak_pnl    = float(trade["peak_pnl"] or 0)
@@ -1019,6 +1028,13 @@ def update_positions():
     opened = closed = funding_applied = 0
     for trade in open_trades:
         sym = trade["symbol"]
+
+        # Evict non-whitelisted symbols immediately (no price fetch needed)
+        if sym not in CARRY_WHITELIST:
+            close_trade(trade["id"], 0.0, 0.0, "WHITELIST_EVICT")
+            closed += 1
+            continue
+
         try:
             spot_now  = fetch_ticker_price(sym)
             fund_data = fetch_funding_rate(sym)
