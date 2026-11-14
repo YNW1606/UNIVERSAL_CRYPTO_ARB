@@ -1,6 +1,15 @@
 {
-  "generated_at": "2026-11-14 14:47 UTC",
+  "generated_at": "2026-11-14 14:52 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-14T14:49",
+      "symbol": "OPUSDT",
+      "direction": "SHORT",
+      "score": -36,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-14T14:41",
       "symbol": "ATOMUSDT",
