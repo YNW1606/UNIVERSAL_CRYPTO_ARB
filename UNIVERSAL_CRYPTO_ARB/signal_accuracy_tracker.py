@@ -418,6 +418,35 @@ def compute_accuracy_report():
 
 # ── JSON EXPORT ───────────────────────────────────────────────────────────────
 
+def _read_accuracy_stats():
+    """Read the latest accuracy summary from DB for embedding in latest_scan.json."""
+    try:
+        conn = get_conn()
+        rows = conn.execute("SELECT * FROM signals ORDER BY timestamp").fetchall()
+        conn.close()
+        actionable = [r for r in rows if abs(r["unified_score"] or 0) >= ACTIONABLE_MIN]
+        resolved   = [r for r in actionable if r["outcome"] != "PENDING"]
+        pending    = [r for r in actionable if r["outcome"] == "PENDING"]
+        wins       = [r for r in resolved if r["outcome"] == "WIN"]
+        wr = (len(wins) / len(resolved) * 100) if resolved else 0.0
+        returns = [r["return_pct"] or 0 for r in resolved]
+        avg_ret = sum(returns) / len(returns) if returns else 0.0
+        gains  = sum(r for r in returns if r > 0)
+        losses = abs(sum(r for r in returns if r < 0))
+        pf = gains / losses if losses > 0 else (999.0 if gains > 0 else 0.0)
+        return {
+            "win_rate":      round(wr, 2),
+            "wins":          len(wins),
+            "losses":        len(resolved) - len(wins),
+            "resolved":      len(resolved),
+            "pending":       len(pending),
+            "profit_factor": round(pf, 3),
+            "avg_return":    round(avg_ret * 100, 4),
+        }
+    except Exception:
+        return {}
+
+
 def save_scan_json(scan_results, extra):
     """Save latest_scan.json for the dashboard generator."""
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -472,6 +501,7 @@ def save_scan_json(scan_results, extra):
         "timestamp":      now,
         "engines_online": int(extra.get("engines_online") or 0),
         "engines":        engines,
+        "accuracy":       _read_accuracy_stats(),
         "active_signals": active,
         "watchlist":      watchlist,   # all symbols regardless of threshold
         "carry_arb":      carry,
@@ -512,11 +542,11 @@ def run_cycle(portfolio_size=100_000.0, verbose=False):
     logged = log_signals(scan_results)
     print(f"  Logged {logged} new signal(s) (|score| >= {MIN_SCORE}).")
 
-    # 4. Save JSON for dashboard
-    save_scan_json(scan_results, extra)
-
-    # 5. Accuracy report
+    # 4. Accuracy report (must run before JSON so accuracy block is populated)
     compute_accuracy_report()
+
+    # 5. Save JSON for dashboard (accuracy block reads from DB computed above)
+    save_scan_json(scan_results, extra)
 
     # 6. Perpetual arb paper trader (update + open + report)
     try:
