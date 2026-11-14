@@ -1,8 +1,11 @@
 """
-12-Factor Quant Alpha Model — Crypto (Binance)
+13-Factor Quant Alpha Model — Crypto (Binance)
 ===============================================
 Factors: Momentum(1h/4h/1d), Reversal(7d), Carry, Volatility, Hurst,
-         Liquidity, Volume-Momentum, OI-Momentum, Technical, Carry-Term
+         Liquidity, Volume-Momentum, OI-Momentum, Technical, Carry-Term,
+         Funding-Carry (F13: annualized funding as holding cost/benefit)
+Enhancements: momentum-persistence 1.5x multiplier (3+ consecutive aligned
+4h bars), eigenvalue-clipped Ledoit-Wolf covariance (noise-factor guard).
 Portfolio: Ledoit-Wolf shrinkage covariance + max-Sharpe SLSQP optimization
 """
 
@@ -23,8 +26,12 @@ os.makedirs(CACHE_DIR, exist_ok=True)
 FACTOR_NAMES = [
     "MOMENTUM_1H", "MOMENTUM_4H", "MOMENTUM_1D", "REVERSAL_7D", "CARRY",
     "VOLATILITY", "TREND_QUALITY", "LIQUIDITY", "VOLUME_MOMENTUM",
-    "OI_MOMENTUM", "TECHNICAL", "CARRY_TERM"
+    "OI_MOMENTUM", "TECHNICAL", "CARRY_TERM", "FUNDING_CARRY"
 ]
+
+# Momentum persistence: 3+ consecutive 4h bars in the same direction
+MOM_PERSIST_BARS = 3
+MOM_PERSIST_MULT = 1.5
 
 
 # ── DATA LAYER ────────────────────────────────────────────────────────────────
@@ -135,7 +142,7 @@ def compute_hurst(prices, min_lag=2, max_lag=20):
 
 def compute_factors_for_symbol(symbol):
     """
-    Compute all 12 factors for one symbol from live Binance data.
+    Compute all 13 factors for one symbol from live Binance data.
     Returns dict: factor_name → float.  Zero on any error (never raises).
     """
     factors = {f: 0.0 for f in FACTOR_NAMES}
@@ -157,9 +164,21 @@ def compute_factors_for_symbol(symbol):
         if len(c1) >= 2:
             factors["MOMENTUM_1H"] = float(log_c1[-1] - log_c1[-2])
 
-        # F2: medium momentum
+        # F2: medium momentum (with persistence multiplier)
         if len(c4) >= 2:
-            factors["MOMENTUM_4H"] = float(log_c4[-1] - log_c4[-2])
+            mom_4h = float(log_c4[-1] - log_c4[-2])
+            # Momentum persistence: if the last MOM_PERSIST_BARS consecutive
+            # 4h bars all moved in the same direction as current momentum,
+            # the signal is more reliable → 1.5x multiplier.
+            try:
+                if len(c4) >= MOM_PERSIST_BARS + 1 and mom_4h != 0.0:
+                    recent_rets = np.diff(log_c4[-(MOM_PERSIST_BARS + 1):])
+                    sign = 1.0 if mom_4h > 0 else -1.0
+                    if np.all(sign * recent_rets > 0):
+                        mom_4h *= MOM_PERSIST_MULT
+            except Exception:
+                pass
+            factors["MOMENTUM_4H"] = mom_4h
 
         # F3: 24h momentum (via 1h bars)
         if len(c1) >= 25:
@@ -228,6 +247,19 @@ def compute_factors_for_symbol(symbol):
             except Exception:
                 pass
 
+        # F13: funding rate carry = annualized funding % / 100
+        # Captures the cost/benefit of holding a leveraged perp position:
+        # funding settles every 8h → 3x/day x 365 days.
+        try:
+            if isinstance(fund_hist, list) and len(fund_hist) > 0:
+                last = fund_hist[-1]
+                if isinstance(last, dict):
+                    fr = float(last.get("fundingRate", 0))
+                    ann_funding_pct = fr * 3 * 365 * 100
+                    factors["FUNDING_CARRY"] = float(ann_funding_pct / 100.0)
+        except Exception:
+            pass
+
     except Exception:
         pass  # return zeros on any outer error
 
@@ -236,9 +268,33 @@ def compute_factors_for_symbol(symbol):
 
 # ── PORTFOLIO MATH ────────────────────────────────────────────────────────────
 
+def _clip_eigenvalues(cov, floor_ratio=0.1):
+    """
+    Eigenvalue clipping: replace eigenvalues below floor_ratio x median
+    with floor_ratio x median. Prevents near-singular covariance from
+    producing extreme portfolio tilts on noisy factors.
+    Returns the reconstructed (symmetric PSD) covariance.
+    """
+    try:
+        eigvals, eigvecs = np.linalg.eigh(cov)
+        med = float(np.median(eigvals))
+        if med <= 0:
+            # Degenerate matrix — fall back to a tiny absolute floor
+            floor = max(float(np.max(eigvals)) * 1e-6, 1e-12)
+        else:
+            floor = floor_ratio * med
+        clipped = np.maximum(eigvals, floor)
+        rebuilt = eigvecs @ np.diag(clipped) @ eigvecs.T
+        return 0.5 * (rebuilt + rebuilt.T)  # enforce symmetry
+    except Exception:
+        return cov
+
+
 def ledoit_wolf_cov(returns_matrix):
     """
-    Analytical Ledoit-Wolf shrinkage toward scaled identity.
+    Analytical Ledoit-Wolf shrinkage toward scaled identity,
+    followed by eigenvalue clipping (floor = 0.1 x median eigenvalue)
+    to prevent extreme portfolio tilts from noisy factors.
     returns_matrix: ndarray (n_time, n_assets).
     """
     T, p = returns_matrix.shape
@@ -260,7 +316,8 @@ def ledoit_wolf_cov(returns_matrix):
     beta_sq /= T ** 2
 
     alpha = float(np.clip(beta_sq / (delta_sq + 1e-20), 0.0, 1.0))
-    return (1.0 - alpha) * S + alpha * target
+    shrunk = (1.0 - alpha) * S + alpha * target
+    return _clip_eigenvalues(shrunk, floor_ratio=0.1)
 
 
 def max_sharpe_weights(expected_returns, cov_matrix, min_w=-0.25, max_w=0.25):
@@ -359,7 +416,7 @@ def run_factor_scan(symbols=None):
     if symbols is None:
         symbols = SYMBOLS
 
-    print(f"Computing 12 factors for {len(symbols)} symbols...")
+    print(f"Computing {len(FACTOR_NAMES)} factors for {len(symbols)} symbols...")
 
     X_rows = []
     factor_dicts = {}
@@ -411,7 +468,7 @@ def run_factor_scan(symbols=None):
     ts = datetime.now(timezone.utc).strftime("%H:%M:%S UTC")
     sep = "═" * 74
     print(f"\n{sep}")
-    print(f"  12-FACTOR QUANT MODEL  |  {ts}")
+    print(f"  {len(FACTOR_NAMES)}-FACTOR QUANT MODEL  |  {ts}")
     print(sep)
 
     # Factor exposure table
@@ -465,7 +522,7 @@ def run_factor_scan(symbols=None):
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description="12-Factor Quant Alpha Model")
+    parser = argparse.ArgumentParser(description="13-Factor Quant Alpha Model")
     parser.add_argument("--symbols", nargs="+", default=None)
     parser.add_argument("--watch", type=int, help="Re-scan interval (seconds)")
     parser.add_argument("--json", action="store_true", help="JSON output")

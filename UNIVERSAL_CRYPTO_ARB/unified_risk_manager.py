@@ -13,6 +13,15 @@ KELLY_SHRINKAGE  = 0.25
 MAX_SINGLE_POS   = 0.15
 RISK_FREE_RATE   = 0.045
 
+# Correlation-adjusted sizing: above this pairwise corr with open positions,
+# new position size is reduced proportionally (up to 50% at corr=1.0).
+NEW_POS_CORR_LIMIT = 0.80
+
+# Drawdown acceleration brake: this many consecutive negative PnL days
+# cuts all new position sizes by LOSS_STREAK_SIZE_CUT until a green day.
+LOSS_STREAK_DAYS     = 3
+LOSS_STREAK_SIZE_CUT = 0.40
+
 CACHE_DIR = "risk_cache"
 os.makedirs(CACHE_DIR, exist_ok=True)
 
@@ -256,6 +265,55 @@ class PositionApprover:
         self.returns_matrix = None
         self.corr_matrix = None
         self.symbols_loaded = []
+        # Drawdown acceleration brake state
+        self.daily_pnl_history = deque(maxlen=30)
+        self.consecutive_loss_days = 0
+
+    # ── Drawdown acceleration brake ──────────────────────────────────────────
+
+    def record_daily_pnl(self, day_pnl):
+        """
+        Record one closed trading day's PnL. 3+ consecutive negative days
+        activates the drawdown acceleration brake (-40% on all new sizes)
+        until a positive day resets it.
+        """
+        try:
+            day_pnl = float(day_pnl)
+            self.daily_pnl_history.append(day_pnl)
+            if day_pnl < 0:
+                self.consecutive_loss_days += 1
+            else:
+                self.consecutive_loss_days = 0
+        except Exception:
+            pass
+
+    def _loss_streak_brake_active(self):
+        return self.consecutive_loss_days >= LOSS_STREAK_DAYS
+
+    # ── Correlation-adjusted new-position sizing ─────────────────────────────
+
+    def _max_corr_with_open_positions(self, symbol):
+        """
+        Max pairwise correlation between the candidate symbol and currently
+        open positions, from the loaded correlation matrix.
+        Returns 0.0 when unavailable (never raises).
+        """
+        try:
+            if (self.corr_matrix is None or not self.open_positions
+                    or not self.symbols_loaded):
+                return 0.0
+            if symbol not in self.symbols_loaded:
+                return 0.0
+            i = self.symbols_loaded.index(symbol)
+            max_corr = 0.0
+            for open_sym in self.open_positions:
+                if open_sym == symbol or open_sym not in self.symbols_loaded:
+                    continue
+                j = self.symbols_loaded.index(open_sym)
+                max_corr = max(max_corr, float(self.corr_matrix[i, j]))
+            return max_corr
+        except Exception:
+            return 0.0
 
     def load_risk_data(self, symbols=None):
         syms = symbols or SYMBOLS
@@ -287,6 +345,22 @@ class PositionApprover:
         if self.corr_matrix is not None and n_open > 0:
             kelly_frac = correlation_adjusted_size(kelly_frac, self.corr_matrix, n_open + 1)
 
+        # Correlation-adjusted new-position sizing: if this symbol is highly
+        # correlated (> NEW_POS_CORR_LIMIT) with any existing position, cut the
+        # new size by (corr - 0.80) / 0.20 x 50% (max 50% cut at corr = 1.0).
+        corr_with_open = self._max_corr_with_open_positions(symbol)
+        corr_reduction = 0.0
+        if corr_with_open > NEW_POS_CORR_LIMIT:
+            corr_reduction = min(
+                (corr_with_open - NEW_POS_CORR_LIMIT) / (1.0 - NEW_POS_CORR_LIMIT) * 0.50,
+                0.50)
+            kelly_frac *= (1.0 - corr_reduction)
+
+        # Drawdown acceleration brake: 3+ consecutive red days → -40% sizing.
+        loss_brake = self._loss_streak_brake_active()
+        if loss_brake:
+            kelly_frac *= (1.0 - LOSS_STREAK_SIZE_CUT)
+
         if action == "REDUCE_SIZE":
             kelly_frac *= 0.5
 
@@ -304,7 +378,12 @@ class PositionApprover:
             "portfolio_size": self.portfolio_size,
             "signal_score": signal_score,
             "dd_status": status,
-            "reason": "APPROVED",
+            "corr_with_open": round(corr_with_open, 3),
+            "corr_size_cut_pct": round(corr_reduction * 100, 1),
+            "loss_streak_brake": loss_brake,
+            "consecutive_loss_days": self.consecutive_loss_days,
+            "reason": "APPROVED" + (" [LOSS-STREAK BRAKE -40%]" if loss_brake else "")
+                      + (f" [CORR CUT -{corr_reduction*100:.0f}%]" if corr_reduction > 0 else ""),
         }
 
     def _current_equity(self):
@@ -336,6 +415,11 @@ class PositionApprover:
             "open_positions": len(self.open_positions),
             "positions": self.open_positions,
             "drawdown": dd_status,
+            "loss_streak": {
+                "consecutive_loss_days": self.consecutive_loss_days,
+                "brake_active": self._loss_streak_brake_active(),
+                "size_cut_pct": LOSS_STREAK_SIZE_CUT * 100 if self._loss_streak_brake_active() else 0.0,
+            },
         }
 
         if self.returns_matrix is not None and self.returns_matrix.shape[0] > 5:

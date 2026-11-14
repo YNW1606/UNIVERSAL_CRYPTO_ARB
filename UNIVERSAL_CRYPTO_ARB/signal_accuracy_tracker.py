@@ -21,7 +21,7 @@ BINANCE = "https://api.binance.com"
 
 WIN_THRESHOLD   = 0.003  # 0.3% net of fees to call it a WIN
 OUTCOME_AFTER_H = 4      # hours after signal → check price
-MIN_SCORE       = 15     # log all signals with |unified_score| >= this (was 35)
+MIN_SCORE       = 35     # only log ACTIONABLE signals (score 35+); monitoring tier (15-34) had 27% WR noise
 ACTIONABLE_MIN  = 35     # "actionable" signals shown prominently in reports
 
 os.makedirs(DB_DIR, exist_ok=True)
@@ -534,6 +534,7 @@ def main():
     parser.add_argument("--watch",     type=int, metavar="SECONDS", help="Repeat every N seconds")
     parser.add_argument("--report",    action="store_true", help="Show report only, no scan")
     parser.add_argument("--clear",     action="store_true", help="Delete the signals database and start fresh")
+    parser.add_argument("--prune",     action="store_true", help="Delete MONITORING tier signals (|score|<35) — keeps ACTIONABLE signals intact")
     parser.add_argument("--portfolio", type=float, default=100_000.0, help="Portfolio size USD")
     args = parser.parse_args()
 
@@ -546,6 +547,17 @@ def main():
         conn.commit()
         conn.close()
         print("Database cleared.")
+        return
+
+    if args.prune:
+        conn = get_conn()
+        before = conn.execute("SELECT COUNT(*) FROM signals").fetchone()[0]
+        conn.execute("DELETE FROM signals WHERE ABS(unified_score) < 35")
+        conn.execute("DELETE FROM accuracy_summary")
+        after = conn.execute("SELECT COUNT(*) FROM signals").fetchone()[0]
+        conn.commit()
+        conn.close()
+        print(f"Pruned {before - after} MONITORING tier signals (|score|<35). {after} ACTIONABLE signals remain.")
         return
 
     if args.report:

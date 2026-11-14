@@ -27,7 +27,21 @@ from datetime import datetime, timezone
 from itertools import combinations
 
 BINANCE_SPOT = "https://api.binance.com"
-SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "DOGEUSDT", "AVAXUSDT", "ADAUSDT"]
+# Sector pairs for genuine relative-value stat arb.
+# BTC-relative pairs excluded: they're beta-correlated, NOT mean-reverting spreads.
+# Backtest confirmed sector pairs have better cointegration on 180-day live data.
+SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "DOGEUSDT", "AVAXUSDT", "ADAUSDT",
+           "ARBUSDT", "OPUSDT", "NEARUSDT", "ATOMUSDT", "DOTUSDT", "UNIUSDT", "LINKUSDT",
+           "SUIUSDT", "APTUSDT", "INJUSDT"]
+PRIORITY_PAIRS = [
+    ("ARBUSDT",  "OPUSDT"),    # Ethereum L2 competitors
+    ("NEARUSDT", "AVAXUSDT"),  # Alt L1 performance
+    ("ETHUSDT",  "BNBUSDT"),   # Large-cap smart contract
+    ("SOLUSDT",  "AVAXUSDT"),  # High-TPS L1
+    ("ATOMUSDT", "DOTUSDT"),   # Interoperability
+    ("UNIUSDT",  "LINKUSDT"),  # Blue-chip DeFi
+    ("SUIUSDT",  "APTUSDT"),   # Move VM L1s (closest competitors)
+]
 CACHE_DIR = "stat_arb_cache"
 os.makedirs(CACHE_DIR, exist_ok=True)
 

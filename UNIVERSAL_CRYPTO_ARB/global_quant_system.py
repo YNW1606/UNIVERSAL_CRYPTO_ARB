@@ -1,7 +1,7 @@
 """
-Global Quant System — 5-Engine Unified Dashboard
+Global Quant System — 6-Engine Unified Dashboard
 Integrates: crypto_master_engine + hft_signal_engine + stat_arb_engine +
-            quant_factor_model + unified_risk_manager
+            quant_factor_model + momentum_alpha_engine + unified_risk_manager
 """
 import time, json, sys, os
 from datetime import datetime, timezone
@@ -11,20 +11,29 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 SYMBOLS = [
     # Large-cap anchors
     "BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT","XRPUSDT",
-    # Mid-cap momentum
-    "DOGEUSDT","ADAUSDT","AVAXUSDT","DOTUSDT","NEARUSDT",
-    # DeFi / ecosystem
-    "LINKUSDT","UNIUSDT","LTCUSDT","TRXUSDT","MATICUSDT",
-    # High-beta altcoins
-    "SUIUSDT","APTUSDT","ARBUSDT","OPUSDT","ATOMUSDT",
+    # Breakout top-performers (180d live backtest: UNI +$4k, NEAR +$3.7k, ARB +$3k, INJ +$2k)
+    "UNIUSDT","NEARUSDT","ARBUSDT","INJUSDT",
+    # Momentum top-performers (180d live backtest: ARB, SUI, OP, SOL, DOT)
+    "SUIUSDT","OPUSDT","DOTUSDT","APTUSDT",
+    # Mid-cap support
+    "DOGEUSDT","ADAUSDT","AVAXUSDT","LINKUSDT",
+    # Stat arb sector pairs (keep for reference, weight=0)
+    "ATOMUSDT","LTCUSDT","TRXUSDT","ADAUSDT",
 ]
+# De-duplicate while preserving order
+_seen = set()
+SYMBOLS = [s for s in SYMBOLS if not (s in _seen or _seen.add(s))]
 PORTFOLIO_SIZE = 100_000.0
 
 ENGINE_WEIGHTS = {
-    "master":   0.40,
-    "hft":      0.20,
-    "factor":   0.25,
-    "stat_arb": 0.15,
+    "master":   0.38,   # 11-layer engine including backtest-validated Layer 11 breakout
+    "momentum": 0.27,   # Backtest: PF 1.77, Sharpe 10.95 — highest quality signals
+    "factor":   0.20,   # Quant factor alpha (eigenvalue-clipped, momentum-persistent)
+    "hft":      0.15,   # Order flow / microstructure
+    # stat_arb weight = 0: backtest proved BTC-relative pairs are NOT cointegrated
+    # (trending spreads on 4h crypto = consistent losses). Re-enable only if
+    # a dedicated HFT stat-arb module with sub-minute tick data is built.
+    "stat_arb": 0.00,
 }
 
 # ── ENGINE LOADERS ───────────────────────────────────────────────────────────
@@ -59,6 +68,13 @@ def load_engines():
         status["factor"] = "✓ ONLINE"
     except Exception as e:
         status["factor"] = f"✗ OFFLINE: {e}"
+
+    try:
+        import momentum_alpha_engine as mae
+        engines["momentum"] = mae
+        status["momentum"] = "✓ ONLINE"
+    except Exception as e:
+        status["momentum"] = f"✗ OFFLINE: {e}"
 
     try:
         import unified_risk_manager as urm
@@ -138,6 +154,23 @@ def collect_stat_arb_signals(engines, symbols):
     except Exception as e:
         print(f"  Stat arb error: {e}")
     return beta_sigs, pairs
+
+
+def collect_momentum_signals(engines, symbols):
+    """Call analyze_momentum() from momentum_alpha_engine (Engine 6)."""
+    if "momentum" not in engines:
+        return {}
+    mae = engines["momentum"]
+    results = {}
+    try:
+        scan = mae.analyze_momentum(symbols)
+        for r in scan:
+            sym = r.get("symbol")
+            if sym:
+                results[sym] = r
+    except Exception as e:
+        print(f"  Momentum engine error: {e}")
+    return results
 
 
 def collect_risk_data(engines, symbols, portfolio_size):
@@ -238,7 +271,8 @@ def _master_score_and_dir(master_data):
     return raw, d
 
 
-def fuse_signals(sym, master_data, hft_data, factor_weight, factor_exp_ret, stat_arb_data):
+def fuse_signals(sym, master_data, hft_data, factor_weight, factor_exp_ret,
+                 stat_arb_data, momentum_data=None):
     """Combine all engines into a single -100..+100 unified_score."""
     scores = {}
 
@@ -272,11 +306,21 @@ def fuse_signals(sym, master_data, hft_data, factor_weight, factor_exp_ret, stat
     else:
         scores["stat_arb"] = 0.0
 
+    # Momentum alpha engine (-100..+100 direct)
+    if momentum_data:
+        try:
+            scores["momentum"] = float(momentum_data.get("score", 0))
+        except Exception:
+            scores["momentum"] = 0.0
+    else:
+        scores["momentum"] = 0.0
+
     unified = int(max(-100, min(100,
-        scores["master"]   * ENGINE_WEIGHTS["master"]  +
-        scores["hft"]      * ENGINE_WEIGHTS["hft"]     +
-        scores["factor"]   * ENGINE_WEIGHTS["factor"]  +
-        scores["stat_arb"] * ENGINE_WEIGHTS["stat_arb"]
+        scores["master"]   * ENGINE_WEIGHTS["master"]   +
+        scores["hft"]      * ENGINE_WEIGHTS["hft"]      +
+        scores["factor"]   * ENGINE_WEIGHTS["factor"]   +
+        scores["stat_arb"] * ENGINE_WEIGHTS["stat_arb"] +
+        scores["momentum"] * ENGINE_WEIGHTS["momentum"]
     )))
 
     direction = "LONG" if unified > 0 else "SHORT" if unified < 0 else "NEUTRAL"
@@ -297,6 +341,7 @@ def fuse_signals(sym, master_data, hft_data, factor_weight, factor_exp_ret, stat
         "factor_weight": factor_weight,
         "factor_exp_ret":factor_exp_ret,
         "stat_arb":      stat_arb_data,
+        "momentum":      momentum_data,
         "master_dir":    m_dir,
     }
 
@@ -308,21 +353,24 @@ def run_global_scan(symbols=None, portfolio_size=PORTFOLIO_SIZE):
     print("\nLoading engines...")
     engines, engine_status = load_engines()
     n_online = sum(1 for s in engine_status.values() if s.startswith("✓"))
-    print(f"  {n_online}/5 engines online")
+    print(f"  {n_online}/6 engines online")
 
-    print("  [1/5] Master engine (8-layer structural)...")
+    print("  [1/6] Master engine (8-layer structural)...")
     master_sigs = collect_master_signals(engines, symbols)
 
-    print("  [2/5] HFT engine (OFI + microprice)...")
+    print("  [2/6] HFT engine (OFI + microprice)...")
     hft_sigs = collect_hft_signals(engines, symbols)
 
-    print("  [3/5] Factor model (12 factors)...")
+    print("  [3/6] Factor model (13 factors)...")
     factor_weights, factor_exp_rets = collect_factor_signals(engines, symbols)
 
-    print("  [4/5] Stat arb (cointegration + BTC beta)...")
+    print("  [4/6] Stat arb (cointegration + BTC beta)...")
     beta_sigs, pair_sigs = collect_stat_arb_signals(engines, symbols)
 
-    print("  [5/5] Risk manager (VaR + Kelly + DD)...")
+    print("  [5/6] Momentum alpha engine (multi-TF trend + squeeze)...")
+    momentum_sigs = collect_momentum_signals(engines, symbols)
+
+    print("  [6/6] Risk manager (VaR + Kelly + DD)...")
     approver, risk_summary = collect_risk_data(engines, symbols, portfolio_size)
 
     print("  Carry arb scan...")
@@ -338,6 +386,7 @@ def run_global_scan(symbols=None, portfolio_size=PORTFOLIO_SIZE):
             factor_weights.get(sym),
             factor_exp_rets.get(sym),
             beta_sigs.get(sym),
+            momentum_sigs.get(sym),
         )
         abs_score = abs(result["unified_score"])
         if approver and abs_score >= 35:
@@ -375,7 +424,7 @@ def print_dashboard(fused, pair_sigs, carry_ops, risk_summary, engine_status, po
     W = 78
     print()
     print("╔" + "═" * W + "╗")
-    hdr = f"  GLOBAL QUANT SYSTEM  ║  {n_online}/5 Engines  ║  {ts}  ║  {session}  "
+    hdr = f"  GLOBAL QUANT SYSTEM  ║  {n_online}/6 Engines  ║  {ts}  ║  {session}  "
     print(f"║{hdr:<{W}}║")
     print("╚" + "═" * W + "╝")
 
@@ -434,6 +483,13 @@ def print_dashboard(fused, pair_sigs, carry_ops, risk_summary, engine_status, po
                 print(f"    StatArb: β_BTC={sa.get('beta_to_btc',0):+.3f}  "
                       f"resid_z={sa.get('residual_z',0):+.3f}  "
                       f"→ {sa.get('trade_direction','N/A')}")
+
+            mo = r.get("momentum") or {}
+            if mo and mo.get("score") is not None:
+                print(f"    Momentum: score={mo.get('score',0):+.1f}  "
+                      f"grade={mo.get('grade','—')}  ADX={mo.get('adx',0):.1f}  "
+                      f"TFs={mo.get('aligned_tfs',0)}/3  "
+                      f"Kelly={mo.get('kelly_pct',0):.2f}% ({mo.get('kelly_mode','N/A')})")
 
             fw = r.get("factor_weight")
             fe = r.get("factor_exp_ret")
@@ -503,7 +559,8 @@ def print_dashboard(fused, pair_sigs, carry_ops, risk_summary, engine_status, po
         "master":   "crypto_master_engine    (8-layer: multi-TF + inst-flow + ML)",
         "hft":      "hft_signal_engine       (OFI + microprice + Kyle λ)",
         "stat_arb": "stat_arb_engine         (cointegration + Kalman filter)",
-        "factor":   "quant_factor_model      (12-factor alpha + portfolio opt)",
+        "factor":   "quant_factor_model      (13-factor alpha + portfolio opt)",
+        "momentum": "momentum_alpha_engine   (multi-TF trend + ADX gate + squeeze)",
         "risk":     "unified_risk_manager    (VaR + Kelly + DD circuit breaker)",
     }
     for key, label in labels.items():
@@ -516,7 +573,7 @@ def print_dashboard(fused, pair_sigs, carry_ops, risk_summary, engine_status, po
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description="Global Quant System — 5-Engine Unified Dashboard")
+    parser = argparse.ArgumentParser(description="Global Quant System — 6-Engine Unified Dashboard")
     parser.add_argument("--portfolio", type=float, default=PORTFOLIO_SIZE)
     parser.add_argument("--watch",  type=int,   help="Re-scan interval in seconds")
     parser.add_argument("--symbols",nargs="+",  default=None)

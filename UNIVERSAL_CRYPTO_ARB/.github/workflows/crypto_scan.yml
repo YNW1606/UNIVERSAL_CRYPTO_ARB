@@ -39,6 +39,9 @@ jobs:
 
     - name: Run 1-minute scan loop (55 iterations ≈ 55 min)
       run: |
+        # One-time prune: remove any MONITORING tier signals from previous runs
+        python signal_accuracy_tracker.py --prune || true
+
         for i in $(seq 1 55); do
           echo "=== Scan $i/55 at $(date -u '+%H:%M:%S UTC') ==="
           START_TIME=$(date +%s)
