@@ -1,6 +1,24 @@
 {
-  "generated_at": "2026-11-14 19:15 UTC",
+  "generated_at": "2026-11-14 19:20 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-14T19:16",
+      "symbol": "BTCUSDT",
+      "direction": "SHORT",
+      "score": -36,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-14T19:16",
+      "symbol": "DOTUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-14T19:12",
       "symbol": "ETHUSDT",
@@ -882,24 +900,6 @@
       "tier": "MODERATE",
       "outcome": "WIN",
       "return_pct": 0.7785
-    },
-    {
-      "timestamp": "2026-11-14T10:53",
-      "symbol": "TRXUSDT",
-      "direction": "LONG",
-      "score": 36,
-      "tier": "MODERATE",
-      "outcome": "LOSS",
-      "return_pct": -1.1483
-    },
-    {
-      "timestamp": "2026-11-14T10:44",
-      "symbol": "ETHUSDT",
-      "direction": "SHORT",
-      "score": -35,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 2.7478
     }
   ]
 }
