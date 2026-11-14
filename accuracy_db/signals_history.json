@@ -1,6 +1,15 @@
 {
-  "generated_at": "2026-11-14 21:54 UTC",
+  "generated_at": "2026-11-14 21:59 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-14T21:58",
+      "symbol": "LINKUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-14T21:53",
       "symbol": "BTCUSDT",
@@ -475,8 +484,8 @@
       "direction": "SHORT",
       "score": -35,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 5.9303
     },
     {
       "timestamp": "2026-11-14T17:56",
@@ -484,8 +493,8 @@
       "direction": "SHORT",
       "score": -35,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 5.3155
     },
     {
       "timestamp": "2026-11-14T17:46",
@@ -891,15 +900,6 @@
       "tier": "MODERATE",
       "outcome": "WIN",
       "return_pct": 0.7525
-    },
-    {
-      "timestamp": "2026-11-14T14:25",
-      "symbol": "AVAXUSDT",
-      "direction": "SHORT",
-      "score": -36,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 3.8234
     }
   ]
 }
