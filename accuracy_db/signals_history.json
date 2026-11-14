@@ -1,6 +1,15 @@
 {
-  "generated_at": "2026-11-14 15:18 UTC",
+  "generated_at": "2026-11-14 15:23 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-14T15:20",
+      "symbol": "OPUSDT",
+      "direction": "SHORT",
+      "score": -36,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-14T15:08",
       "symbol": "BNBUSDT",
@@ -322,8 +331,8 @@
       "direction": "SHORT",
       "score": -35,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 3.8578
     },
     {
       "timestamp": "2026-11-14T11:08",
