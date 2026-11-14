@@ -9,13 +9,13 @@
     "risk": true
   },
   "accuracy": {
-    "win_rate": 39.29,
-    "wins": 11,
-    "losses": 17,
-    "resolved": 28,
-    "pending": 3,
-    "profit_factor": 1.758,
-    "avg_return": 0.248
+    "win_rate": 100.0,
+    "wins": 3,
+    "losses": 0,
+    "resolved": 3,
+    "pending": 25,
+    "profit_factor": 999.0,
+    "avg_return": 1.514
   },
   "active_signals": [
     {
