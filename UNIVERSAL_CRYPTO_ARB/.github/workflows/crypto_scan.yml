@@ -2,21 +2,27 @@ name: Crypto Quant Scan
 
 on:
   schedule:
-    - cron: '0 * * * *'    # Trigger once per hour; loop runs every ~60s internally
+    - cron: '0 * * * *'    # Safety net: fires hourly if self-trigger chain breaks
   workflow_dispatch:         # Manual trigger from GitHub UI
 
 permissions:
   contents: write
+  actions: write             # Needed for self-trigger (workflow_dispatch API)
+
+# Only one scan job at a time — prevents concurrent SQLite writes / DB corruption
+concurrency:
+  group: crypto-scan-singleton
+  cancel-in-progress: false   # Queue rather than cancel; chain stays intact
 
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 58     # Safety: kill before next hourly trigger
+    timeout-minutes: 56       # Leave 2 min headroom for self-trigger step
 
     steps:
     - uses: actions/checkout@v3
       with:
-        fetch-depth: 0   # full history needed for rebase
+        fetch-depth: 0
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -39,13 +45,13 @@ jobs:
         git config --global user.email "quant-bot@github.com"
         git config --global user.name "Quant Bot"
 
-    - name: Run 1-minute scan loop (55 iterations ≈ 55 min)
+    - name: Run 1-minute scan loop (50 iterations ≈ 50 min)
       run: |
-        # One-time prune: remove any MONITORING tier signals from previous runs
+        # One-time prune: remove MONITORING tier noise signals (score < 35)
         python signal_accuracy_tracker.py --prune || true
 
-        for i in $(seq 1 55); do
-          echo "=== Scan $i/55 at $(date -u '+%H:%M:%S UTC') ==="
+        for i in $(seq 1 50); do
+          echo "=== Scan $i/50 at $(date -u '+%H:%M:%S UTC') ==="
           START_TIME=$(date +%s)
 
           python signal_accuracy_tracker.py --once
@@ -54,13 +60,12 @@ jobs:
           REMAINING=$(( 60 - ELAPSED ))
           [ $REMAINING -gt 5 ] && sleep $REMAINING
 
-          # Commit + push every 5 scans (every ~5 min) and on final scan
-          if [ $(( i % 5 )) -eq 0 ] || [ $i -eq 55 ]; then
+          # Commit + push every 5 scans (~5 min) and on final scan
+          if [ $(( i % 5 )) -eq 0 ] || [ $i -eq 50 ]; then
             python generate_dashboard.py
             git add accuracy_db/ docs/
             if ! git diff --staged --quiet; then
-              git commit -m "Scans up to $(date -u '+%Y-%m-%d %H:%M UTC') [scan $i/55]"
-              # Pull remote changes first (ours=local for binary DBs), then push
+              git commit -m "Scans up to $(date -u '+%Y-%m-%d %H:%M UTC') [scan $i/50]"
               git pull --no-rebase -X ours origin main || true
               git push origin HEAD:main
             fi
@@ -68,3 +73,14 @@ jobs:
         done
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    # ── SELF-TRIGGER: immediately queue the next run so scanning is continuous ──
+    # This ensures data updates every ~50 min regardless of GitHub cron reliability.
+    # Concurrency group above guarantees only one job runs at a time (no DB corruption).
+    - name: Queue next scan run
+      if: always()
+      run: |
+        sleep 20
+        gh workflow run crypto_scan.yml --ref main || true
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
