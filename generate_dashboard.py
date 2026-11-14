@@ -648,6 +648,88 @@ def build_history_table(signals):
 </table>'''
 
 
+def _parse_ts(ts_str):
+    """Return (day_str YYYY-MM-DD, time_str HH:MM) from any timestamp format."""
+    s = str(ts_str).replace("+00:00", "").replace("Z", "").replace(" UTC", "").strip()
+    if "T" in s:
+        day, time = s[:10], s[11:16]
+    elif " " in s:
+        parts = s.split(" ")
+        day  = parts[0]
+        time = parts[1][:5] if len(parts) > 1 else "?"
+    else:
+        day, time = s[:10], "?"
+    return day, time
+
+
+def build_daily_trade_log(signals):
+    """Day-grouped signal log: per-day summary header + full chronological list."""
+    if not signals:
+        return '<div class="empty-state">No signal history yet — first scan pending.</div>'
+
+    from collections import OrderedDict
+    days = OrderedDict()
+    for s in sorted(signals, key=lambda x: x.get("timestamp", ""), reverse=True):
+        day, _ = _parse_ts(s.get("timestamp", ""))
+        if day not in days:
+            days[day] = []
+        days[day].append(s)
+
+    html_parts = []
+    for day, sigs in days.items():
+        resolved = [s for s in sigs if s.get("outcome") != "PENDING"]
+        wins     = [s for s in resolved if s.get("outcome") == "WIN"]
+        losses   = [s for s in resolved if s.get("outcome") == "LOSS"]
+        pending  = [s for s in sigs     if s.get("outcome") == "PENDING"]
+        wr       = len(wins) / len(resolved) * 100 if resolved else 0
+        rets     = [s.get("return_pct") or 0 for s in resolved]
+        avg_ret  = sum(rets) / len(rets) if rets else 0
+        wr_color  = "#00d4aa" if wr >= 55 else ("#ffd060" if wr >= 45 else "#ff6b6b")
+        avg_color = "#00d4aa" if avg_ret >= 0 else "#ff6b6b"
+
+        pend_badge = (f'<span class="ds-badge ds-pend">{len(pending)} pending</span>'
+                      if pending else "")
+        wr_badge   = (f'<span class="ds-badge" style="color:{wr_color}">{wr:.0f}% WR</span>'
+                      if resolved else "")
+        avg_badge  = (f'<span class="ds-badge" style="color:{avg_color}">{avg_ret:+.2f}% avg</span>'
+                      if resolved else "")
+
+        html_parts.append(f'''<div class="dlog-day-header">
+  <span class="dlog-date">&#128197; {day}</span>
+  <span class="dlog-daystats">
+    <span class="ds-badge ds-total">{len(sigs)} signals</span>
+    <span class="ds-badge ds-win">&#9650; {len(wins)} WIN</span>
+    <span class="ds-badge ds-loss">&#9660; {len(losses)} LOSS</span>
+    {pend_badge}{wr_badge}{avg_badge}
+  </span>
+</div>''')
+
+        for s in sorted(sigs, key=lambda x: x.get("timestamp", ""), reverse=True):
+            _, time  = _parse_ts(s.get("timestamp", ""))
+            sym      = s.get("symbol", "?")
+            dirn     = s.get("direction", "?")
+            sc       = s.get("unified_score", 0)
+            oc       = s.get("outcome", "PENDING")
+            ret      = s.get("return_pct")
+            ret_str  = f"{ret:+.2f}%" if ret is not None else "—"
+            ret_cls  = "pos" if (ret or 0) > 0 else ("neg" if (ret or 0) < 0 else "")
+            dir_cls  = "long" if dirn == "LONG" else "short"
+            row_cls  = ("dlog-row-win" if oc == "WIN"
+                        else ("dlog-row-loss" if oc == "LOSS" else "dlog-row-pend"))
+
+            html_parts.append(f'''<div class="dlog-row {row_cls}">
+  <span class="dlog-time mono">{time} UTC</span>
+  <span class="dlog-sym"><b>{sym.replace("USDT","")}</b></span>
+  <span class="dlog-dir {dir_cls}">{dirn}</span>
+  <span class="dlog-tier">{_tier_badge(sc)}</span>
+  <span class="dlog-score mono">{sc:+d}</span>
+  <span class="dlog-oc">{_outcome_badge(oc)}</span>
+  <span class="dlog-ret {ret_cls} mono">{ret_str}</span>
+</div>''')
+
+    return f'<div class="dlog-wrap">{"".join(html_parts)}</div>'
+
+
 # ── CHART DATA ───────────────────────────────────────────────────────────────
 
 def chart_equity(equity):
@@ -909,6 +991,47 @@ a{color:#00d4aa;text-decoration:none}
   .risk-grid{grid-template-columns:1fr}
   .cards-grid{grid-template-columns:1fr}
 }
+
+/* Daily Trade Log */
+.dlog-wrap{display:flex;flex-direction:column;gap:3px}
+.dlog-day-header{
+  display:flex;align-items:center;gap:14px;
+  padding:10px 16px;margin-top:14px;
+  background:linear-gradient(90deg,#0f1f38,#0d1526);
+  border-radius:8px;border:1px solid rgba(0,212,170,0.18);
+}
+.dlog-day-header:first-child{margin-top:0}
+.dlog-date{font-size:13px;font-weight:700;color:#fff;min-width:120px;flex-shrink:0}
+.dlog-daystats{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ds-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:5px;white-space:nowrap}
+.ds-total{background:rgba(255,255,255,0.07);color:#c0cfe0}
+.ds-win{background:rgba(0,212,170,0.12);color:#00d4aa;border:1px solid rgba(0,212,170,0.25)}
+.ds-loss{background:rgba(255,107,107,0.12);color:#ff6b6b;border:1px solid rgba(255,107,107,0.25)}
+.ds-pend{background:rgba(255,255,255,0.05);color:#8095a8}
+.dlog-row{
+  display:grid;
+  grid-template-columns:62px 68px 54px 110px 40px 90px 60px;
+  align-items:center;gap:10px;
+  padding:7px 14px 7px 28px;
+  border-radius:6px;font-size:12px;
+  border-left:2px solid transparent;
+}
+.dlog-row:hover{background:rgba(255,255,255,0.03)}
+.dlog-row-win{border-left-color:rgba(0,212,170,0.5)}
+.dlog-row-loss{border-left-color:rgba(255,107,107,0.5)}
+.dlog-row-pend{border-left-color:rgba(128,149,168,0.3)}
+.dlog-time{color:#8095a8;font-size:11px}
+.dlog-sym{font-size:13px}
+.dlog-dir{font-size:11px;font-weight:700}
+.dlog-tier{}
+.dlog-score{font-size:11px;text-align:right}
+.dlog-oc{}
+.dlog-ret{font-size:12px;text-align:right}
+@media(max-width:700px){
+  .dlog-row{grid-template-columns:52px 1fr 50px auto auto;gap:6px}
+  .dlog-tier,.dlog-score{display:none}
+  .dlog-day-header{flex-direction:column;align-items:flex-start;gap:6px}
+}
 """
 
 
@@ -1013,7 +1136,7 @@ def build_html(scan, signals, stats, arb=None):
   <div class="header-right">
     <div class="ts">{scan_ts}</div>
     <div class="sub">Last scan &nbsp;|&nbsp; <span class="engines-pill">{n_online}/5 Engines Online</span></div>
-    <div class="sub" style="margin-top:4px;font-size:10px">Auto-refreshes every 10 min &nbsp;|&nbsp; <a href="https://github.com/YNW1606/UNIVERSAL_CRYPTO_ARB" target="_blank">GitHub ↗</a></div>
+    <div class="sub" style="margin-top:4px;font-size:10px">Auto-refreshes every 10 min &nbsp;|&nbsp; BloomAI Quant System</div>
   </div>
 </div>
 
@@ -1102,16 +1225,16 @@ def build_html(scan, signals, stats, arb=None):
   {build_engine_status(scan)}
 </div>
 
-<!-- Signal History -->
+<!-- Daily Trade Log -->
 <div class="section">
-  <div class="section-title">Signal History  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">last 50 signals</span></div>
-  {build_history_table(signals)}
+  <div class="section-title">Daily Trade Log  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">all signals · grouped by day · newest first</span></div>
+  {build_daily_trade_log(signals)}
 </div>
 
 <div class="footer">
   Generated at {now_str} &nbsp;·&nbsp;
-  GitHub Actions scan every ~1 min &nbsp;·&nbsp; Tracking {len(scan.get("watchlist") or [])} symbols &nbsp;·&nbsp;
-  <a href="https://github.com/YNW1606/UNIVERSAL_CRYPTO_ARB" target="_blank">Source Code</a>
+  Auto-scan every ~1 min &nbsp;·&nbsp; Tracking {len(scan.get("watchlist") or [])} symbols &nbsp;·&nbsp;
+  BloomAI Quant System &nbsp;·&nbsp; <a href="https://bloomai.technology/quant/" target="_blank">bloomai.technology/quant</a>
 </div>
 
 </div>
