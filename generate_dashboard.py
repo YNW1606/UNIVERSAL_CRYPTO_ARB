@@ -454,11 +454,69 @@ def build_perp_arb_panel(arb):
         "n_open":           n_open,
     })
 
+    # Scanner watchlist section (shown when no open positions)
+    scan_time    = arb.get("scan_time", "")
+    scan_regime  = arb.get("scan_regime", "UNKNOWN")
+    scan_btc     = arb.get("scan_btc_24h", 0) or 0
+    scan_floor   = arb.get("scan_carry_floor", 22) or 22
+    scan_wl      = arb.get("scan_watchlist") or []
+    regime_cls   = "pos" if scan_regime == "BULL" else ("red" if scan_regime == "BEAR" else "yellow")
+    watchlist_rows = ""
+    for w in scan_wl[:8]:
+        sym      = w.get("symbol","?").replace("USDT","")
+        bpct     = w.get("basis_pct", 0) or 0
+        ann      = w.get("ann_pct", 0) or 0
+        need_pct = w.get("need_pct", 0) or 0
+        b_cls    = "neg" if bpct < 0 else "pos"
+        watchlist_rows += (
+            f'<tr>'
+            f'<td><b>{sym}</b></td>'
+            f'<td class="{b_cls}">{bpct:+.3f}%</td>'
+            f'<td class="act" style="font-size:11px">need {need_pct:+.3f}% more</td>'
+            f'<td style="color:#8095a8;font-size:11px">{ann:+.1f}%/yr</td>'
+            f'</tr>\n'
+        )
+    watchlist_html = ""
+    if watchlist_rows and n_open == 0:
+        watchlist_html = f'''
+<div class="arb-sub-title">Watching — Near Threshold (basis 0.05-0.20%)</div>
+<table class="data-table" style="margin-bottom:12px">
+<thead><tr><th>Symbol</th><th>Basis Now</th><th>Gap to Entry</th><th>Funding</th></tr></thead>
+<tbody>{watchlist_rows}</tbody>
+</table>'''
+
+    btc_cls = "pos" if scan_btc >= 0 else "red"
+    scanner_status_html = f'''
+<div style="background:rgba(0,180,255,0.07);border:1px solid rgba(0,180,255,0.18);border-radius:8px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+  <span style="display:inline-flex;align-items:center;gap:6px">
+    <span style="width:8px;height:8px;border-radius:50%;background:#00b4ff;display:inline-block;animation:pulse-dot 1.4s ease-in-out infinite"></span>
+    <b style="color:#00b4ff;font-size:13px">Scanner Running</b>
+  </span>
+  <span style="color:#8095a8;font-size:12px">{scan_time}</span>
+  <span class="{regime_cls}" style="font-size:12px">Regime: {scan_regime} · BTC 24h <span class="{btc_cls}">{scan_btc:+.2f}%</span></span>
+  <span style="color:#8095a8;font-size:12px">Carry floor: {scan_floor:.1f}%/yr · Basis min: 0.20%</span>
+  {"<span style='color:#8095a8;font-size:12px'>Watching " + str(len(scan_wl)) + " near-miss candidates</span>" if n_open == 0 else ""}
+  {"<span class='pos' style='font-size:12px'>" + str(n_open) + " positions open</span>" if n_open > 0 else ""}
+</div>
+
+<!-- Live Crypto Prices Board (always visible, updates every 3s) -->
+<div id="live-prices-board" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+  <div class="price-chip" data-sym="BTCUSDT"><span class="pc-sym">BTC</span><span class="pc-price" id="lp-BTCUSDT">—</span><span class="pc-chg" id="lc-BTCUSDT"></span></div>
+  <div class="price-chip" data-sym="ETHUSDT"><span class="pc-sym">ETH</span><span class="pc-price" id="lp-ETHUSDT">—</span><span class="pc-chg" id="lc-ETHUSDT"></span></div>
+  <div class="price-chip" data-sym="SOLUSDT"><span class="pc-sym">SOL</span><span class="pc-price" id="lp-SOLUSDT">—</span><span class="pc-chg" id="lc-SOLUSDT"></span></div>
+  <div class="price-chip" data-sym="BNBUSDT"><span class="pc-sym">BNB</span><span class="pc-price" id="lp-BNBUSDT">—</span><span class="pc-chg" id="lc-BNBUSDT"></span></div>
+  <div class="price-chip" data-sym="XRPUSDT"><span class="pc-sym">XRP</span><span class="pc-price" id="lp-XRPUSDT">—</span><span class="pc-chg" id="lc-XRPUSDT"></span></div>
+  <div class="price-chip" data-sym="DOGEUSDT"><span class="pc-sym">DOGE</span><span class="pc-price" id="lp-DOGEUSDT">—</span><span class="pc-chg" id="lc-DOGEUSDT"></span></div>
+  <div class="price-chip" data-sym="DOTUSDT"><span class="pc-sym">DOT</span><span class="pc-price" id="lp-DOTUSDT">—</span><span class="pc-chg" id="lc-DOTUSDT"></span></div>
+  <div class="price-chip" data-sym="AVAXUSDT"><span class="pc-sym">AVAX</span><span class="pc-price" id="lp-AVAXUSDT">—</span><span class="pc-chg" id="lc-AVAXUSDT"></span></div>
+</div>'''
+
     return f'''
 <script>
 window.PERP_POSITIONS = {js_pos_json};
 window.PERP_SUMMARY   = {js_summary};
 </script>
+{scanner_status_html}
 <!-- Account Balance Bar -->
 <div class="acct-bar">
   <div class="acct-left">
@@ -501,7 +559,7 @@ window.PERP_SUMMARY   = {js_summary};
 <table class="data-table" style="margin-bottom:16px">
 <thead><tr><th>Symbol</th><th>Strategy</th><th>Direction</th><th>Ann Yield</th><th>Basis Entry→Now</th><th>Funding</th><th>Unrealized</th><th>TP / SL</th><th>Age</th></tr></thead>
 <tbody>{open_rows}</tbody>
-</table>""" if open_rows else '<div class="empty-state">No open positions yet — will open on next scan.</div>'}
+</table>""" if open_rows else watchlist_html + '<div class="empty-state" style="margin-top:8px">No entry-ready opportunities — scanning every minute for basis ≥ 0.20% or carry ≥ ' + f'{scan_floor:.0f}%/yr' + '</div>'}
 
 {f"""<div class="arb-sub-title">Recent Closed ({n_close})</div>
 <table class="data-table">
@@ -958,6 +1016,13 @@ a{color:#00d4aa;text-decoration:none}
 @media(max-width:900px){.arb-stats{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:600px){.arb-stats{grid-template-columns:repeat(2,1fr)}}
 
+/* Live Price Chips */
+#live-prices-board{align-items:center}
+.price-chip{display:flex;align-items:center;gap:6px;padding:6px 12px;background:#111928;
+  border:1px solid rgba(255,255,255,0.08);border-radius:20px;font-size:12px;min-width:110px}
+.pc-sym{font-weight:700;color:#8095a8;font-size:11px;width:34px}
+.pc-price{font-weight:700;color:#e2e8f0;font-variant-numeric:tabular-nums;min-width:60px}
+.pc-chg{font-size:10px;font-variant-numeric:tabular-nums;min-width:48px;text-align:right}
 /* Watchlist */
 .watchlist-grid{display:flex;flex-direction:column;gap:6px}
 .wl-row{display:grid;grid-template-columns:72px 1fr 100px 180px;align-items:center;gap:12px;
@@ -1244,17 +1309,19 @@ def build_html(scan, signals, stats, arb=None):
 {wr_js}
 </script>
 <script>
-// ── LIVE P&L TICKER ───────────────────────────────────────────────────────
+// ── LIVE P&L TICKER + PRICE BOARD ────────────────────────────────────────
 (function() {{
   const positions = window.PERP_POSITIONS || [];
   const summary   = window.PERP_SUMMARY   || {{}};
-  if (!positions.length) return;
 
   const startBal   = summary.starting_balance || 1000000;
   const realizedPnl = summary.realized_pnl || 0;
 
+  const PRICE_BOARD_SYMS = ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','XRPUSDT','DOGEUSDT','DOTUSDT','AVAXUSDT'];
+
   let spotPrices = {{}};
   let perpPrices = {{}};
+  let prevPrices = {{}};   // for 24h-change color flash
   let lastFetch  = 0;
   let fetchPending = false;
 
@@ -1269,13 +1336,38 @@ def build_html(scan, signals, stats, arb=None):
       const sData = await sRes.json();
       const pData = await pRes.json();
       for (const t of (sData?.result?.list || [])) spotPrices[t.symbol] = parseFloat(t.lastPrice);
-      for (const t of (pData?.result?.list || [])) perpPrices[t.symbol] = parseFloat(t.lastPrice);
+      for (const t of (pData?.result?.list || [])) {{
+        perpPrices[t.symbol] = parseFloat(t.lastPrice);
+        // Store 24h change pct for the price board
+        if (t.price24hPcnt !== undefined) perpPrices[t.symbol + '_24h'] = parseFloat(t.price24hPcnt) * 100;
+      }}
       lastFetch = Date.now();
       setDot('#00d4aa');  // green = live
+      updatePriceBoard();
     }} catch(e) {{
       setDot('#ff6b6b');  // red = fetch error
     }}
     fetchPending = false;
+  }}
+
+  function updatePriceBoard() {{
+    for (const sym of PRICE_BOARD_SYMS) {{
+      const price = perpPrices[sym] || spotPrices[sym];
+      const chg24h = perpPrices[sym + '_24h'];
+      const pEl = document.getElementById('lp-' + sym);
+      const cEl = document.getElementById('lc-' + sym);
+      if (!price || !pEl) continue;
+      // Format price
+      const p = price;
+      const formatted = p >= 1000 ? '$' + p.toLocaleString('en-US', {{maximumFractionDigits:1}})
+                       : p >= 1   ? '$' + p.toLocaleString('en-US', {{minimumFractionDigits:2, maximumFractionDigits:4}})
+                       : '$' + p.toFixed(5);
+      pEl.textContent = formatted;
+      if (cEl && chg24h !== undefined) {{
+        cEl.textContent = (chg24h >= 0 ? '+' : '') + chg24h.toFixed(2) + '%';
+        cEl.style.color = chg24h >= 0 ? '#00d4aa' : '#ff6b6b';
+      }}
+    }}
   }}
 
   function setDot(color) {{
@@ -1291,6 +1383,8 @@ def build_html(scan, signals, stats, arb=None):
   function recalcAndUpdate() {{
     // Only update DOM if we have fresh prices (< 10s old)
     if (!lastFetch || Date.now() - lastFetch > 10000) return;
+    // Always update price board even with no positions
+    updatePriceBoard();
 
     let totalUnreal = 0;
     for (const pos of positions) {{
