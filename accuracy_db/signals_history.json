@@ -1,6 +1,33 @@
 {
-  "generated_at": "2026-11-14 18:33 UTC",
+  "generated_at": "2026-11-14 18:38 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-14T18:38",
+      "symbol": "LTCUSDT",
+      "direction": "SHORT",
+      "score": -37,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-14T18:37",
+      "symbol": "ETHUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-14T18:35",
+      "symbol": "TRXUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-14T18:28",
       "symbol": "DOGEUSDT",
@@ -475,8 +502,8 @@
       "direction": "SHORT",
       "score": -36,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 2.6117
     },
     {
       "timestamp": "2026-11-14T14:35",
@@ -484,8 +511,8 @@
       "direction": "SHORT",
       "score": -36,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 1.2925
     },
     {
       "timestamp": "2026-11-14T14:35",
@@ -493,8 +520,8 @@
       "direction": "SHORT",
       "score": -36,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 0.9961
     },
     {
       "timestamp": "2026-11-14T14:28",
@@ -873,33 +900,6 @@
       "tier": "MODERATE",
       "outcome": "WIN",
       "return_pct": 2.8729
-    },
-    {
-      "timestamp": "2026-11-14T10:23",
-      "symbol": "BNBUSDT",
-      "direction": "SHORT",
-      "score": -36,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 2.4802
-    },
-    {
-      "timestamp": "2026-11-14T10:23",
-      "symbol": "APTUSDT",
-      "direction": "SHORT",
-      "score": -36,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 2.8733
-    },
-    {
-      "timestamp": "2026-11-14T10:23",
-      "symbol": "BTCUSDT",
-      "direction": "SHORT",
-      "score": -35,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 1.6068
     }
   ]
 }
