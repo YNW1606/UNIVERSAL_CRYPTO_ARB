@@ -1,0 +1,7 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "python signal_accuracy_tracker.py --watch 1800"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
