@@ -1,6 +1,15 @@
 {
-  "generated_at": "2026-11-14 13:30 UTC",
+  "generated_at": "2026-11-14 13:35 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-14T13:33",
+      "symbol": "XRPUSDT",
+      "direction": "SHORT",
+      "score": -37,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-14T13:29",
       "symbol": "SUIUSDT",
@@ -313,8 +322,8 @@
       "direction": "SHORT",
       "score": -43,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 0.4092
     },
     {
       "timestamp": "2026-11-14T09:34",
@@ -322,8 +331,8 @@
       "direction": "SHORT",
       "score": -43,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -0.1121
     },
     {
       "timestamp": "2026-11-14T09:34",
@@ -331,8 +340,8 @@
       "direction": "SHORT",
       "score": -42,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 0.8424
     },
     {
       "timestamp": "2026-11-14T09:34",
@@ -340,8 +349,8 @@
       "direction": "SHORT",
       "score": -39,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 0.3821
     },
     {
       "timestamp": "2026-11-14T09:34",
@@ -349,8 +358,8 @@
       "direction": "SHORT",
       "score": -37,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 2.3607
     },
     {
       "timestamp": "2026-11-14T09:34",
@@ -358,8 +367,8 @@
       "direction": "SHORT",
       "score": -36,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 1.3474
     },
     {
       "timestamp": "2026-11-14T09:34",
@@ -367,8 +376,8 @@
       "direction": "SHORT",
       "score": -35,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 1.1943
     },
     {
       "timestamp": "2026-11-14T09:34",
@@ -376,8 +385,8 @@
       "direction": "SHORT",
       "score": -35,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 0.5883
     },
     {
       "timestamp": "2026-11-14T06:44",
