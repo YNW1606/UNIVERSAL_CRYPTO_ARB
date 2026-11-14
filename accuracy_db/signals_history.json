@@ -1,6 +1,24 @@
 {
-  "generated_at": "2026-11-14 16:14 UTC",
+  "generated_at": "2026-11-14 16:19 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-14T16:19",
+      "symbol": "APTUSDT",
+      "direction": "SHORT",
+      "score": -36,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-14T16:15",
+      "symbol": "LINKUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-14T16:12",
       "symbol": "UNIUSDT",
