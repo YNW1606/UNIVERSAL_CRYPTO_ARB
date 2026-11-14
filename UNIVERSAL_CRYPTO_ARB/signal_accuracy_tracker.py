@@ -518,6 +518,45 @@ def save_scan_json(scan_results, extra):
         print(f"  JSON save error: {e}")
 
 
+def save_signals_history_json():
+    """Export last 100 signals as signals_history.json for the bloomai.technology quant page."""
+    try:
+        conn = get_conn()
+        rows = conn.execute(
+            "SELECT timestamp, symbol, direction, unified_score, outcome, return_pct "
+            "FROM signals ORDER BY timestamp DESC LIMIT 100"
+        ).fetchall()
+        conn.close()
+
+        signals_out = []
+        for r in rows:
+            sc = r["unified_score"] or 0
+            if abs(sc) >= 65:   tier = "PERFECT"
+            elif abs(sc) >= 50: tier = "HIGH"
+            elif abs(sc) >= 35: tier = "MODERATE"
+            else:               tier = "MONITORING"
+            signals_out.append({
+                "timestamp":  str(r["timestamp"])[:16],
+                "symbol":     r["symbol"],
+                "direction":  r["direction"],
+                "score":      sc,
+                "tier":       tier,
+                "outcome":    r["outcome"],
+                "return_pct": r["return_pct"],
+            })
+
+        data = {
+            "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+            "signals": signals_out,
+        }
+        hist_path = os.path.join(DB_DIR, "signals_history.json")
+        with open(hist_path, "w") as f:
+            json.dump(data, f, indent=2, default=str)
+        print(f"  Saved signals_history.json ({len(signals_out)} signals)")
+    except Exception as e:
+        print(f"  signals_history.json save error: {e}")
+
+
 # ── MAIN CYCLE ────────────────────────────────────────────────────────────────
 
 def run_cycle(portfolio_size=100_000.0, verbose=False):
@@ -548,7 +587,10 @@ def run_cycle(portfolio_size=100_000.0, verbose=False):
     # 5. Save JSON for dashboard (accuracy block reads from DB computed above)
     save_scan_json(scan_results, extra)
 
-    # 6. Perpetual arb paper trader (update + open + report)
+    # 6. Export signal history JSON for bloomai.technology/quant page
+    save_signals_history_json()
+
+    # 7. Perpetual arb paper trader (update + open + report)
     try:
         import perp_arb_paper as pap
         pap.init_db()
