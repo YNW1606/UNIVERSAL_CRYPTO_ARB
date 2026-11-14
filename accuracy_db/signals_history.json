@@ -1,6 +1,42 @@
 {
-  "generated_at": "2026-11-14 16:29 UTC",
+  "generated_at": "2026-11-14 16:35 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-14T16:35",
+      "symbol": "ATOMUSDT",
+      "direction": "SHORT",
+      "score": -38,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-14T16:33",
+      "symbol": "ETHUSDT",
+      "direction": "SHORT",
+      "score": -38,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-14T16:33",
+      "symbol": "DOTUSDT",
+      "direction": "SHORT",
+      "score": -37,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-14T16:33",
+      "symbol": "BTCUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-14T16:21",
       "symbol": "TRXUSDT",
