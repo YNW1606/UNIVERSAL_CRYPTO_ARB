@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-14 21:02 UTC",
+  "generated_at": "2026-11-14 21:07 UTC",
   "signals": [
     {
       "timestamp": "2026-11-14T21:01",
@@ -520,8 +520,8 @@
       "direction": "SHORT",
       "score": -36,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 2.1472
     },
     {
       "timestamp": "2026-11-14T16:37",
