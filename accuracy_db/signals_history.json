@@ -1,6 +1,24 @@
 {
-  "generated_at": "2026-11-14 22:09 UTC",
+  "generated_at": "2026-11-14 22:14 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-14T22:13",
+      "symbol": "ETHUSDT",
+      "direction": "SHORT",
+      "score": -38,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-14T22:10",
+      "symbol": "OPUSDT",
+      "direction": "SHORT",
+      "score": -36,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-14T22:06",
       "symbol": "ARBUSDT",
@@ -430,8 +448,8 @@
       "direction": "SHORT",
       "score": -35,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 3.1525
     },
     {
       "timestamp": "2026-11-14T18:12",
@@ -439,8 +457,8 @@
       "direction": "SHORT",
       "score": -37,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 6.6217
     },
     {
       "timestamp": "2026-11-14T18:11",
@@ -448,8 +466,8 @@
       "direction": "SHORT",
       "score": -35,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 7.2072
     },
     {
       "timestamp": "2026-11-14T18:08",
@@ -882,24 +900,6 @@
       "tier": "MODERATE",
       "outcome": "WIN",
       "return_pct": 2.6117
-    },
-    {
-      "timestamp": "2026-11-14T14:35",
-      "symbol": "DOGEUSDT",
-      "direction": "SHORT",
-      "score": -36,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 1.2925
-    },
-    {
-      "timestamp": "2026-11-14T14:35",
-      "symbol": "TRXUSDT",
-      "direction": "SHORT",
-      "score": -36,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 0.9961
     }
   ]
 }
