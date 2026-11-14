@@ -1,6 +1,15 @@
 {
-  "generated_at": "2026-11-14 23:05 UTC",
+  "generated_at": "2026-11-14 23:10 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-14T23:10",
+      "symbol": "BNBUSDT",
+      "direction": "SHORT",
+      "score": -36,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-14T22:59",
       "symbol": "DOTUSDT",
@@ -891,15 +900,6 @@
       "tier": "MODERATE",
       "outcome": "WIN",
       "return_pct": 1.0996
-    },
-    {
-      "timestamp": "2026-11-14T16:01",
-      "symbol": "BTCUSDT",
-      "direction": "SHORT",
-      "score": -37,
-      "tier": "MODERATE",
-      "outcome": "LOSS",
-      "return_pct": -0.3285
     }
   ]
 }
