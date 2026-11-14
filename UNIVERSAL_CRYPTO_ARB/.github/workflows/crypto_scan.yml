@@ -62,11 +62,32 @@ jobs:
 
           # Commit + push every 5 scans (~5 min) and on final scan
           if [ $(( i % 5 )) -eq 0 ] || [ $i -eq 50 ]; then
+            # Save scan data before resetting to latest remote code
+            mkdir -p /tmp/scan_backup
+            cp accuracy_db/signals.db        /tmp/scan_backup/ 2>/dev/null || true
+            cp accuracy_db/latest_scan.json  /tmp/scan_backup/ 2>/dev/null || true
+            cp accuracy_db/perp_arb.json     /tmp/scan_backup/ 2>/dev/null || true
+            cp accuracy_db/perp_arb.db       /tmp/scan_backup/ 2>/dev/null || true
+            cp accuracy_db/signals_history.json /tmp/scan_backup/ 2>/dev/null || true
+
+            # Hard-reset to latest remote so Python code is always up to date
+            # This prevents the runner from reverting code pushes we make from local
+            git fetch origin main
+            git reset --hard origin/main
+
+            # Restore our fresh scan data on top of the latest code
+            cp /tmp/scan_backup/signals.db          accuracy_db/ 2>/dev/null || true
+            cp /tmp/scan_backup/latest_scan.json    accuracy_db/ 2>/dev/null || true
+            cp /tmp/scan_backup/perp_arb.json       accuracy_db/ 2>/dev/null || true
+            cp /tmp/scan_backup/perp_arb.db         accuracy_db/ 2>/dev/null || true
+            cp /tmp/scan_backup/signals_history.json accuracy_db/ 2>/dev/null || true
+
+            # Regenerate dashboard with latest code + fresh scan data
             python generate_dashboard.py
+
             git add accuracy_db/ docs/
             if ! git diff --staged --quiet; then
               git commit -m "Scans up to $(date -u '+%Y-%m-%d %H:%M UTC') [scan $i/50]"
-              git pull --no-rebase -X ours origin main || true
               git push origin HEAD:main
             fi
           fi

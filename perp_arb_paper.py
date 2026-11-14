@@ -352,6 +352,10 @@ def _funding_stats(symbol):
 
 # ── MARKET SCAN ───────────────────────────────────────────────────────────────
 
+# Global cache: near-miss candidates for dashboard display (basis 0.05-0.20%)
+_SCAN_WATCHLIST = []
+_SCAN_REGIME    = {}
+
 def scan_opportunities():
     """
     Fetch ALL Bybit linear perps at once (single API call), score each one,
@@ -361,8 +365,10 @@ def scan_opportunities():
     gated; FUNDING_SQUEEZE candidates are appended from the watchlist.
     Falls back to per-symbol fetch for the SYMBOLS watchlist if bulk fails.
     """
+    global _SCAN_WATCHLIST, _SCAN_REGIME
     regime    = get_market_regime()
     carry_min = regime["carry_min"]
+    _SCAN_REGIME = regime
     print(f"  Regime: {regime['regime']} (BTC 24h {regime['btc_24h_pct']:+.2f}%) → "
           f"carry floor {carry_min*3*365*100:.1f}%/yr")
 
@@ -386,8 +392,15 @@ def scan_opportunities():
                 pass
 
     opps = []
+    watching = []   # near-miss candidates for dashboard display
     for t in all_tickers:
         sym  = t["symbol"]
+
+        # Early whitelist filter — skip spot price fetch for non-whitelisted symbols.
+        # Non-whitelist symbols are always rejected after whitelist checks anyway.
+        if sym not in CARRY_WHITELIST:
+            continue
+
         fr   = float(t.get("fundingRate") or t.get("lastFundingRate") or 0)
         perp = float(t.get("markPrice") or 0)
         vol  = float(t.get("volume24h") or 0)
@@ -402,7 +415,7 @@ def scan_opportunities():
         if vol < MIN_VOLUME_24H:
             continue
 
-        # Fetch spot price
+        # Fetch spot price (now only for whitelisted symbols — 48 max vs 200+)
         try:
             spot = fetch_ticker_price(sym)
         except Exception:
@@ -413,9 +426,6 @@ def scan_opportunities():
         basis_pct = (perp - spot) / spot * 100
 
         if fr >= carry_min:
-            # Whitelist filter: skip tokenized stocks and other exotic assets
-            if sym not in CARRY_WHITELIST:
-                continue
             opps.append({
                 "strategy":     "CARRY_ARB",
                 "symbol":       sym,
@@ -429,8 +439,6 @@ def scan_opportunities():
                 "score":        ann_pct,
             })
         elif fr <= -carry_min:
-            if sym not in CARRY_WHITELIST:
-                continue
             opps.append({
                 "strategy":     "NEG_CARRY",
                 "symbol":       sym,
@@ -443,10 +451,6 @@ def scan_opportunities():
                 "volume24h":    vol,
                 "score":        abs(ann_pct),
             })
-
-        # Whitelist check applies to ALL strategies — no junk tokens in any path
-        if sym not in CARRY_WHITELIST:
-            continue
 
         if BASIS_MIN_PCT <= basis_pct <= BASIS_MAX_PCT:
             opps.append({
@@ -474,6 +478,16 @@ def scan_opportunities():
                 "volume24h":    vol,
                 "score":        abs(basis_pct) * 10,
             })
+        elif 0.05 <= abs(basis_pct) < BASIS_MIN_PCT:
+            # Near-miss: approaching threshold — record for dashboard "watching" display
+            watching.append({
+                "symbol":    sym,
+                "basis_pct": round(basis_pct, 4),
+                "ann_pct":   round(ann_pct, 2),
+                "spot":      round(spot, 6),
+                "perp":      round(perp, 6),
+                "need_pct":  round(BASIS_MIN_PCT - abs(basis_pct), 4),
+            })
 
     opps.sort(key=lambda x: x["score"], reverse=True)
 
@@ -487,6 +501,14 @@ def scan_opportunities():
         pass
 
     opps.sort(key=lambda x: x["score"], reverse=True)
+
+    # Cache near-miss watchlist for dashboard display (closest to threshold first)
+    watching.sort(key=lambda x: abs(x["basis_pct"]), reverse=True)
+    _SCAN_WATCHLIST = watching[:12]
+
+    total_pass = len(opps)
+    total_watch = len(_SCAN_WATCHLIST)
+    print(f"  Scan: {total_pass} entry-ready, {total_watch} watching (near threshold)")
     return opps
 
 
@@ -1379,6 +1401,12 @@ def compute_report(verbose=True):
             }
             for r in sorted(closed, key=lambda x: x["closed_at"] or "", reverse=True)[:20]
         ],
+        # Live scanner state — always populated, even with 0 open positions
+        "scan_time":        datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+        "scan_regime":      _SCAN_REGIME.get("regime", "UNKNOWN"),
+        "scan_btc_24h":     round(_SCAN_REGIME.get("btc_24h_pct", 0), 2),
+        "scan_carry_floor": round((_SCAN_REGIME.get("carry_min", 0) * 3 * 365 * 100), 1),
+        "scan_watchlist":   _SCAN_WATCHLIST,   # near-miss candidates (basis 0.05-0.20%)
     }
 
 
