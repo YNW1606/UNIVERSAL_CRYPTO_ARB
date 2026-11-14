@@ -1,6 +1,24 @@
 {
-  "generated_at": "2026-11-14 17:52 UTC",
+  "generated_at": "2026-11-14 17:57 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-14T17:57",
+      "symbol": "ARBUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-14T17:56",
+      "symbol": "NEARUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-14T17:46",
       "symbol": "XRPUSDT",
@@ -457,8 +475,8 @@
       "direction": "SHORT",
       "score": -36,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 3.9296
     },
     {
       "timestamp": "2026-11-14T13:51",
@@ -882,24 +900,6 @@
       "tier": "MODERATE",
       "outcome": "WIN",
       "return_pct": 0.5883
-    },
-    {
-      "timestamp": "2026-11-14T06:44",
-      "symbol": "OPUSDT",
-      "direction": "SHORT",
-      "score": -43,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 1.2277
-    },
-    {
-      "timestamp": "2026-11-14T06:44",
-      "symbol": "DOGEUSDT",
-      "direction": "SHORT",
-      "score": -41,
-      "tier": "MODERATE",
-      "outcome": "LOSS",
-      "return_pct": -0.1748
     }
   ]
 }
