@@ -1,6 +1,42 @@
 {
-  "generated_at": "2026-11-14 23:25 UTC",
+  "generated_at": "2026-11-14 23:31 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-14T23:31",
+      "symbol": "ETHUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-14T23:28",
+      "symbol": "SUIUSDT",
+      "direction": "SHORT",
+      "score": -37,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-14T23:28",
+      "symbol": "SOLUSDT",
+      "direction": "SHORT",
+      "score": -36,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-14T23:28",
+      "symbol": "TRXUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-14T23:25",
       "symbol": "ADAUSDT",
@@ -466,8 +502,8 @@
       "direction": "SHORT",
       "score": -35,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 5.3533
     },
     {
       "timestamp": "2026-11-14T19:25",
@@ -864,42 +900,6 @@
       "tier": "MODERATE",
       "outcome": "WIN",
       "return_pct": 1.3269
-    },
-    {
-      "timestamp": "2026-11-14T16:12",
-      "symbol": "UNIUSDT",
-      "direction": "SHORT",
-      "score": -36,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 2.5158
-    },
-    {
-      "timestamp": "2026-11-14T16:10",
-      "symbol": "SUIUSDT",
-      "direction": "SHORT",
-      "score": -35,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 1.0924
-    },
-    {
-      "timestamp": "2026-11-14T16:09",
-      "symbol": "DOGEUSDT",
-      "direction": "SHORT",
-      "score": -36,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 1.3871
-    },
-    {
-      "timestamp": "2026-11-14T16:09",
-      "symbol": "ADAUSDT",
-      "direction": "SHORT",
-      "score": -36,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 1.2195
     }
   ]
 }
