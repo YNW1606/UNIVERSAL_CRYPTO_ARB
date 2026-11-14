@@ -1,6 +1,15 @@
 {
-  "generated_at": "2026-11-14 16:35 UTC",
+  "generated_at": "2026-11-14 16:40 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-14T16:37",
+      "symbol": "XRPUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-14T16:35",
       "symbol": "ATOMUSDT",
