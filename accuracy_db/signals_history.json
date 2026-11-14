@@ -1,6 +1,15 @@
 {
-  "generated_at": "2026-11-14 15:49 UTC",
+  "generated_at": "2026-11-14 15:54 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-14T15:50",
+      "symbol": "TRXUSDT",
+      "direction": "SHORT",
+      "score": -36,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-14T15:49",
       "symbol": "ETHUSDT",
