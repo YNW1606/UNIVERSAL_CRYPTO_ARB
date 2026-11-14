@@ -1,6 +1,24 @@
 {
-  "generated_at": "2026-11-14 13:45 UTC",
+  "generated_at": "2026-11-14 13:51 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-14T13:48",
+      "symbol": "OPUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-14T13:47",
+      "symbol": "ETHUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-14T13:45",
       "symbol": "ADAUSDT",
