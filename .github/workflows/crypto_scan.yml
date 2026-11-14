@@ -15,6 +15,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0   # full history needed for rebase
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -58,7 +60,9 @@ jobs:
             git add accuracy_db/ docs/
             if ! git diff --staged --quiet; then
               git commit -m "Scans up to $(date -u '+%Y-%m-%d %H:%M UTC') [scan $i/55]"
-              git push || (git pull --rebase origin main && git push)
+              # Pull remote changes first (ours=local for binary DBs), then push
+              git pull --no-rebase -X ours origin main || true
+              git push origin HEAD:main
             fi
           fi
         done
