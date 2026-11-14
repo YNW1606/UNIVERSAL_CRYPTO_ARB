@@ -1,6 +1,24 @@
 {
-  "generated_at": "2026-11-14 19:30 UTC",
+  "generated_at": "2026-11-14 19:35 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-14T19:35",
+      "symbol": "TRXUSDT",
+      "direction": "SHORT",
+      "score": -36,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-14T19:34",
+      "symbol": "AVAXUSDT",
+      "direction": "SHORT",
+      "score": -36,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-14T19:27",
       "symbol": "APTUSDT",
@@ -882,24 +900,6 @@
       "tier": "MODERATE",
       "outcome": "WIN",
       "return_pct": 3.2263
-    },
-    {
-      "timestamp": "2026-11-14T10:58",
-      "symbol": "BNBUSDT",
-      "direction": "SHORT",
-      "score": -35,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 3.0139
-    },
-    {
-      "timestamp": "2026-11-14T10:57",
-      "symbol": "LTCUSDT",
-      "direction": "SHORT",
-      "score": -35,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 3.706
     }
   ]
 }
