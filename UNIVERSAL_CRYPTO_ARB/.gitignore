@@ -50,3 +50,9 @@ Thumbs.db
 
 # accuracy_db — keep the SQLite DB (GitHub Actions writes to it)
 # accuracy_db/ is intentionally NOT ignored
+# SQLite WAL/lock files — transient, never commit
+*.lock
+*.lock-wal
+*.lock-shm
+*-wal
+*-shm
