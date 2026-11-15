@@ -285,9 +285,9 @@
       "closed_at": "2026-11-13T12:53:34.326777+00:00"
     }
   ],
-  "scan_time": "2026-11-15 01:45 UTC",
+  "scan_time": "2026-11-15 01:50 UTC",
   "scan_regime": "BEAR",
-  "scan_btc_24h": -9.03,
+  "scan_btc_24h": -8.71,
   "scan_carry_floor": 22.0,
   "scan_watchlist": []
 }
