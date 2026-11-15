@@ -1,6 +1,24 @@
 {
-  "generated_at": "2026-11-15 05:36 UTC",
+  "generated_at": "2026-11-15 07:33 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-15T07:31",
+      "symbol": "XRPUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-15T07:30",
+      "symbol": "BTCUSDT",
+      "direction": "SHORT",
+      "score": -37,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-15T05:24",
       "symbol": "TRXUSDT",
@@ -187,8 +205,8 @@
       "direction": "LONG",
       "score": 35,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": 0.0325
     },
     {
       "timestamp": "2026-11-15T03:17",
@@ -196,8 +214,8 @@
       "direction": "SHORT",
       "score": -35,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 1.436
     },
     {
       "timestamp": "2026-11-15T03:17",
@@ -205,8 +223,8 @@
       "direction": "SHORT",
       "score": -35,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": 0.2644
     },
     {
       "timestamp": "2026-11-15T03:16",
@@ -214,8 +232,8 @@
       "direction": "SHORT",
       "score": -35,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 1.0863
     },
     {
       "timestamp": "2026-11-15T03:13",
@@ -223,8 +241,8 @@
       "direction": "SHORT",
       "score": -35,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": 0.2298
     },
     {
       "timestamp": "2026-11-15T03:05",
@@ -232,8 +250,8 @@
       "direction": "LONG",
       "score": 35,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -1.7566
     },
     {
       "timestamp": "2026-11-15T02:58",
@@ -241,8 +259,8 @@
       "direction": "LONG",
       "score": 35,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -0.2919
     },
     {
       "timestamp": "2026-11-15T02:56",
@@ -250,8 +268,8 @@
       "direction": "SHORT",
       "score": -35,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -0.3128
     },
     {
       "timestamp": "2026-11-15T02:54",
@@ -259,8 +277,8 @@
       "direction": "LONG",
       "score": 35,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -0.3181
     },
     {
       "timestamp": "2026-11-15T02:51",
@@ -268,8 +286,8 @@
       "direction": "SHORT",
       "score": -36,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -0.6533
     },
     {
       "timestamp": "2026-11-15T02:46",
@@ -277,8 +295,8 @@
       "direction": "SHORT",
       "score": -40,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 0.6406
     },
     {
       "timestamp": "2026-11-15T02:40",
@@ -286,8 +304,8 @@
       "direction": "SHORT",
       "score": -35,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 0.8652
     },
     {
       "timestamp": "2026-11-15T02:34",
@@ -295,8 +313,8 @@
       "direction": "SHORT",
       "score": -36,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -0.3593
     },
     {
       "timestamp": "2026-11-15T02:29",
@@ -304,8 +322,8 @@
       "direction": "SHORT",
       "score": -37,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": 0.01
     },
     {
       "timestamp": "2026-11-15T02:26",
@@ -313,8 +331,8 @@
       "direction": "SHORT",
       "score": -36,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -1.932
     },
     {
       "timestamp": "2026-11-15T02:25",
@@ -322,8 +340,8 @@
       "direction": "SHORT",
       "score": -35,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -0.9837
     },
     {
       "timestamp": "2026-11-15T02:24",
@@ -331,8 +349,8 @@
       "direction": "SHORT",
       "score": -35,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": 0.0861
     },
     {
       "timestamp": "2026-11-15T02:16",
@@ -340,8 +358,8 @@
       "direction": "SHORT",
       "score": -40,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -0.3654
     },
     {
       "timestamp": "2026-11-15T02:16",
@@ -349,8 +367,8 @@
       "direction": "SHORT",
       "score": -37,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -0.9214
     },
     {
       "timestamp": "2026-11-15T02:15",
@@ -358,8 +376,8 @@
       "direction": "SHORT",
       "score": -35,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": 0.287
     },
     {
       "timestamp": "2026-11-15T02:04",
@@ -367,8 +385,8 @@
       "direction": "SHORT",
       "score": -36,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -4.6463
     },
     {
       "timestamp": "2026-11-15T01:52",
@@ -376,8 +394,8 @@
       "direction": "SHORT",
       "score": -37,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -4.9845
     },
     {
       "timestamp": "2026-11-15T01:52",
@@ -385,8 +403,8 @@
       "direction": "SHORT",
       "score": -35,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -4.1973
     },
     {
       "timestamp": "2026-11-15T01:47",
@@ -394,8 +412,8 @@
       "direction": "SHORT",
       "score": -36,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -6.5905
     },
     {
       "timestamp": "2026-11-15T01:45",
@@ -403,8 +421,8 @@
       "direction": "SHORT",
       "score": -39,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -3.8307
     },
     {
       "timestamp": "2026-11-15T01:44",
@@ -412,8 +430,8 @@
       "direction": "SHORT",
       "score": -37,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -6.5861
     },
     {
       "timestamp": "2026-11-15T01:39",
@@ -421,8 +439,8 @@
       "direction": "SHORT",
       "score": -37,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -5.7287
     },
     {
       "timestamp": "2026-11-15T01:31",
@@ -882,24 +900,6 @@
       "tier": "MODERATE",
       "outcome": "WIN",
       "return_pct": 3.8411
-    },
-    {
-      "timestamp": "2026-11-14T20:51",
-      "symbol": "AVAXUSDT",
-      "direction": "SHORT",
-      "score": -36,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 5.1491
-    },
-    {
-      "timestamp": "2026-11-14T20:51",
-      "symbol": "TRXUSDT",
-      "direction": "SHORT",
-      "score": -36,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 0.5521
     }
   ]
 }
