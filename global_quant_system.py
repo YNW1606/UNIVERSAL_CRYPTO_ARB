@@ -1,4 +1,4 @@
-"""
+﻿"""
 Global Quant System — 6-Engine Unified Dashboard
 Integrates: crypto_master_engine + hft_signal_engine + stat_arb_engine +
             quant_factor_model + momentum_alpha_engine + unified_risk_manager
@@ -117,13 +117,23 @@ def collect_master_signals(engines, symbols):
     if "master" not in engines:
         return {}
     cme = engines["master"]
+    # Load ML model once (uses cached pickle; trains on first call if missing)
+    try:
+        model, scaler = cme.train_master_ml(force=False)
+    except Exception:
+        model, scaler = None, None
+    # Breadth data shared across all symbols (one API call vs N)
+    try:
+        breadth_data = cme.scan_breadth(symbols[:8])
+    except Exception:
+        breadth_data = None
     results = {}
     for sym in symbols:
         try:
-            r = cme.analyze_symbol(sym)
+            r = cme.analyze_symbol(sym, model, scaler, breadth_data=breadth_data)
             if r:
                 results[sym] = r
-        except Exception as e:
+        except Exception:
             pass
     return results
 
@@ -270,29 +280,29 @@ def collect_carry_arb(engines, symbols):
 # ── SIGNAL FUSION ────────────────────────────────────────────────────────────
 
 def _master_score_and_dir(master_data):
-    """Extract signed score from crypto_master_engine result dict."""
+    """Extract signed score from crypto_master_engine result dict.
+    analyze_symbol() returns result["master"] = {"score": 0-100, "direction": str}.
+    """
     if not master_data:
         return 0, ""
-    # Try common keys used by crypto_master_engine
-    raw = (master_data.get("master_score")
-           or master_data.get("score")
-           or master_data.get("final_score", 0))
-    try:
-        raw = float(raw)
-    except Exception:
-        raw = 0.0
+    # analyze_symbol returns nested: result["master"]["score"] / ["direction"]
+    nested = master_data.get("master") or {}
+    raw = float(nested.get("score") or 0)
+    d   = str(nested.get("direction") or "").upper()
+    if not d:
+        # Fallback: flat keys used by other callers
+        raw = float(master_data.get("master_score")
+                    or master_data.get("score")
+                    or master_data.get("final_score") or 0)
+        for key in ("verdict", "direction", "signal", "trade_direction"):
+            d = str(master_data.get(key, "")).upper()
+            if d:
+                break
 
-    # Direction string
-    for key in ("verdict", "direction", "signal", "trade_direction"):
-        d = str(master_data.get(key, "")).upper()
-        if d:
-            break
-
-    if any(w in d for w in ("BULL","LONG","BUY","UP")):
+    if any(w in d for w in ("BULL", "LONG", "BUY", "UP")):
         return abs(raw), d
-    if any(w in d for w in ("BEAR","SHORT","SELL","DOWN")):
+    if any(w in d for w in ("BEAR", "SHORT", "SELL", "DOWN")):
         return -abs(raw), d
-    # Fallback: use sign of raw score
     return raw, d
 
 
@@ -388,6 +398,7 @@ def fuse_signals(sym, master_data, hft_data, factor_weight, factor_exp_ret,
         "master_dir":        m_dir,
         "inst_data":         inst_data,
         "inst_confirmed":    gate_block is None,
+        "inst_blocked":      gate_block is not None,
         "gate_block":        gate_block,
     }
     return base
@@ -467,6 +478,24 @@ def run_global_scan(symbols=None, portfolio_size=PORTFOLIO_SIZE):
 
     if blocked_count:
         print(f"  Institutional gate blocked {blocked_count} signal(s).")
+
+    # ── SIGNAL QUALITY METER ─────────────────────────────────────────────────
+    # Shows at a glance whether weak signals are a scoring problem or simply a
+    # quiet market, and how much the institutional gate is filtering.
+    n_actionable = sum(1 for r in fused
+                       if abs(r["unified_score"]) >= 50
+                       and r["direction"] != "NEUTRAL"
+                       and r.get("inst_confirmed", True))
+    n_moderate   = sum(1 for r in fused if 35 <= abs(r["unified_score"]) < 50)
+    n_weak       = sum(1 for r in fused if abs(r["unified_score"]) < 35)
+    top_abs      = max((abs(r["unified_score"]) for r in fused), default=0)
+    print(f"  Signal quality: {n_actionable} actionable (>=50, inst-OK) | "
+          f"{n_moderate} moderate (35-49, not logged) | "
+          f"{blocked_count} inst-blocked | {n_weak} weak (<35) | "
+          f"strongest |score|={top_abs}")
+    if n_actionable == 0 and n_moderate > 0 and blocked_count == 0:
+        print("  → Market verdict: engines agree but conviction is sub-50 — "
+              "sideways/distribution regime, not a scoring fault. No signals logged.")
 
     fused.sort(key=lambda r: abs(r["unified_score"]), reverse=True)
     print_dashboard(fused, pair_sigs, carry_ops, risk_summary, engine_status, portfolio_size)
