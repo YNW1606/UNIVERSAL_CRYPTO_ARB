@@ -1,6 +1,15 @@
 {
-  "generated_at": "2026-11-15 02:00 UTC",
+  "generated_at": "2026-11-15 02:06 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-15T02:04",
+      "symbol": "ADAUSDT",
+      "direction": "SHORT",
+      "score": -36,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-15T01:52",
       "symbol": "LINKUSDT",
@@ -891,15 +900,6 @@
       "tier": "MODERATE",
       "outcome": "WIN",
       "return_pct": 5.033
-    },
-    {
-      "timestamp": "2026-11-14T18:00",
-      "symbol": "LTCUSDT",
-      "direction": "SHORT",
-      "score": -36,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 3.5745
     }
   ]
 }
