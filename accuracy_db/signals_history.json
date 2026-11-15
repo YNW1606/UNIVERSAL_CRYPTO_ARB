@@ -1,6 +1,15 @@
 {
-  "generated_at": "2026-11-15 07:39 UTC",
+  "generated_at": "2026-11-15 07:44 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-15T07:42",
+      "symbol": "UNIUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-15T07:39",
       "symbol": "ETHUSDT",
@@ -214,8 +223,8 @@
       "direction": "SHORT",
       "score": -36,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -0.2237
     },
     {
       "timestamp": "2026-11-15T03:35",
@@ -891,15 +900,6 @@
       "tier": "MODERATE",
       "outcome": "WIN",
       "return_pct": 0.3122
-    },
-    {
-      "timestamp": "2026-11-14T21:48",
-      "symbol": "TRXUSDT",
-      "direction": "SHORT",
-      "score": -40,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 0.9091
     }
   ]
 }
