@@ -639,12 +639,17 @@ def main():
     if args.prune:
         conn = get_conn()
         before = conn.execute("SELECT COUNT(*) FROM signals").fetchone()[0]
-        conn.execute("DELETE FROM signals WHERE ABS(unified_score) < 35")
+        # Remove all signals below the current MIN_SCORE threshold (now 50 = HIGH tier).
+        # Also remove old PENDING signals that are stale (> 48h old) — they'll never resolve cleanly.
+        conn.execute("DELETE FROM signals WHERE ABS(unified_score) < ?", (MIN_SCORE,))
+        conn.execute(
+            "DELETE FROM signals WHERE outcome='PENDING' AND timestamp < datetime('now','-48 hours')"
+        )
         conn.execute("DELETE FROM accuracy_summary")
         after = conn.execute("SELECT COUNT(*) FROM signals").fetchone()[0]
         conn.commit()
         conn.close()
-        print(f"Pruned {before - after} MONITORING tier signals (|score|<35). {after} ACTIONABLE signals remain.")
+        print(f"Pruned {before - after} sub-threshold/stale signals (|score|<{MIN_SCORE} or stale PENDING). {after} remain.")
         return
 
     if args.report:
