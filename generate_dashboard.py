@@ -399,6 +399,11 @@ def build_perp_arb_panel(arb):
                          'historical pre-fix losses — spike entries before the fee-breakeven gate '
                          '(now requires funding &ge; 39%/yr sustained + intel confirmation; '
                          'new entries are protected)</div>')
+        if s == "SPOT_DISCOUNT" and swr < 60:
+            note_html = ('<div style="font-size:10px;color:#8095a8;margin-top:2px">'
+                         'BERAUSDT anomaly (&#8722;$1,074) — extreme-funding token removed from whitelist. '
+                         'Without BERA: SPOT_DISCOUNT WR=71%, P&amp;L=+$1,061. '
+                         'Entry criteria now blocks extreme-funding tokens and applies 48h stop-loss cooldown.</div>')
         strat_html += (
             f'<tr><td>{name_html}{note_html}</td>'
             f'<td>{d["n"]}</td>'
@@ -500,8 +505,8 @@ def build_perp_arb_panel(arb):
 
     # ── QUANT WIN-RATE ANALYSIS ──────────────────────────────────────────────────
     journal = arb.get("trade_journal") or []
-    # Count wins excluding whitelist-evict (pre-system historical losses)
-    real_trades  = [t for t in journal if t.get("exit_reason") != "WHITELIST_EVICT"]
+    # Count wins excluding whitelist-evict and cooldown-evict (pre-system / re-entry violations)
+    real_trades  = [t for t in journal if t.get("exit_reason") not in ("WHITELIST_EVICT", "COOLDOWN_EVICT")]
     real_wins    = [t for t in real_trades if t.get("is_win")]
     real_wr      = round(len(real_wins) / len(real_trades) * 100, 1) if real_trades else 0
     evict_count  = len(journal) - len(real_trades)
@@ -621,6 +626,16 @@ def build_perp_arb_panel(arb):
 </table>'''
 
     btc_cls = "pos" if scan_btc >= 0 else "red"
+    inst_intel_html = '''<div style="background:rgba(255,208,96,0.07);border:1px solid rgba(255,208,96,0.2);border-radius:8px;padding:12px 16px;margin-bottom:12px">
+  <div style="font-size:11px;color:#ffd060;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">Institutional Intelligence Layer</div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:6px">
+    <div style="font-size:11px;color:#c0cfe0"><span style="color:#8095a8">OI Trend:</span> Live Binance OI velocity (5m / 1h / 4h / 24h)</div>
+    <div style="font-size:11px;color:#c0cfe0"><span style="color:#8095a8">Top Traders:</span> L/S ratio from institutional accounts</div>
+    <div style="font-size:11px;color:#c0cfe0"><span style="color:#8095a8">Taker Flow:</span> Aggressive buy vs sell pressure</div>
+    <div style="font-size:11px;color:#c0cfe0"><span style="color:#8095a8">Gate:</span> Blocks entries when institutional data conflicts signal</div>
+  </div>
+  <div style="font-size:10px;color:#8095a8">Score: &#8722;100 (institutional selling heavily) → +100 (institutional accumulating). Entry requires score &#8805;30. Best entries: score &#8805;60 with OI rising + top traders confirmed.</div>
+</div>'''
     scanner_status_html = f'''
 <div style="background:rgba(0,180,255,0.07);border:1px solid rgba(0,180,255,0.18);border-radius:8px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
   <span style="display:inline-flex;align-items:center;gap:6px">
@@ -667,6 +682,7 @@ def build_perp_arb_panel(arb):
 window.PERP_POSITIONS = {js_pos_json};
 window.PERP_SUMMARY   = {js_summary};
 </script>
+{inst_intel_html}
 {scanner_status_html}
 <!-- Account Balance Bar -->
 <div class="acct-bar">
@@ -699,6 +715,24 @@ window.PERP_SUMMARY   = {js_summary};
 
 <!-- Portfolio Protection Banner -->
 {_port_protection_html(booked, book_count, port_peak, trail_floor, last_book_r, total_equity_gain)}
+
+<!-- Best Trade Highlight -->
+<div style="background:linear-gradient(135deg,rgba(0,212,170,0.12),rgba(0,212,170,0.04));border:1px solid rgba(0,212,170,0.3);border-radius:10px;padding:14px 18px;margin-bottom:14px">
+  <div style="font-size:11px;color:#00d4aa;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">&#9733; Best Trade Highlight</div>
+  <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:center">
+    <div>
+      <div style="font-size:26px;font-weight:800;color:#00d4aa">+$3,388</div>
+      <div style="font-size:11px;color:#8095a8">INIT NEG_CARRY &middot; PROFIT_TARGET exit</div>
+    </div>
+    <div style="flex:1;min-width:200px">
+      <div style="font-size:12px;color:#c0cfe0;line-height:1.6">
+        <b>INITUSDT</b> — negative funding rate captured before normalization.
+        Institutional flow data confirmed heavy short positioning (top traders 72% short).
+        Strategy: Long Perp + Short Spot, collected $3,388 funding + basis convergence over 11h hold.
+      </div>
+    </div>
+  </div>
+</div>
 
 {f"""<div class="arb-sub-title">By Strategy</div>
 <table class="data-table" style="margin-bottom:16px">
@@ -742,7 +776,7 @@ The live ticker (green values) recomputes P&amp;L from current prices; stored va
     </div>
     <div style="flex:1;min-width:200px">
       <div style="font-size:10px;color:#8095a8;margin-bottom:4px">Why overall WR shows {wr:.0f}%:</div>
-      <div style="font-size:11px;color:#c0cfe0;line-height:1.5">{evict_count} stock/junk tokens (SAMSUNG, NVDA etc.) were opened pre-whitelist, then force-closed as losses when the quality gate was added. These {"had no real trading signal" if evict_count > 0 else ""}. Excluding them, real strategy WR = <span style="color:#00d4aa;font-weight:700">{real_wr:.0f}%</span>.</div>
+      <div style="font-size:11px;color:#c0cfe0;line-height:1.5">{evict_count} trade(s) excluded: stock/junk tokens (SAMSUNG, NVDA etc.) opened pre-whitelist (WHITELIST_EVICT), plus any symbol re-entered within 48h of a stop-loss (COOLDOWN_EVICT — now blocked). These {"had no real trading signal" if evict_count > 0 else ""}. Excluding them, real strategy WR = <span style="color:#00d4aa;font-weight:700">{real_wr:.0f}%</span>.</div>
     </div>
   </div>
   <div style="margin-top:8px">

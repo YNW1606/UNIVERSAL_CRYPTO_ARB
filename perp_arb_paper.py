@@ -91,7 +91,7 @@ CARRY_WHITELIST = {
     # Additional established DeFi / infrastructure projects added 2026-11-14
     "AKEUSDT",   # Akash Network — $400M+/day, cloud compute L1
     "TRUMPUSDT", # TRUMP meme coin — $15M+/day, speculative carry
-    "BERAUSDT",  # Berachain — $30M+/day, new L1 w/ deep OI
+    # BERAUSDT removed: extreme funding + basis never converged → STOP_LOSS_BASIS -$1074
     # Intentionally excluded (exchange-set funding, not speculative demand):
     # SOXLUSDT/SOXSUSDT/NVDAUSDT/MSTRUSDT/SKHYUSDT (tokenized stocks/ETFs)
     # SNXXUSDT (possible leveraged token, unconfirmed)
@@ -818,14 +818,30 @@ def _tiered_size(opps, n_slots, budget):
 
 # ── OPEN PAPER TRADE ──────────────────────────────────────────────────────────
 
+STOP_LOSS_COOLDOWN_H = 48   # don't re-enter a symbol for 48h after a stop-loss exit
+
 def open_trade(opp):
-    """Insert a new paper trade into the DB. Skip if one already open for (symbol, strategy)."""
+    """Insert a new paper trade into the DB. Skip if one already open for (symbol, strategy)
+    OR if the symbol had a stop-loss exit within the cooldown window."""
     c = _conn()
     existing = c.execute(
         "SELECT id FROM trades WHERE symbol=? AND strategy=? AND status='OPEN'",
         (opp["symbol"], opp["strategy"])
     ).fetchone()
     if existing:
+        c.close()
+        return None
+
+    # Stop-loss cooldown: don't re-enter same symbol for 48h after any stop/diverge exit
+    cooldown_cutoff = (datetime.now(timezone.utc) - timedelta(hours=STOP_LOSS_COOLDOWN_H)).isoformat()
+    recent_loss = c.execute(
+        "SELECT id FROM trades WHERE symbol=? AND status='CLOSED' "
+        "AND exit_reason IN ('STOP_LOSS_BASIS','BASIS_DIVERGING','STOP_LOSS') "
+        "AND closed_at > ?",
+        (opp["symbol"], cooldown_cutoff)
+    ).fetchone()
+    if recent_loss:
+        print(f"    [cooldown] {opp['symbol']} blocked — stop-loss within last {STOP_LOSS_COOLDOWN_H}h")
         c.close()
         return None
 
