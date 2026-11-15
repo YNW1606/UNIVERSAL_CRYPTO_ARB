@@ -1,6 +1,15 @@
 {
-  "generated_at": "2026-11-15 10:27 UTC",
+  "generated_at": "2026-11-15 10:32 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-15T10:29",
+      "symbol": "DOGEUSDT",
+      "direction": "SHORT",
+      "score": -37,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-15T10:19",
       "symbol": "LINKUSDT",
@@ -891,15 +900,6 @@
       "tier": "MODERATE",
       "outcome": "LOSS",
       "return_pct": -1.7114
-    },
-    {
-      "timestamp": "2026-11-14T23:47",
-      "symbol": "LTCUSDT",
-      "direction": "SHORT",
-      "score": -36,
-      "tier": "MODERATE",
-      "outcome": "LOSS",
-      "return_pct": -2.1769
     }
   ]
 }
