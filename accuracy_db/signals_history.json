@@ -1,6 +1,42 @@
 {
-  "generated_at": "2026-11-15 03:12 UTC",
+  "generated_at": "2026-11-15 03:17 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-15T03:17",
+      "symbol": "BTCUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-15T03:17",
+      "symbol": "ADAUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-15T03:16",
+      "symbol": "BNBUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-15T03:13",
+      "symbol": "LINKUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-15T03:05",
       "symbol": "ETHUSDT",
@@ -403,8 +439,8 @@
       "direction": "SHORT",
       "score": -36,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -6.4456
     },
     {
       "timestamp": "2026-11-14T23:13",
@@ -412,8 +448,8 @@
       "direction": "SHORT",
       "score": -39,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -2.2604
     },
     {
       "timestamp": "2026-11-14T23:10",
@@ -864,42 +900,6 @@
       "tier": "MODERATE",
       "outcome": "WIN",
       "return_pct": 2.6805
-    },
-    {
-      "timestamp": "2026-11-14T19:16",
-      "symbol": "BTCUSDT",
-      "direction": "SHORT",
-      "score": -36,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 2.8854
-    },
-    {
-      "timestamp": "2026-11-14T19:16",
-      "symbol": "DOTUSDT",
-      "direction": "SHORT",
-      "score": -35,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 7.2429
-    },
-    {
-      "timestamp": "2026-11-14T19:12",
-      "symbol": "ETHUSDT",
-      "direction": "SHORT",
-      "score": -40,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 4.6423
-    },
-    {
-      "timestamp": "2026-11-14T19:11",
-      "symbol": "UNIUSDT",
-      "direction": "SHORT",
-      "score": -35,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 4.0732
     }
   ]
 }
