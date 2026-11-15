@@ -88,24 +88,48 @@ CARRY_WHITELIST = {
     "AAVEUSDT","LDOUSDT","SHIBUSDT","1000PEPEUSDT","WIFUSDT",
     "BONKUSDT","JASMYUSDT","MINAUSDT","GALAUSDT","SANDUSDT",
     "AXSUSDT","MANAUSDT","APEUSDT","GMTUSDT","FLOWUSDT",
-    # Additional established DeFi / infrastructure projects added 2026-11-14
-    "AKEUSDT",   # Akash Network — $400M+/day, cloud compute L1
-    "TRUMPUSDT", # TRUMP meme coin — $15M+/day, speculative carry
+    # High-carry established projects (expanded 2026-11-15 to capture bear-market NEG_CARRY)
+    "AKEUSDT",   # Akash Network — cloud compute L1
+    "TRUMPUSDT", # TRUMP meme coin — speculative carry
+    "IOSTUSDT",  # IOST blockchain — consistent neg carry in bear markets
+    "KAVAUSDT",  # Kava Protocol — DeFi L1
+    "ZRXUSDT",   # 0x Protocol — DEX infrastructure
+    "ARKMUSDT",  # Arkham Intelligence — on-chain analytics
+    "SKLUSDT",   # SKALE Network — Ethereum L2
+    "ANKRUSDT",  # Ankr Network — web3 infra
+    "CRVUSDT",   # Curve Finance — DeFi blue chip
+    "MASKUSDT",  # Mask Network — web3 social
+    "CTKUSDT",   # CertiK — blockchain security
+    "IOTXUSDT",  # IoTeX — DePIN blockchain
+    "CELRUSDT",  # Celer Network — multi-chain
+    # Bear-market NEG_CARRY expansion (2026-11-15) — established projects with organic neg funding
+    "ZILUSDT",   # Zilliqa — established L1 (since 2017)
+    "ENSUSDT",   # Ethereum Name Service — DeFi blue chip
+    "AEROUSDT",  # Aerodrome Finance — Base chain DEX (Velodrome fork)
+    "LSKUSDT",   # Lisk — rebranded established blockchain (since 2016)
+    "ORCAUSDT",  # Orca — Solana DEX blue chip
+    "HUMAUSDT",  # Huma Finance — RWA DeFi lending protocol
+    "SOPHUSDT",  # Sophon — ZK infrastructure layer ($70M+ Bybit volume)
+    "BARDUSDT",  # Bard Protocol — bear market structural carry ($18M volume)
+    "GRAMUSDT",  # Gram — TON ecosystem token ($10M+ Bybit volume)
+    "0GUSDT",    # 0G (Zero Gravity) — decentralized AI infrastructure chain
+    "XCNUSDT",   # Onyxcoin — web3 infrastructure ($2M+ volume)
     # BERAUSDT removed: extreme funding + basis never converged → STOP_LOSS_BASIS -$1074
     # Intentionally excluded (exchange-set funding, not speculative demand):
     # SOXLUSDT/SOXSUSDT/NVDAUSDT/MSTRUSDT/SKHYUSDT (tokenized stocks/ETFs)
     # SNXXUSDT (possible leveraged token, unconfirmed)
     # ERAUSDT (too new, insufficient track record)
+    # KAVAUSDT note: extreme funding (-600%+/yr) is structural in bear — intel gate will size down
 }
 
 # ── THRESHOLDS ────────────────────────────────────────────────────────────────
-CARRY_MIN_RATE      = 0.000274  # 0.0274%/8h = ~30%/yr base floor
+CARRY_MIN_RATE      = 0.000228  # 0.0228%/8h = ~25%/yr base floor (was 30%/yr)
 CARRY_EXIT_RATE     = 0.00005
-NEG_CARRY_MIN_RATE  = -0.000274  # 30%/yr floor — symmetric with CARRY_ARB
+NEG_CARRY_MIN_RATE  = -0.000182  # 20%/yr floor (was -30%/yr) — bear market has abundant NEG_CARRY
 
 # Regime-adaptive carry floor
-CARRY_MIN_RATE_BULL = 0.000200  # 21.9%/yr — bull market
-CARRY_MIN_RATE_BEAR = 0.000274  # 30%/yr — bear market stricter quality bar
+CARRY_MIN_RATE_BULL = 0.000182  # 20%/yr — bull market
+CARRY_MIN_RATE_BEAR = 0.000228  # 25%/yr — bear market (intel gate does quality filtering)
 REGIME_LOOKBACK_H   = 24        # BTC trend lookback (hours)
 REGIME_BULL_PCT     = 0.5       # BTC 24h change >= +0.5% → BULL
 REGIME_BEAR_PCT     = -0.5      # BTC 24h change <= -0.5% → BEAR (else SIDEWAYS)
@@ -122,20 +146,23 @@ MAX_ENRICH          = 30        # max candidates enriched with funding history p
 # Funding-rate volatility gate (unstable funding = unreliable carry)
 VOL_GATE_PERIODS    = 10        # std-dev over last 10 funding prints
 VOL_GATE_STD        = 0.0003    # above this = highly unstable
-VOL_GATE_MIN_ANN    = 25.0      # unstable symbols must yield > 25%/yr (vs 15%)
+VOL_GATE_MIN_ANN    = 20.0      # unstable symbols must yield > 20%/yr (was 25%)
 VOL_GATE_SIZE_MULT  = 0.5       # and get only half size
 
 # Sustained funding entry filter
-SUSTAINED_PERIODS   = 5         # last 5 prints (40h) must ALL be consistently above floor
-SPIKE_RATIO         = 2.0       # tighter: current > 2× avg = spike → skip
-SUSTAINED_FLOOR_PCT = 0.65      # each recent rate must be >= 65% of avg7 (was 50%)
+# Bear markets generate structural negative funding — 3 periods (24h) confirms the trend.
+# CARRY_ARB still needs 5 periods (40h) since positive funding spikes are more common.
+SUSTAINED_PERIODS         = 3   # NEG_CARRY + general: last 3 prints (24h) must be consistent
+SUSTAINED_PERIODS_CARRY   = 5   # CARRY_ARB: stricter — last 5 prints (40h)
+SPIKE_RATIO               = 3.0 # bear-market NEG_CARRY can legitimately be 3× 7-day avg
+SPIKE_RATIO_NEG           = 5.0 # NEG_CARRY spikes — allow up to 5× (structural bear squeeze)
+SUSTAINED_FLOOR_PCT       = 0.50 # each recent rate must be >= 50% of avg7 (was 65%)
 
-# Fee breakeven gate: refuse CARRY_ARB if round-trip fees can't be recovered within 3 days.
-# Math: breakeven_days = (size × 0.0016) / (fr × size/2 × 3) = 0.00107 / fr
-# → at 39%/yr (fr=0.000357) → 3.0 days PASS; at 30%/yr (fr=0.000274) → 3.9 days BLOCKED
-# This tightens effective minimum from 30%/yr to 39%/yr for CARRY_ARB entries.
-CARRY_FEE_BREAKEVEN_MAX_DAYS = 3.0   # 0.00107 / fr ≤ 3 → minimum fr ≥ 0.000357 = 39%/yr
-CARRY_MIN_HOLD_H    = 48        # CARRY_ARB: never exit FUNDING_DROPPED before 48h (was 24h)
+# Fee breakeven gate: refuse CARRY_ARB if round-trip fees can't be recovered within 4 days.
+# Math: breakeven_days = 0.00107 / fr
+# → at 32%/yr (fr=0.000293) → 3.65 days PASS; at 25%/yr (fr=0.000228) → 4.7 days BLOCKED
+CARRY_FEE_BREAKEVEN_MAX_DAYS = 4.0   # was 3.0; allows fr ≥ 0.000267 = 29%/yr
+CARRY_MIN_HOLD_H    = 48        # CARRY_ARB: never exit FUNDING_DROPPED before 48h
 
 # Smart re-entry after portfolio take-profit
 REENTRY_MIN_ANN_PCT = 20.0      # best carry must exceed 20%/yr before redeploying
@@ -178,7 +205,7 @@ MIN_POSITION_USD    = 30_000
 MAX_POSITION_USD    = 250_000
 POSITION_USD        = STARTING_BALANCE / MAX_OPEN_TRADES  # $66.7k flat fallback
 FUNDING_INTERVAL_H  = 8
-MIN_VOLUME_24H      = 5_000_000
+MIN_VOLUME_24H      = 1_000_000
 MAX_ANN_RATE        = 500.0
 # Annualization factor for basis-convergence yield: the basis is expected to be
 # captured over at most BASIS_MAX_HOURS, so expected annual return from a basis
@@ -643,11 +670,13 @@ def _apply_momentum_and_vol(opps):
             # ── 1. SPIKE FILTER ──────────────────────────────────────────────
             # If current rate is MUCH higher than the 7-day average, it's a one-period
             # spike. The next 8h print will revert → we'd pay fees and collect nothing.
+            # NEG_CARRY allows up to 5× avg (bear-market structural squeeze is real).
             # EXCEPTION: OI growing > 5%/24h + top traders confirming + funding RISING
             # = regime change (new structural carry forming) → allow at half size.
+            _spike_limit = SPIKE_RATIO_NEG if o["strategy"] == "NEG_CARRY" else SPIKE_RATIO
             if abs(avg7) > 1e-9:
                 spike_ratio = abs(fr) / abs(avg7)
-                if spike_ratio > SPIKE_RATIO:
+                if spike_ratio > _spike_limit:
                     # Check for regime-change exception before skipping
                     _is_regime_change = False
                     if INTEL_GATE_ENABLED:
@@ -668,13 +697,15 @@ def _apply_momentum_and_vol(opps):
                         continue   # spike entry — will revert — SKIP
 
             # ── 2. SUSTAINED CHECK ───────────────────────────────────────────
-            # Require the last SUSTAINED_PERIODS prints to ALL be above a floor.
-            # This confirms the carry is structural (days-old), not a one-period event.
+            # Require the last N prints to ALL be above a floor.
+            # CARRY_ARB: stricter (5 prints = 40h) — positive funding spikes are common noise.
+            # NEG_CARRY: 3 prints (24h) — bear market generates structural neg funding quickly.
             # EXEMPT: regime-change entries (OI growth is the confirmation, not history)
+            _n_periods = SUSTAINED_PERIODS_CARRY if o["strategy"] == "CARRY_ARB" else SUSTAINED_PERIODS
             if not o.get("_regime_change"):
                 rates_hist = _funding_hist(o["symbol"])
-                if rates_hist and len(rates_hist) >= SUSTAINED_PERIODS:
-                    last_n    = rates_hist[-SUSTAINED_PERIODS:]
+                if rates_hist and len(rates_hist) >= _n_periods:
+                    last_n    = rates_hist[-_n_periods:]
                     min_floor = abs(avg7) * SUSTAINED_FLOOR_PCT
                     if o["strategy"] == "CARRY_ARB":
                         sustained = all(r >= min_floor for r in last_n)
@@ -705,9 +736,8 @@ def _apply_momentum_and_vol(opps):
                 o["_vol_flagged"] = True
 
             # ── 6. INSTITUTIONAL INTELLIGENCE GATE ──────────────────────────
-            # Uses live OI velocity, top-trader positioning, taker flow, basis
-            # alignment to decide if the carry is institutionally confirmed.
-            # Only blocks entries — never crashes (fail-open on API errors).
+            # carry_quality_score() is direction-aware: for NEG_CARRY it rewards
+            # bearish OI/top-trader/taker-flow alignment.  INTEL_MIN_SKIP = 30.
             # SKIP for regime-change entries (already vetted in step 1).
             if INTEL_GATE_ENABLED and not o.get("_regime_change"):
                 try:
@@ -716,8 +746,10 @@ def _apply_momentum_and_vol(opps):
                         intel = intel_fn(o["symbol"])
                         score = intel.get("score", 50)
                         gate  = intel.get("gate", "MODERATE")
-                        if score < INTEL_MIN_SKIP:
-                            continue   # OI falling + wrong-side institutions + spiking → SKIP
+                        # NEG_CARRY allows slightly lower scores (bear market conditions)
+                        min_skip = INTEL_MIN_SKIP - 5 if o["strategy"] == "NEG_CARRY" else INTEL_MIN_SKIP
+                        if score < min_skip:
+                            continue   # institutional conditions don't support carry
                         if score < INTEL_MIN_HALVE:
                             o["_vol_flagged"] = True   # marginal conditions → half size
                         o["intel_score"] = score
