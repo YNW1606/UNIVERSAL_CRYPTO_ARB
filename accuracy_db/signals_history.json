@@ -1,6 +1,15 @@
 {
-  "generated_at": "2026-11-15 10:32 UTC",
+  "generated_at": "2026-11-15 10:37 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-15T10:36",
+      "symbol": "TRXUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-15T10:29",
       "symbol": "DOGEUSDT",
@@ -891,15 +900,6 @@
       "tier": "MODERATE",
       "outcome": "LOSS",
       "return_pct": -2.9152
-    },
-    {
-      "timestamp": "2026-11-14T23:48",
-      "symbol": "BTCUSDT",
-      "direction": "SHORT",
-      "score": -36,
-      "tier": "MODERATE",
-      "outcome": "LOSS",
-      "return_pct": -1.7114
     }
   ]
 }
