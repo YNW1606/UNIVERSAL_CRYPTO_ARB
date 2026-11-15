@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-15 00:17 UTC",
+  "generated_at": "2026-11-15 00:23 UTC",
   "signals": [
     {
       "timestamp": "2026-11-15T00:15",
@@ -484,8 +484,8 @@
       "direction": "SHORT",
       "score": -36,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 0.5661
     },
     {
       "timestamp": "2026-11-14T20:17",
@@ -493,8 +493,8 @@
       "direction": "SHORT",
       "score": -39,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 1.7114
     },
     {
       "timestamp": "2026-11-14T20:17",
@@ -502,8 +502,8 @@
       "direction": "SHORT",
       "score": -35,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 2.3283
     },
     {
       "timestamp": "2026-11-14T20:14",
