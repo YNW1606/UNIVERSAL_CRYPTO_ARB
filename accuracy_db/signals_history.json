@@ -1,6 +1,42 @@
 {
-  "generated_at": "2026-11-15 00:02 UTC",
+  "generated_at": "2026-11-15 00:07 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-15T00:07",
+      "symbol": "BNBUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-15T00:07",
+      "symbol": "ADAUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-15T00:06",
+      "symbol": "ARBUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-15T00:05",
+      "symbol": "LINKUSDT",
+      "direction": "SHORT",
+      "score": -36,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-15T00:02",
       "symbol": "ETHUSDT",
@@ -864,42 +900,6 @@
       "tier": "MODERATE",
       "outcome": "WIN",
       "return_pct": 3.6675
-    },
-    {
-      "timestamp": "2026-11-14T17:06",
-      "symbol": "ETHUSDT",
-      "direction": "SHORT",
-      "score": -36,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 2.1472
-    },
-    {
-      "timestamp": "2026-11-14T16:37",
-      "symbol": "XRPUSDT",
-      "direction": "SHORT",
-      "score": -35,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 2.7261
-    },
-    {
-      "timestamp": "2026-11-14T16:35",
-      "symbol": "ATOMUSDT",
-      "direction": "SHORT",
-      "score": -38,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 1.506
-    },
-    {
-      "timestamp": "2026-11-14T16:33",
-      "symbol": "ETHUSDT",
-      "direction": "SHORT",
-      "score": -38,
-      "tier": "MODERATE",
-      "outcome": "LOSS",
-      "return_pct": 0.1432
     }
   ]
 }
