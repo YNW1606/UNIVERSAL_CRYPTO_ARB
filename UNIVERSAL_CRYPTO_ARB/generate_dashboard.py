@@ -587,11 +587,12 @@ window.PERP_SUMMARY   = {js_summary};
 <table class="data-table" style="margin-bottom:16px">
 <thead><tr><th>Symbol</th><th>Strategy</th><th>Direction</th><th>Ann Yield</th><th>Basis Entry→Now</th><th>Funding</th><th>Unrealized</th><th>TP / SL</th><th>Age</th></tr></thead>
 <tbody>{open_rows}</tbody>
-</table>""" if open_rows else watchlist_html + f'''<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:14px 18px;margin-top:8px">
+</table>""" if open_rows else (watchlist_html + """<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:14px 18px;margin-top:8px">""" + f"""
   <div style="font-size:12px;color:#8095a8;margin-bottom:4px">No open positions — scanner active every minute</div>
-  <div style="font-size:12px;color:#c0cfe0">Entry criteria: <span style="color:#ffd060">Basis ≥ 0.20%</span> (SPOT_DISCOUNT/PREMIUM) or <span style="color:#ffd060">Funding ≥ {scan_floor:.0f}%/yr</span> (CARRY_ARB). Current market: <span class="{regime_cls}">{scan_regime}</span> regime, BTC 24h <span class="{'pos' if scan_btc>=0 else 'red'}">{scan_btc:+.2f}%</span>.</div>
-  <div style="font-size:11px;color:#8095a8;margin-top:4px">Live perp–spot basis and funding rates are shown above, updating every 5s. Chips glow green when above entry threshold.</div>
-</div>'''}
+  <div style="font-size:12px;color:#c0cfe0">Entry criteria: <span style="color:#ffd060">Basis &ge; 0.20%</span> (SPOT_DISCOUNT/PREMIUM) or <span style="color:#ffd060">Funding &ge; {scan_floor:.0f}%/yr</span> (CARRY_ARB). Market: <span class="{regime_cls}">{scan_regime}</span>, BTC 24h <span class="{btc_cls}">{scan_btc:+.2f}%</span>.
+  </div>
+  <div style="font-size:11px;color:#8095a8;margin-top:4px">Live perp&#8211;spot basis &amp; funding shown above (every 5s) &#8212; chips glow green when entry-ready.</div>
+</div>""")}
 
 {f"""<div class="arb-sub-title">Closed Trades ({n_close} total)</div>
 <table class="data-table">
