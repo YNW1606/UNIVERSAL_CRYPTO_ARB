@@ -1,6 +1,24 @@
 {
-  "generated_at": "2026-11-15 08:19 UTC",
+  "generated_at": "2026-11-15 08:25 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-15T08:24",
+      "symbol": "DOTUSDT",
+      "direction": "SHORT",
+      "score": -36,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-15T08:21",
+      "symbol": "SOLUSDT",
+      "direction": "SHORT",
+      "score": -36,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-15T08:19",
       "symbol": "LTCUSDT",
@@ -232,8 +250,8 @@
       "direction": "LONG",
       "score": 35,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -0.9636
     },
     {
       "timestamp": "2026-11-15T04:14",
@@ -882,24 +900,6 @@
       "tier": "MODERATE",
       "outcome": "LOSS",
       "return_pct": -1.8895
-    },
-    {
-      "timestamp": "2026-11-14T22:13",
-      "symbol": "ETHUSDT",
-      "direction": "SHORT",
-      "score": -38,
-      "tier": "MODERATE",
-      "outcome": "LOSS",
-      "return_pct": -2.1363
-    },
-    {
-      "timestamp": "2026-11-14T22:10",
-      "symbol": "OPUSDT",
-      "direction": "SHORT",
-      "score": -36,
-      "tier": "MODERATE",
-      "outcome": "LOSS",
-      "return_pct": -4.1505
     }
   ]
 }
