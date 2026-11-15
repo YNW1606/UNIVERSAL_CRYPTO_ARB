@@ -1,6 +1,15 @@
 {
-  "generated_at": "2026-11-15 04:09 UTC",
+  "generated_at": "2026-11-15 04:14 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-15T04:14",
+      "symbol": "ETHUSDT",
+      "direction": "LONG",
+      "score": 35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-15T04:07",
       "symbol": "LINKUSDT",
@@ -891,15 +900,6 @@
       "tier": "MODERATE",
       "outcome": "WIN",
       "return_pct": 4.3155
-    },
-    {
-      "timestamp": "2026-11-14T19:46",
-      "symbol": "BTCUSDT",
-      "direction": "SHORT",
-      "score": -35,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 2.6537
     }
   ]
 }
