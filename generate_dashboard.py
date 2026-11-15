@@ -30,6 +30,16 @@ def load_scan_json():
 
 
 def load_perp_arb_json():
+    """Load perp arb report — compute directly from DB for full/fresh data."""
+    try:
+        import perp_arb_paper as pap
+        pap.init_db()
+        report = pap.compute_report(verbose=False)
+        pap.save_json(report)   # keep JSON in sync for downstream tools
+        return report
+    except Exception:
+        pass
+    # Fallback: stale JSON
     if not os.path.exists(ARB_PATH):
         return {}
     try:
@@ -424,36 +434,85 @@ def build_perp_arb_panel(arb):
             "fees_total":    fees_tot,
         })
 
-    # Recent closed — show all 20, include dates
+    # ── QUANT WIN-RATE ANALYSIS ──────────────────────────────────────────────────
+    journal = arb.get("trade_journal") or []
+    # Count wins excluding whitelist-evict (pre-system historical losses)
+    real_trades  = [t for t in journal if t.get("exit_reason") != "WHITELIST_EVICT"]
+    real_wins    = [t for t in real_trades if t.get("is_win")]
+    real_wr      = round(len(real_wins) / len(real_trades) * 100, 1) if real_trades else 0
+    evict_count  = len(journal) - len(real_trades)
+    # Build WR timeline sparkline data
+    wr_points    = [t["cum_wr"] for t in journal]
+    wr_dates     = [(t.get("closed_at") or "")[:10] for t in journal]
+    # Canvas sparkline — min/max scale
+    sp_min, sp_max = (min(wr_points) if wr_points else 0), (max(wr_points) if wr_points else 100)
+    sp_range = max(sp_max - sp_min, 10)
+    sp_w, sp_h = 420, 60
+    def wr_x(i): return int(sp_w * i / max(len(wr_points)-1, 1))
+    def wr_y(v): return int(sp_h - sp_h * (v - sp_min) / sp_range)
+    spark_pts = " ".join(f"{wr_x(i)},{wr_y(v)}" for i, v in enumerate(wr_points))
+    # Date labels (every 5th trade)
+    date_labels = ""
+    for i, t in enumerate(journal):
+        if i == 0 or i == len(journal)-1 or (i+1) % 5 == 0:
+            d = (t.get("closed_at") or "")[:10]
+            date_labels += f'<text x="{wr_x(i)}" y="74" font-size="8" fill="#8095a8" text-anchor="middle">{d[5:]}</text>'
+
+    # ── TRADE JOURNAL TABLE ───────────────────────────────────────────────────
     closed_rows = ""
-    for r in (arb.get("recent_closed") or [])[:20]:
-        sym    = r.get("symbol", "?").replace("USDT", "")
-        strat  = r.get("strategy", "")
-        rpnl   = r.get("realized_pnl", 0) or 0
-        fund   = r.get("funding_earned", 0) or 0
-        fees   = r.get("fees", 0) or 0
-        exit_  = r.get("exit_reason", "?")
-        rp_cl  = "pos" if rpnl >= 0 else "neg"
-        ann    = r.get("ann_yield", 0) or 0
-        # Parse open/close dates
-        try:
-            opn = r.get("opened_at", "")[:10] or "—"
-        except Exception:
-            opn = "—"
-        try:
-            cld = r.get("closed_at", "")[:10] or "—"
-        except Exception:
-            cld = "—"
+    for t in reversed(journal):   # newest first
+        sym      = t.get("symbol", "?").replace("USDT", "")
+        strat    = t.get("strategy", "")
+        rpnl     = t.get("realized_pnl", 0) or 0
+        fund     = t.get("funding_earned", 0) or 0
+        fees     = t.get("fees", 0) or 0
+        exit_    = t.get("exit_reason", "?")
+        rp_cl    = "pos" if rpnl >= 0 else "neg"
+        win_badge = ('<span style="background:#00d4aa22;color:#00d4aa;border:1px solid #00d4aa44;'
+                     'border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700">WIN</span>'
+                     if rpnl > 0 else
+                     '<span style="background:#ff4d4d22;color:#ff6b6b;border:1px solid #ff4d4d44;'
+                     'border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700">LOSS</span>')
+        s_entry  = t.get("spot_entry", 0) or 0
+        p_entry  = t.get("perp_entry", 0) or 0
+        s_exit   = t.get("spot_exit", 0) or 0
+        p_exit   = t.get("perp_exit", 0) or 0
+        # Format prices: use ≤ 4 sig figs
+        def fmt_p(v):
+            if v == 0: return "—"
+            if v >= 100: return f"{v:.2f}"
+            if v >= 1:   return f"{v:.4f}"
+            return f"{v:.6f}"
+        # Timestamps
+        opn_dt   = (t.get("opened_at") or "")[:16].replace("T", " ") or "—"
+        cld_dt   = (t.get("closed_at") or "")[:16].replace("T", " ") or "—"
+        hold_h   = t.get("hold_hours", 0) or 0
+        hold_txt = f"{hold_h:.1f}h" if hold_h < 48 else f"{hold_h/24:.1f}d"
+        trade_no = t.get("trade_no", "")
+        cum_wr   = t.get("cum_wr", 0)
+        wr_cl    = "pos" if cum_wr >= 55 else ("act" if cum_wr >= 40 else "neg")
+        dirn_arrow = "↑S↓P" if "LONG_SPOT" in (t.get("direction") or "") else "↑P↓S"
+        evict_flag = ' style="opacity:0.5"' if exit_ == "WHITELIST_EVICT" else ""
         closed_rows += (
-            f'<tr>'
+            f'<tr{evict_flag}>'
+            f'<td style="color:#8095a8;font-size:10px">#{trade_no}</td>'
+            f'<td>{win_badge}</td>'
             f'<td><b>{sym}</b></td>'
-            f'<td class="mono" style="font-size:11px">{strat}</td>'
-            f'<td class="{rp_cl}">${rpnl:+.2f}</td>'
+            f'<td class="mono" style="font-size:10px">{strat[:4]}<br><span style="color:#8095a8;font-size:9px">{dirn_arrow}</span></td>'
+            f'<td style="font-size:10px;color:#c0cfe0">'
+            f'  <span style="color:#00d4aa">▶</span> {fmt_p(s_entry)} / {fmt_p(p_entry)}<br>'
+            f'  <span style="color:#ffd060">■</span> {fmt_p(s_exit)} / {fmt_p(p_exit)}'
+            f'</td>'
+            f'<td style="font-size:10px;color:#8095a8">'
+            f'  {opn_dt}<br>'
+            f'  {cld_dt}'
+            f'</td>'
+            f'<td class="act" style="font-size:10px">{hold_txt}</td>'
             f'<td class="pos" style="font-size:11px">${fund:+.2f}</td>'
             f'<td class="neg" style="font-size:11px">-${fees:.2f}</td>'
-            f'<td class="act" style="font-size:11px">{exit_}</td>'
-            f'<td style="color:#8095a8;font-size:10px">{opn}</td>'
-            f'<td style="color:#8095a8;font-size:10px">{cld}</td>'
+            f'<td class="{rp_cl}" style="font-weight:700">${rpnl:+.2f}</td>'
+            f'<td class="{wr_cl}" style="font-size:10px">{cum_wr}%</td>'
+            f'<td class="act" style="font-size:10px">{exit_}</td>'
             f'</tr>\n'
         )
 
@@ -594,11 +653,56 @@ window.PERP_SUMMARY   = {js_summary};
   <div style="font-size:11px;color:#8095a8;margin-top:4px">Live perp&#8211;spot basis &amp; funding shown above (every 5s) &#8212; chips glow green when entry-ready.</div>
 </div>""")}
 
-{f"""<div class="arb-sub-title">Closed Trades ({n_close} total)</div>
-<table class="data-table">
-<thead><tr><th>Symbol</th><th>Strategy</th><th>Net P&L</th><th>Funding</th><th>Fees</th><th>Exit Reason</th><th>Opened</th><th>Closed</th></tr></thead>
+{f"""
+<div class="arb-sub-title" style="margin-top:20px">Win Rate Analysis</div>
+<div style="background:#0a1520;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:14px 18px;margin-bottom:12px">
+  <div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:10px">
+    <div>
+      <div style="font-size:10px;color:#8095a8;text-transform:uppercase;letter-spacing:.5px">Overall WR</div>
+      <div style="font-size:22px;font-weight:700;color:{'#ff6b6b' if wr < 40 else '#ffd060' if wr < 55 else '#00d4aa'}">{wr:.0f}%</div>
+      <div style="font-size:10px;color:#8095a8">{arb.get('wins',0)}W / {arb.get('losses',0)}L  ({n_close} closed)</div>
+    </div>
+    <div>
+      <div style="font-size:10px;color:#8095a8;text-transform:uppercase;letter-spacing:.5px">Strategy WR (excl. evictions)</div>
+      <div style="font-size:22px;font-weight:700;color:{'#00d4aa' if real_wr >= 55 else '#ffd060'}">{real_wr:.0f}%</div>
+      <div style="font-size:10px;color:#8095a8">{len(real_wins)}W / {len(real_trades)-len(real_wins)}L  ({len(real_trades)} non-evict trades)</div>
+    </div>
+    <div>
+      <div style="font-size:10px;color:#8095a8;text-transform:uppercase;letter-spacing:.5px">Profit Factor</div>
+      <div style="font-size:22px;font-weight:700;color:{'#00d4aa' if pf >= 1.5 else '#ffd060'}">{pf:.2f}×</div>
+      <div style="font-size:10px;color:#8095a8">avg win / avg loss ratio</div>
+    </div>
+    <div style="flex:1;min-width:200px">
+      <div style="font-size:10px;color:#8095a8;margin-bottom:4px">Why overall WR shows {wr:.0f}%:</div>
+      <div style="font-size:11px;color:#c0cfe0;line-height:1.5">{evict_count} stock/junk tokens (SAMSUNG, NVDA etc.) were opened pre-whitelist, then force-closed as losses when the quality gate was added. These {"had no real trading signal" if evict_count > 0 else ""}. Excluding them, real strategy WR = <span style="color:#00d4aa;font-weight:700">{real_wr:.0f}%</span>.</div>
+    </div>
+  </div>
+  <div style="margin-top:8px">
+    <div style="font-size:10px;color:#8095a8;margin-bottom:4px">Cumulative Win Rate Over All {n_close} Trades</div>
+    <svg width="{sp_w}" height="80" style="display:block;overflow:visible">
+      <line x1="0" y1="{wr_y(50)}" x2="{sp_w}" y2="{wr_y(50)}" stroke="rgba(255,255,255,0.08)" stroke-dasharray="3,3"/>
+      <polyline points="{spark_pts}" fill="none" stroke="#00d4aa" stroke-width="1.5" opacity="0.9"/>
+      {date_labels}
+      <text x="0" y="{wr_y(50)+3}" font-size="8" fill="rgba(255,255,255,0.3)">50%</text>
+    </svg>
+  </div>
+</div>
+
+<div class="arb-sub-title">Complete Trade Journal ({n_close} trades, newest first)</div>
+<div style="font-size:11px;color:#8095a8;margin-bottom:8px">Entry/Exit: Spot price / Perp price &nbsp;|&nbsp; ↑S↓P = Long Spot Short Perp &nbsp;|&nbsp; ↑P↓S = Long Perp Short Spot &nbsp;|&nbsp; Faded rows = pre-whitelist historical evictions</div>
+<div style="overflow-x:auto">
+<table class="data-table" style="font-size:11px;min-width:900px">
+<thead><tr>
+  <th>#</th><th>W/L</th><th>Symbol</th><th>Strategy</th>
+  <th>Entry (S/P) → Exit (S/P)</th>
+  <th>Opened → Closed (UTC)</th>
+  <th>Hold</th><th>Funding</th><th>Fees</th>
+  <th>Net P&amp;L</th><th>Cum WR</th><th>Exit Reason</th>
+</tr></thead>
 <tbody>{closed_rows}</tbody>
-</table>""" if closed_rows else ""}
+</table>
+</div>
+""" if closed_rows else ""}
 '''
 
 
