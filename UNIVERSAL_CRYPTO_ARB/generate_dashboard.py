@@ -1,10 +1,26 @@
-"""
+﻿"""
 Dashboard Generator
 Reads accuracy_db/signals.db + accuracy_db/latest_scan.json
 Writes docs/index.html — served free via GitHub Pages
 """
 import sqlite3, json, os, sys
 from datetime import datetime, timezone
+
+
+def fetch_live_inst_data():
+    """Fetch live institutional flow data for major symbols from Binance FAPI."""
+    try:
+        import institutional_intel as ii
+        symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT"]
+        data = {}
+        for sym in symbols:
+            try:
+                data[sym] = ii.get_institutional_signal(sym)
+            except Exception:
+                pass
+        return data
+    except Exception:
+        return {}
 
 BASE      = os.path.dirname(os.path.abspath(__file__))
 DB_PATH   = os.path.join(BASE, "accuracy_db", "signals.db")
@@ -64,12 +80,12 @@ def load_signals_db():
         return []
 
 
-ACTIONABLE_SCORE = 35  # Only score >= this counts toward WR/PF stats
+ACTIONABLE_SCORE = 50  # Raised from 35: only HIGH+PERFECT tiers (MODERATE had 17% WR = noise)
 
 
 def compute_stats(signals):
-    # Main KPIs use ACTIONABLE signals only (|score| >= 35)
-    # Monitoring tier (15-34) has ~27% WR by noise — excluded from performance stats
+    # Main KPIs use ACTIONABLE signals only (|score| >= 50)
+    # Monitoring tier (15-49) has ~17-27% WR by noise — excluded from performance stats
     actionable = [s for s in signals if abs(s.get("unified_score", 0)) >= ACTIONABLE_SCORE]
     resolved   = [s for s in actionable if s.get("outcome") != "PENDING"]
     pending    = [s for s in signals if s.get("outcome") == "PENDING"]
@@ -174,8 +190,16 @@ def _outcome_badge(outcome):
 
 def build_signal_cards(scan):
     active = scan.get("active_signals") or []
+    # Hard filter: only HIGH/PERFECT tier (|score| >= 50) directional signals are
+    # shown as actionable. MODERATE-tier (35-49) signals proved to be noise (17% WR)
+    # and are never logged by the tracker — don't display them as active either.
+    active = [s for s in active
+              if abs(s.get("unified_score", 0)) >= ACTIONABLE_SCORE
+              and s.get("direction") in ("LONG", "SHORT")]
     if not active:
-        return '<div class="empty-state">No active signals above threshold — market in distribution, wait for setup.</div>'
+        return ('<div class="empty-state">No signals at HIGH/PERFECT conviction (|score| &ge; 50) right now — '
+                'the engines are in agreement that no high-quality setup exists. '
+                'Sub-threshold activity is visible in the Market Watchlist below.</div>')
 
     cards = []
     for s in active[:8]:
@@ -202,6 +226,26 @@ def build_signal_cards(scan):
                      f'<span class="bar-val">{float(val):+.0f}</span>'
                      f'</div>')
 
+        # Institutional data
+        inst      = s.get("inst_data") or {}
+        inst_sc   = inst.get("institutional_score", None)
+        inst_conf = inst.get("confidence", "")
+        oi_trend  = inst.get("oi_trend", "")
+        top_bias  = inst.get("top_trader_bias", "")
+        inst_html = ""
+        if inst_sc is not None:
+            inst_col = ("#00d4aa" if inst_sc >= 10 else
+                        "#ffd060" if inst_sc >= -10 else "#ff6b6b")
+            oi_sym  = "▲" if oi_trend == "RISING" else ("▼" if oi_trend == "FALLING" else "→")
+            inst_html = (
+                f'<div class="inst-row" style="font-size:10px;color:#8095a8;margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">'
+                f'<span style="color:{inst_col};font-weight:700">INST {inst_sc:+d}</span>'
+                f'<span>OI {oi_sym}</span>'
+                f'<span style="color:#c0cfe0">{top_bias}</span>'
+                f'<span style="color:#8095a8">{inst_conf}</span>'
+                f'</div>'
+            )
+
         dir_cls = "card-long" if score > 0 else "card-short"
         cards.append(f'''
 <div class="signal-card {dir_cls}">
@@ -212,6 +256,7 @@ def build_signal_cards(scan):
   {_tier_badge(score)}
   <div class="score">{score:+d}/100</div>
   {size_html}
+  {inst_html}
   <div class="bars">{bars}</div>
 </div>''')
     return "\n".join(cards)
@@ -351,15 +396,32 @@ def build_perp_arb_panel(arb):
     eq_cls   = "green" if equity >= start_bal else "red"
     dep_pct  = min(100, deployed / start_bal * 100) if start_bal else 0
 
-    # Strategy breakdown
+    # Strategy breakdown — sorted by P&L so the best performer (NEG_CARRY) leads.
+    strat_items = sorted((arb.get("by_strategy") or {}).items(),
+                         key=lambda x: x[1].get("pnl", 0), reverse=True)
+    best_strat = strat_items[0][0] if strat_items and strat_items[0][1].get("pnl", 0) > 0 else None
     strat_html = ""
-    for s, d in sorted((arb.get("by_strategy") or {}).items(),
-                        key=lambda x: x[1].get("pnl", 0), reverse=True):
+    for s, d in strat_items:
         swr = d.get("win_rate", 0)
         sw_cls = "pos" if swr >= 50 else "neg"
         sp_cls = "pos" if d.get("pnl", 0) >= 0 else "neg"
+        name_html = f'<b>{s}</b>'
+        note_html = ""
+        if s == best_strat:
+            name_html += (' <span style="background:#00d4aa22;color:#00d4aa;border:1px solid #00d4aa44;'
+                          'border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700;margin-left:4px">BEST</span>')
+        if s == "CARRY_ARB" and swr < 50:
+            note_html = ('<div style="font-size:10px;color:#8095a8;margin-top:2px">'
+                         'historical pre-fix losses — spike entries before the fee-breakeven gate '
+                         '(now requires funding &ge; 39%/yr sustained + intel confirmation; '
+                         'new entries are protected)</div>')
+        if s == "SPOT_DISCOUNT" and swr < 60:
+            note_html = ('<div style="font-size:10px;color:#8095a8;margin-top:2px">'
+                         'BERAUSDT anomaly (&#8722;$1,074) — extreme-funding token removed from whitelist. '
+                         'Without BERA: SPOT_DISCOUNT WR=71%, P&amp;L=+$1,061. '
+                         'Entry criteria now blocks extreme-funding tokens and applies 48h stop-loss cooldown.</div>')
         strat_html += (
-            f'<tr><td><b>{s}</b></td>'
+            f'<tr><td>{name_html}{note_html}</td>'
             f'<td>{d["n"]}</td>'
             f'<td class="{sw_cls}">{swr:.0f}%</td>'
             f'<td class="{sp_cls}">${d["pnl"]:+.2f}</td></tr>\n'
@@ -368,6 +430,7 @@ def build_perp_arb_panel(arb):
     # Open positions — build rows + collect JS data
     open_rows = ""
     js_positions = []
+    stale_count = 0
     for p in (arb.get("open_positions") or [])[:12]:
         trade_id = p.get("id", "")
         sym      = p.get("symbol", "?").replace("USDT", "")
@@ -392,6 +455,25 @@ def build_perp_arb_panel(arb):
             age_h = (datetime.now(timezone.utc) - datetime.fromisoformat(ts)).total_seconds() / 3600
         except Exception:
             age_h = 0
+
+        # Staleness: a position older than 8h that has never had a funding period
+        # applied means the updater hasn't touched it — its stored unrealized P&L
+        # and funding totals are stale (the live JS ticker still shows fresh P&L).
+        fund_periods = p.get("funding_periods", 0) or 0
+        is_stale = age_h > 8 and fund_periods == 0
+        if is_stale:
+            stale_count += 1
+
+        # Yield display: for basis-convergence strategies the funding-annualized
+        # number is meaningless (extreme-funding tokens stored -2000%+/yr).
+        # Show the expected basis-convergence yield instead.
+        basis_yield = p.get("basis_yield_ann")
+        if strat in ("SPOT_DISCOUNT", "SPOT_PREMIUM"):
+            if basis_yield is None:
+                basis_yield = abs(basis_e) * (24 * 365 / 72)  # fallback compute
+            ann_html = f'<span class="pos">{basis_yield:+.1f}%/yr</span><br><span style="font-size:9px;color:#8095a8">basis conv.</span>'
+        else:
+            ann_html = f'<span class="pos">{ann:+.1f}%/yr</span>'
         # Smart exit proximity indicators
         size_usd_p  = p.get("size_usd", 66666) or 66666
         tp_usd      = size_usd_p * 0.030
@@ -410,12 +492,15 @@ def build_perp_arb_panel(arb):
             smart_txt = f'TP ${tp_usd:,.0f} | SL ${sl_usd:,.0f}'
             smart_cls = "act"
 
+        stale_badge = ('<span style="background:#ffd06022;color:#ffd060;border:1px solid #ffd06044;'
+                       'border-radius:3px;padding:1px 4px;font-size:9px;font-weight:700;margin-left:4px">STALE</span>'
+                       if is_stale else "")
         open_rows += (
             f'<tr data-trade="{trade_id}">'
-            f'<td><b>{sym}</b></td>'
+            f'<td><b>{sym}</b>{stale_badge}</td>'
             f'<td class="mono" style="font-size:11px">{strat}</td>'
             f'<td class="mono" style="font-size:11px">{dirn}</td>'
-            f'<td class="pos">{ann:+.1f}%/yr</td>'
+            f'<td>{ann_html}</td>'
             f'<td class="mono">{basis_e:+.3f}% → <span class="live-basis">{basis_n:+.3f}%</span></td>'
             f'<td class="{fe_cls}">${fund_e:+.2f}</td>'
             f'<td class="live-unreal {up_cls}">${upnl_p:+.2f}</td>'
@@ -436,8 +521,8 @@ def build_perp_arb_panel(arb):
 
     # ── QUANT WIN-RATE ANALYSIS ──────────────────────────────────────────────────
     journal = arb.get("trade_journal") or []
-    # Count wins excluding whitelist-evict (pre-system historical losses)
-    real_trades  = [t for t in journal if t.get("exit_reason") != "WHITELIST_EVICT"]
+    # Count wins excluding whitelist-evict and cooldown-evict (pre-system / re-entry violations)
+    real_trades  = [t for t in journal if t.get("exit_reason") not in ("WHITELIST_EVICT", "COOLDOWN_EVICT")]
     real_wins    = [t for t in real_trades if t.get("is_win")]
     real_wr      = round(len(real_wins) / len(real_trades) * 100, 1) if real_trades else 0
     evict_count  = len(journal) - len(real_trades)
@@ -463,14 +548,14 @@ def build_perp_arb_panel(arb):
     for t in reversed(journal):   # newest first
         sym      = t.get("symbol", "?").replace("USDT", "")
         strat    = t.get("strategy", "")
-        rpnl     = t.get("realized_pnl", 0) or 0
+        t_rpnl   = t.get("realized_pnl", 0) or 0
         fund     = t.get("funding_earned", 0) or 0
         fees     = t.get("fees", 0) or 0
         exit_    = t.get("exit_reason", "?")
-        rp_cl    = "pos" if rpnl >= 0 else "neg"
+        rp_cl    = "pos" if t_rpnl >= 0 else "neg"
         win_badge = ('<span style="background:#00d4aa22;color:#00d4aa;border:1px solid #00d4aa44;'
                      'border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700">WIN</span>'
-                     if rpnl > 0 else
+                     if t_rpnl > 0 else
                      '<span style="background:#ff4d4d22;color:#ff6b6b;border:1px solid #ff4d4d44;'
                      'border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700">LOSS</span>')
         s_entry  = t.get("spot_entry", 0) or 0
@@ -510,7 +595,7 @@ def build_perp_arb_panel(arb):
             f'<td class="act" style="font-size:10px">{hold_txt}</td>'
             f'<td class="pos" style="font-size:11px">${fund:+.2f}</td>'
             f'<td class="neg" style="font-size:11px">-${fees:.2f}</td>'
-            f'<td class="{rp_cl}" style="font-weight:700">${rpnl:+.2f}</td>'
+            f'<td class="{rp_cl}" style="font-weight:700">${t_rpnl:+.2f}</td>'
             f'<td class="{wr_cl}" style="font-size:10px">{cum_wr}%</td>'
             f'<td class="act" style="font-size:10px">{exit_}</td>'
             f'</tr>\n'
@@ -557,6 +642,66 @@ def build_perp_arb_panel(arb):
 </table>'''
 
     btc_cls = "pos" if scan_btc >= 0 else "red"
+
+    # ── Live Institutional Intelligence table ─────────────────────────────────
+    live_inst = fetch_live_inst_data()
+    inst_rows = ""
+    consensus_scores = []
+    for sym, d in live_inst.items():
+        sc       = d.get("institutional_score", 0) or 0
+        oi_tr    = d.get("oi_trend", "—")
+        oi_1h    = d.get("oi_pct_1h", 0) or 0
+        tt_bias  = d.get("top_trader_bias", "—")
+        tt_ratio = d.get("top_long_ratio", 0) or 0
+        gl_ratio = d.get("global_long_ratio", 0) or 0
+        f_tr     = d.get("funding_trend", "—")
+        conf     = d.get("confidence", "")
+        sc_col   = ("#00d4aa" if sc >= 20 else "#ffd060" if sc >= -20 else "#ff6b6b")
+        oi_col   = "#00d4aa" if oi_tr == "RISING" else ("#ff6b6b" if oi_tr == "FALLING" else "#8095a8")
+        f_col    = "#00d4aa" if f_tr == "RISING" else ("#ff6b6b" if f_tr == "FALLING" else "#8095a8")
+        tt_col   = "#00d4aa" if tt_bias == "LONG" else "#ff6b6b"
+        gl_pct   = f"{gl_ratio*100:.0f}%" if gl_ratio else "—"
+        ticker   = sym.replace("USDT","")
+        consensus_scores.append(sc)
+        inst_rows += (
+            f'<tr>'
+            f'<td><b style="color:#e0eaf5">{ticker}</b></td>'
+            f'<td><span style="color:{oi_col}">{oi_tr}</span> <span style="color:#8095a8;font-size:10px">{oi_1h:+.2f}%/h</span></td>'
+            f'<td><span style="color:{tt_col}">{tt_bias}</span> <span style="color:#8095a8;font-size:10px">{tt_ratio:.1f}:1</span></td>'
+            f'<td style="color:#8095a8;font-size:11px">{gl_pct} long</td>'
+            f'<td><span style="color:{f_col}">{f_tr}</span></td>'
+            f'<td style="font-weight:700;color:{sc_col}">{sc:+d}</td>'
+            f'<td style="color:#8095a8;font-size:10px">{conf}</td>'
+            f'</tr>\n'
+        )
+    if consensus_scores:
+        avg_sc = sum(consensus_scores) / len(consensus_scores)
+        cons_lbl = ("BULLISH ACCUMULATION" if avg_sc >= 25 else
+                    "MILD BULLISH" if avg_sc >= 5 else
+                    "NEUTRAL" if avg_sc >= -15 else
+                    "MILD BEARISH" if avg_sc >= -35 else "BEARISH DISTRIBUTION")
+        cons_col = ("#00d4aa" if avg_sc >= 5 else "#ffd060" if avg_sc >= -15 else "#ff6b6b")
+        consensus_line = f'<div style="font-size:11px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,208,96,0.1)">Consensus: <b style="color:{cons_col}">{cons_lbl}</b> <span style="color:#8095a8">(avg score {avg_sc:+.0f})</span> &nbsp;·&nbsp; Gate active: entries blocked when score &lt; 30</div>'
+    else:
+        consensus_line = '<div style="font-size:11px;margin-top:8px;color:#8095a8">Fetching institutional data…</div>'
+
+    inst_intel_html = f'''<div style="background:rgba(255,208,96,0.07);border:1px solid rgba(255,208,96,0.2);border-radius:8px;padding:12px 16px;margin-bottom:12px">
+  <div style="font-size:11px;color:#ffd060;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">&#9670; Live Institutional Intelligence · Binance FAPI · Updated {datetime.now(timezone.utc).strftime("%H:%M UTC")}</div>
+  <table style="width:100%;border-collapse:collapse;font-size:11px">
+    <thead><tr style="color:#8095a8;font-size:10px;text-transform:uppercase;letter-spacing:0.5px">
+      <th style="text-align:left;padding:3px 8px 5px 0">Symbol</th>
+      <th style="text-align:left;padding:3px 8px 5px 0">OI Trend (1h)</th>
+      <th style="text-align:left;padding:3px 8px 5px 0">Top Traders</th>
+      <th style="text-align:left;padding:3px 8px 5px 0">Global L/S</th>
+      <th style="text-align:left;padding:3px 8px 5px 0">Funding</th>
+      <th style="text-align:left;padding:3px 8px 5px 0">Score</th>
+      <th style="text-align:left;padding:3px 8px 5px 0">Conf</th>
+    </tr></thead>
+    <tbody>{inst_rows if inst_rows else "<tr><td colspan='7' style='color:#8095a8;padding:8px 0'>Fetching…</td></tr>"}</tbody>
+  </table>
+  {consensus_line}
+  <div style="font-size:10px;color:#8095a8;margin-top:4px">Score: &#8722;100 (heavy institutional selling) → +100 (institutional accumulation). Entry gate requires score &#8805;30.</div>
+</div>'''
     scanner_status_html = f'''
 <div style="background:rgba(0,180,255,0.07);border:1px solid rgba(0,180,255,0.18);border-radius:8px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
   <span style="display:inline-flex;align-items:center;gap:6px">
@@ -603,6 +748,7 @@ def build_perp_arb_panel(arb):
 window.PERP_POSITIONS = {js_pos_json};
 window.PERP_SUMMARY   = {js_summary};
 </script>
+{inst_intel_html}
 {scanner_status_html}
 <!-- Account Balance Bar -->
 <div class="acct-bar">
@@ -636,13 +782,35 @@ window.PERP_SUMMARY   = {js_summary};
 <!-- Portfolio Protection Banner -->
 {_port_protection_html(booked, book_count, port_peak, trail_floor, last_book_r, total_equity_gain)}
 
+<!-- Best Trade Highlight -->
+<div style="background:linear-gradient(135deg,rgba(0,212,170,0.12),rgba(0,212,170,0.04));border:1px solid rgba(0,212,170,0.3);border-radius:10px;padding:14px 18px;margin-bottom:14px">
+  <div style="font-size:11px;color:#00d4aa;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">&#9733; Best Trade Highlight</div>
+  <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:center">
+    <div>
+      <div style="font-size:26px;font-weight:800;color:#00d4aa">+$3,388</div>
+      <div style="font-size:11px;color:#8095a8">INIT NEG_CARRY &middot; PROFIT_TARGET exit</div>
+    </div>
+    <div style="flex:1;min-width:200px">
+      <div style="font-size:12px;color:#c0cfe0;line-height:1.6">
+        <b>INITUSDT</b> — negative funding rate captured before normalization.
+        Institutional flow data confirmed heavy short positioning (top traders 72% short).
+        Strategy: Long Perp + Short Spot, collected $3,388 funding + basis convergence over 11h hold.
+      </div>
+    </div>
+  </div>
+</div>
+
 {f"""<div class="arb-sub-title">By Strategy</div>
 <table class="data-table" style="margin-bottom:16px">
 <thead><tr><th>Strategy</th><th>Trades</th><th>Win Rate</th><th>P&L</th></tr></thead>
 <tbody>{strat_html}</tbody>
 </table>""" if strat_html else ""}
 
-{f"""<div class="arb-sub-title">Open Positions ({n_open})</div>
+{f"""<div style="background:rgba(255,208,96,0.08);border:1px solid rgba(255,208,96,0.25);border-radius:8px;
+padding:10px 14px;margin-bottom:10px;font-size:12px;color:#ffd060">
+&#9888; {stale_count} position(s) have not been refreshed in &gt;8h — stored funding/unrealized P&amp;L below is stale.
+The live ticker (green values) recomputes P&amp;L from current prices; stored values catch up on the next updater cycle.
+</div>""" if stale_count > 0 else ""}{f"""<div class="arb-sub-title">Open Positions ({n_open})</div>
 <table class="data-table" style="margin-bottom:16px">
 <thead><tr><th>Symbol</th><th>Strategy</th><th>Direction</th><th>Ann Yield</th><th>Basis Entry→Now</th><th>Funding</th><th>Unrealized</th><th>TP / SL</th><th>Age</th></tr></thead>
 <tbody>{open_rows}</tbody>
@@ -674,7 +842,7 @@ window.PERP_SUMMARY   = {js_summary};
     </div>
     <div style="flex:1;min-width:200px">
       <div style="font-size:10px;color:#8095a8;margin-bottom:4px">Why overall WR shows {wr:.0f}%:</div>
-      <div style="font-size:11px;color:#c0cfe0;line-height:1.5">{evict_count} stock/junk tokens (SAMSUNG, NVDA etc.) were opened pre-whitelist, then force-closed as losses when the quality gate was added. These {"had no real trading signal" if evict_count > 0 else ""}. Excluding them, real strategy WR = <span style="color:#00d4aa;font-weight:700">{real_wr:.0f}%</span>.</div>
+      <div style="font-size:11px;color:#c0cfe0;line-height:1.5">{evict_count} trade(s) excluded: stock/junk tokens (SAMSUNG, NVDA etc.) opened pre-whitelist (WHITELIST_EVICT), plus any symbol re-entered within 48h of a stop-loss (COOLDOWN_EVICT — now blocked). These {"had no real trading signal" if evict_count > 0 else ""}. Excluding them, real strategy WR = <span style="color:#00d4aa;font-weight:700">{real_wr:.0f}%</span>.</div>
     </div>
   </div>
   <div style="margin-top:8px">
@@ -1263,9 +1431,10 @@ def _build_tier_breakdown(tiers, monitoring_count):
         if n == 0:
             continue
         wr_color = "#00d4aa" if wr >= 55 else ("#ffd060" if wr >= 40 else "#ff6b6b")
-        is_monitor = key == "MONITOR"
-        note = " — excluded from main stats (noise)" if is_monitor else ""
-        opacity = "0.5" if is_monitor else "1"
+        # Only HIGH (50-64) + PERFECT (>=65) count toward main stats now
+        is_excluded = key in ("MONITOR", "MODERATE")
+        note = " — excluded from main stats (below 50 threshold)" if is_excluded else ""
+        opacity = "0.5" if is_excluded else "1"
         rows += f'''
 <div class="tier-row" style="opacity:{opacity}">
   <div class="tier-stars" style="color:{color}">{stars}</div>
@@ -1287,7 +1456,7 @@ def _build_tier_breakdown(tiers, monitoring_count):
     </span>
   </div>
   <div class="tier-grid">{rows}</div>
-  {'<div style="font-size:11px;color:#ff9f40;margin-top:8px">⚠ ' + str(monitoring_count) + ' MONITORING signals (score 15-34) excluded from Win Rate — these had ~27% WR and represent noise, not trades.</div>' if monitoring_count > 0 else ''}
+  {'<div style="font-size:11px;color:#ff9f40;margin-top:8px">⚠ ' + str(monitoring_count) + ' sub-threshold signals (score &lt; 50) excluded from Win Rate — MODERATE/MONITORING tiers proved to be noise (17-27% WR), not trades.</div>' if monitoring_count > 0 else ''}
 </div>
 <style>
 .tier-grid {{display:flex;flex-direction:column;gap:6px}}
@@ -1304,6 +1473,42 @@ def _build_tier_breakdown(tiers, monitoring_count):
 @media(max-width:700px){{.tier-row{{grid-template-columns:28px 1fr 60px 60px}}
   .tier-res,.tier-note{{display:none}}}}
 </style>'''
+
+
+def _build_stats_bar(stats, wr, wr_cls, pf, pf_cls, ret_cls):
+    """KPI stats bar. Handles the fresh-DB state gracefully (no fake 0% WR)."""
+    if stats["total"] == 0:
+        return '''<div class="stats-bar" style="grid-template-columns:1fr">
+  <div class="stat-card" style="text-align:center;padding:24px">
+    <div class="stat-label">Signal Tracker Status</div>
+    <div class="stat-val" style="font-size:18px;color:#00d4aa">Starting fresh — building quality signal history</div>
+    <div class="stat-sub" style="margin-top:6px">Only HIGH/PERFECT tier signals (|score| &ge; 50, institutionally confirmed) are logged.
+    Weaker MODERATE-tier signals (35-49) were pruned after proving to be noise (17% WR).
+    Win-rate statistics will appear once the first qualifying signals resolve (4h after logging).</div>
+  </div>
+</div>'''
+    return f'''<div class="stats-bar">
+  <div class="stat-card">
+    <div class="stat-label">Actionable Signals <span style="font-size:10px;color:#8095a8">(score &ge;50)</span></div>
+    <div class="stat-val">{stats['actionable']}</div>
+    <div class="stat-sub">{stats['resolved']} resolved &middot; {stats['pending']} pending &middot; {stats['total']} total logged</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Win Rate <span style="font-size:10px;color:#8095a8">(score &ge;50)</span></div>
+    <div class="stat-val {wr_cls}">{wr if stats['resolved'] else '—'}{'%' if stats['resolved'] else ''}</div>
+    <div class="stat-sub">{str(stats['wins']) + ' wins / ' + str(stats['resolved']) + ' resolved' if stats['resolved'] else 'no resolved signals yet — first outcomes land 4h after logging'}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Profit Factor</div>
+    <div class="stat-val {pf_cls}">{f'{pf:.2f}&times;' if stats['resolved'] else '—'}</div>
+    <div class="stat-sub">Gains &divide; Losses (need &gt;1.0)</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Avg Return / Signal</div>
+    <div class="stat-val {ret_cls}">{f"{stats['avg_ret']:+.3f}%" if stats['resolved'] else '—'}</div>
+    <div class="stat-sub">Net of 0.3% fee threshold</div>
+  </div>
+</div>'''
 
 
 # ── MAIN BUILDER ─────────────────────────────────────────────────────────────
@@ -1350,29 +1555,8 @@ def build_html(scan, signals, stats, arb=None):
   </div>
 </div>
 
-<!-- Stats Bar (ACTIONABLE signals only: |score| >= 35) -->
-<div class="stats-bar">
-  <div class="stat-card">
-    <div class="stat-label">Actionable Signals <span style="font-size:10px;color:#8095a8">(score ≥35)</span></div>
-    <div class="stat-val">{stats['actionable']}</div>
-    <div class="stat-sub">{stats['resolved']} resolved · {stats['pending']} pending · {stats['total']} total logged</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Win Rate <span style="font-size:10px;color:#8095a8">(score ≥35)</span></div>
-    <div class="stat-val {wr_cls}">{wr}%</div>
-    <div class="stat-sub">{stats['wins']} wins / {stats['resolved']} resolved</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Profit Factor</div>
-    <div class="stat-val {pf_cls}">{pf:.2f}×</div>
-    <div class="stat-sub">Gains ÷ Losses (need &gt;1.0)</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Avg Return / Signal</div>
-    <div class="stat-val {ret_cls}">{stats['avg_ret']:+.3f}%</div>
-    <div class="stat-sub">Net of 0.3% fee threshold</div>
-  </div>
-</div>
+<!-- Stats Bar (ACTIONABLE signals only: |score| >= 50) -->
+{_build_stats_bar(stats, wr, wr_cls, pf, pf_cls, ret_cls)}
 
 <!-- Score Tier Breakdown -->
 {_build_tier_breakdown(stats['tiers'], stats['monitoring_only'])}
@@ -1393,7 +1577,7 @@ def build_html(scan, signals, stats, arb=None):
 
 <!-- Active Signals -->
 <div class="section">
-  <div class="section-title">Active Signals  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">|score| ≥ 35 (actionable)</span></div>
+  <div class="section-title">Active Signals  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">|score| ≥ 50 · inst-confirmed · regime-filtered</span></div>
   <div class="cards-grid">
     {build_signal_cards(scan)}
   </div>
@@ -1674,7 +1858,6 @@ def main():
     with open(OUT_PATH, "w", encoding="utf-8") as f:
         f.write(html)
     print(f"Dashboard written → {OUT_PATH}")
-    print(f"GitHub Pages URL: https://YNW1606.github.io/UNIVERSAL_CRYPTO_ARB/")
 
 
 if __name__ == "__main__":

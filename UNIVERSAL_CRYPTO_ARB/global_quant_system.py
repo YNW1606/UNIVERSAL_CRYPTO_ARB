@@ -1,10 +1,35 @@
-"""
+﻿"""
 Global Quant System — 6-Engine Unified Dashboard
 Integrates: crypto_master_engine + hft_signal_engine + stat_arb_engine +
             quant_factor_model + momentum_alpha_engine + unified_risk_manager
+
+v2: Institutional intelligence gate + BTC regime filter.
+Signals must pass BOTH:
+  1. BTC regime: no SHORT in BULL, no LONG in BEAR (4h trend ≥ ±1.5%)
+  2. Institutional gate: inst_score ≥ -20 for LONG, ≤ +20 for SHORT
+Signals that fail either gate get dropped (not logged to accuracy tracker).
 """
 import time, json, sys, os
 from datetime import datetime, timezone
+
+# Institutional intelligence gate
+_INST_MOD = None
+def _get_inst():
+    global _INST_MOD
+    if _INST_MOD is None:
+        try:
+            import institutional_intel as _m
+            _INST_MOD = _m
+        except Exception:
+            pass
+    return _INST_MOD
+
+# BTC regime is fetched once per run (cached 10 min inside the module)
+_RUN_REGIME = None
+
+INST_GATE_ENABLED = True   # set False to bypass for debugging
+INST_SKIP_BELOW   = -20    # LONG signals with inst_score < this → DROP
+INST_SKIP_ABOVE   = +20    # SHORT signals with inst_score > this → DROP
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -92,13 +117,23 @@ def collect_master_signals(engines, symbols):
     if "master" not in engines:
         return {}
     cme = engines["master"]
+    # Load ML model once (uses cached pickle; trains on first call if missing)
+    try:
+        model, scaler = cme.train_master_ml(force=False)
+    except Exception:
+        model, scaler = None, None
+    # Breadth data shared across all symbols (one API call vs N)
+    try:
+        breadth_data = cme.scan_breadth(symbols[:8])
+    except Exception:
+        breadth_data = None
     results = {}
     for sym in symbols:
         try:
-            r = cme.analyze_symbol(sym)
+            r = cme.analyze_symbol(sym, model, scaler, breadth_data=breadth_data)
             if r:
                 results[sym] = r
-        except Exception as e:
+        except Exception:
             pass
     return results
 
@@ -245,35 +280,38 @@ def collect_carry_arb(engines, symbols):
 # ── SIGNAL FUSION ────────────────────────────────────────────────────────────
 
 def _master_score_and_dir(master_data):
-    """Extract signed score from crypto_master_engine result dict."""
+    """Extract signed score from crypto_master_engine result dict.
+    analyze_symbol() returns result["master"] = {"score": 0-100, "direction": str}.
+    """
     if not master_data:
         return 0, ""
-    # Try common keys used by crypto_master_engine
-    raw = (master_data.get("master_score")
-           or master_data.get("score")
-           or master_data.get("final_score", 0))
-    try:
-        raw = float(raw)
-    except Exception:
-        raw = 0.0
+    # analyze_symbol returns nested: result["master"]["score"] / ["direction"]
+    nested = master_data.get("master") or {}
+    raw = float(nested.get("score") or 0)
+    d   = str(nested.get("direction") or "").upper()
+    if not d:
+        # Fallback: flat keys used by other callers
+        raw = float(master_data.get("master_score")
+                    or master_data.get("score")
+                    or master_data.get("final_score") or 0)
+        for key in ("verdict", "direction", "signal", "trade_direction"):
+            d = str(master_data.get(key, "")).upper()
+            if d:
+                break
 
-    # Direction string
-    for key in ("verdict", "direction", "signal", "trade_direction"):
-        d = str(master_data.get(key, "")).upper()
-        if d:
-            break
-
-    if any(w in d for w in ("BULL","LONG","BUY","UP")):
+    if any(w in d for w in ("BULL", "LONG", "BUY", "UP")):
         return abs(raw), d
-    if any(w in d for w in ("BEAR","SHORT","SELL","DOWN")):
+    if any(w in d for w in ("BEAR", "SHORT", "SELL", "DOWN")):
         return -abs(raw), d
-    # Fallback: use sign of raw score
     return raw, d
 
 
 def fuse_signals(sym, master_data, hft_data, factor_weight, factor_exp_ret,
-                 stat_arb_data, momentum_data=None):
-    """Combine all engines into a single -100..+100 unified_score."""
+                 stat_arb_data, momentum_data=None, regime=None):
+    """Combine all engines into a single -100..+100 unified_score.
+    Applies BTC regime gate and institutional intelligence gate before returning.
+    Returns None if the signal is blocked by either gate.
+    """
     scores = {}
 
     # Master (0-100 → signed via direction)
@@ -330,20 +368,40 @@ def fuse_signals(sym, master_data, hft_data, factor_weight, factor_exp_ret,
             "★   MODERATE"if abs_u >= 35 else
             "○   WAIT")
 
-    return {
-        "symbol":        sym,
-        "unified_score": unified,
-        "direction":     direction,
-        "tier":          tier,
-        "components":    scores,
-        "master":        master_data,
-        "hft":           hft_data,
-        "factor_weight": factor_weight,
-        "factor_exp_ret":factor_exp_ret,
-        "stat_arb":      stat_arb_data,
-        "momentum":      momentum_data,
-        "master_dir":    m_dir,
+    # ── Institutional & Regime Gate ───────────────────────────────────────────
+    inst_data  = None
+    gate_block = None
+    if INST_GATE_ENABLED and abs_u >= 35 and direction != "NEUTRAL":
+        inst_mod = _get_inst()
+        if inst_mod:
+            try:
+                inst_data = inst_mod.get_institutional_signal(sym)
+                reg       = regime or {}
+                confirmed, reason = inst_mod.is_signal_confirmed(direction, inst_data, reg)
+                if not confirmed:
+                    gate_block = reason
+            except Exception:
+                pass
+
+    base = {
+        "symbol":            sym,
+        "unified_score":     unified,
+        "direction":         direction,
+        "tier":              tier,
+        "components":        scores,
+        "master":            master_data,
+        "hft":               hft_data,
+        "factor_weight":     factor_weight,
+        "factor_exp_ret":    factor_exp_ret,
+        "stat_arb":          stat_arb_data,
+        "momentum":          momentum_data,
+        "master_dir":        m_dir,
+        "inst_data":         inst_data,
+        "inst_confirmed":    gate_block is None,
+        "inst_blocked":      gate_block is not None,
+        "gate_block":        gate_block,
     }
+    return base
 
 # ── MAIN SCAN ─────────────────────────────────────────────────────────────────
 
@@ -376,8 +434,20 @@ def run_global_scan(symbols=None, portfolio_size=PORTFOLIO_SIZE):
     print("  Carry arb scan...")
     carry_ops = collect_carry_arb(engines, symbols)
 
+    # Fetch BTC regime once for the whole scan (cached 10 min internally)
+    regime = {}
+    if INST_GATE_ENABLED:
+        try:
+            inst_mod = _get_inst()
+            if inst_mod:
+                regime = inst_mod.get_btc_regime()
+                print(f"  BTC regime: {regime.get('regime','?')} ({regime.get('btc_4h_pct',0):+.1f}% 4h)")
+        except Exception:
+            pass
+
     # Fuse per symbol
     fused = []
+    blocked_count = 0
     for sym in symbols:
         result = fuse_signals(
             sym,
@@ -387,18 +457,45 @@ def run_global_scan(symbols=None, portfolio_size=PORTFOLIO_SIZE):
             factor_exp_rets.get(sym),
             beta_sigs.get(sym),
             momentum_sigs.get(sym),
+            regime=regime,
         )
         abs_score = abs(result["unified_score"])
-        if approver and abs_score >= 35:
+        if approver and abs_score >= 35 and result.get("inst_confirmed", True):
             win_prob = 0.50 + abs_score / 400.0
             approval = approver.approve_trade(
                 sym, result["direction"], abs_score,
                 win_prob=win_prob, tp_pct=0.020, sl_pct=0.012
             )
         else:
-            approval = {"approved": False, "size_usd": 0, "size_pct": 0, "reason": "Signal too weak"}
+            approval = {"approved": False, "size_usd": 0, "size_pct": 0,
+                        "reason": result.get("gate_block") or "Signal too weak"}
         result["approval"] = approval
+
+        if result.get("gate_block"):
+            blocked_count += 1
+
         fused.append(result)
+
+    if blocked_count:
+        print(f"  Institutional gate blocked {blocked_count} signal(s).")
+
+    # ── SIGNAL QUALITY METER ─────────────────────────────────────────────────
+    # Shows at a glance whether weak signals are a scoring problem or simply a
+    # quiet market, and how much the institutional gate is filtering.
+    n_actionable = sum(1 for r in fused
+                       if abs(r["unified_score"]) >= 50
+                       and r["direction"] != "NEUTRAL"
+                       and r.get("inst_confirmed", True))
+    n_moderate   = sum(1 for r in fused if 35 <= abs(r["unified_score"]) < 50)
+    n_weak       = sum(1 for r in fused if abs(r["unified_score"]) < 35)
+    top_abs      = max((abs(r["unified_score"]) for r in fused), default=0)
+    print(f"  Signal quality: {n_actionable} actionable (>=50, inst-OK) | "
+          f"{n_moderate} moderate (35-49, not logged) | "
+          f"{blocked_count} inst-blocked | {n_weak} weak (<35) | "
+          f"strongest |score|={top_abs}")
+    if n_actionable == 0 and n_moderate > 0 and blocked_count == 0:
+        print("  → Market verdict: engines agree but conviction is sub-50 — "
+              "sideways/distribution regime, not a scoring fault. No signals logged.")
 
     fused.sort(key=lambda r: abs(r["unified_score"]), reverse=True)
     print_dashboard(fused, pair_sigs, carry_ops, risk_summary, engine_status, portfolio_size)

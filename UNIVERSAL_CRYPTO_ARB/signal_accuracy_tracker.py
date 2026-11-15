@@ -21,10 +21,8 @@ BINANCE = "https://api.binance.com"
 
 WIN_THRESHOLD   = 0.003  # 0.3% net of fees to call it a WIN
 OUTCOME_AFTER_H = 4      # hours after signal → check price
-MIN_SCORE       = 50     # raised from 35: only HIGH (50-64) + PERFECT (65+) tiers logged
-                         # MODERATE (35-49) had 17% WR today — pure noise, not worth tracking
-ACTIONABLE_MIN  = 50     # dashboard KPI threshold matches logging threshold
-DEDUP_MINS      = 60     # raised from 30: same symbol+direction dedup window (minutes)
+MIN_SCORE       = 35     # only log ACTIONABLE signals (score 35+); monitoring tier (15-34) had 27% WR noise
+ACTIONABLE_MIN  = 35     # "actionable" signals shown prominently in reports
 
 os.makedirs(DB_DIR, exist_ok=True)
 
@@ -96,20 +94,16 @@ def get_current_price(symbol):
 def log_signals(scan_results):
     """
     scan_results: list of fused signal dicts from global_quant_system.run_global_scan()
-    Logs every signal with |unified_score| >= MIN_SCORE (now 50 = HIGH tier only),
-    deduplicates within DEDUP_MINS window, and skips inst-gate-blocked signals.
+    Logs every signal with |unified_score| >= MIN_SCORE, deduplicates within same 30-min window.
     """
     conn = get_conn()
     now  = datetime.now(timezone.utc).isoformat()
-    window_start = (datetime.now(timezone.utc) - timedelta(minutes=DEDUP_MINS)).isoformat()
+    window_start = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat()
     logged = 0
-    skipped_inst = 0
-    skipped_weak = 0
 
     for r in scan_results:
         score = r.get("unified_score", 0)
         if abs(score) < MIN_SCORE:
-            skipped_weak += 1
             continue
 
         sym       = r.get("symbol", "")
@@ -117,12 +111,7 @@ def log_signals(scan_results):
         if direction == "NEUTRAL":
             continue
 
-        # Skip signals blocked by institutional or regime gate
-        if not r.get("inst_confirmed", True):
-            skipped_inst += 1
-            continue
-
-        # Dedup: skip if same symbol+direction already logged in last DEDUP_MINS
+        # Dedup: skip if same symbol+direction already logged in last 30 min
         existing = conn.execute(
             "SELECT id FROM signals WHERE symbol=? AND direction=? AND timestamp>?",
             (sym, direction, window_start)
@@ -151,10 +140,6 @@ def log_signals(scan_results):
 
     conn.commit()
     conn.close()
-    if skipped_inst:
-        print(f"  Skipped {skipped_inst} inst-blocked signal(s).")
-    if skipped_weak:
-        print(f"  Skipped {skipped_weak} weak signal(s) (|score|<{MIN_SCORE}).")
     return logged
 
 
@@ -639,17 +624,12 @@ def main():
     if args.prune:
         conn = get_conn()
         before = conn.execute("SELECT COUNT(*) FROM signals").fetchone()[0]
-        # Remove all signals below the current MIN_SCORE threshold (now 50 = HIGH tier).
-        # Also remove old PENDING signals that are stale (> 48h old) — they'll never resolve cleanly.
-        conn.execute("DELETE FROM signals WHERE ABS(unified_score) < ?", (MIN_SCORE,))
-        conn.execute(
-            "DELETE FROM signals WHERE outcome='PENDING' AND timestamp < datetime('now','-48 hours')"
-        )
+        conn.execute("DELETE FROM signals WHERE ABS(unified_score) < 35")
         conn.execute("DELETE FROM accuracy_summary")
         after = conn.execute("SELECT COUNT(*) FROM signals").fetchone()[0]
         conn.commit()
         conn.close()
-        print(f"Pruned {before - after} sub-threshold/stale signals (|score|<{MIN_SCORE} or stale PENDING). {after} remain.")
+        print(f"Pruned {before - after} MONITORING tier signals (|score|<35). {after} ACTIONABLE signals remain.")
         return
 
     if args.report:
