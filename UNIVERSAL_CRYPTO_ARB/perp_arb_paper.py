@@ -1218,9 +1218,11 @@ def compute_report(verbose=True):
     open_partials = sum(float(r.get("partial_pnl") or 0) for r in open_)
 
     capital_deployed = sum(float(r["size_usd"] or 0) for r in open_)
-    # True equity includes ALL realized (closed trades + partials + booked profit events)
-    account_equity   = STARTING_BALANCE + total_booked + total_pnl + open_partials + total_unreal
-    available_cash   = STARTING_BALANCE + total_booked + total_pnl + open_partials - capital_deployed
+    # True equity = starting + ALL realized PnL from closed trades + unrealized + partial exits
+    # NOTE: total_booked_pnl (meta) is the sum of unrealized_pnl AT TIME OF book events.
+    # Those same trades' realized_pnl is already counted in total_pnl — do NOT add both.
+    account_equity   = STARTING_BALANCE + total_pnl + open_partials + total_unreal
+    available_cash   = STARTING_BALANCE + total_pnl + open_partials - capital_deployed
     return_pct       = (account_equity - STARTING_BALANCE) / STARTING_BALANCE * 100
 
     # Portfolio trailing stop floor (live display)
@@ -1388,16 +1390,23 @@ def compute_report(verbose=True):
         ],
         "recent_closed": [
             {
-                "id":          r["id"],
-                "strategy":    r["strategy"],
-                "symbol":      r["symbol"],
-                "direction":   r["direction"],
+                "id":           r["id"],
+                "strategy":     r["strategy"],
+                "symbol":       r["symbol"],
+                "direction":    r["direction"],
+                "size_usd":     round(float(r["size_usd"] or 0), 2),
+                "ann_yield":    round(float(r.get("ann_yield_at_open") or 0), 2),
+                "spot_entry":   round(float(r["spot_entry"] or 0), 6),
+                "perp_entry":   round(float(r["perp_entry"] or 0), 6),
+                "spot_exit":    round(float(r.get("spot_exit") or 0), 6),
+                "perp_exit":    round(float(r.get("perp_exit") or 0), 6),
+                "basis_entry":  round(float(r.get("basis_entry_pct") or 0), 4),
                 "realized_pnl": round(float(r["realized_pnl"] or 0), 4),
                 "funding_earned": round(float(r["funding_total"] or 0), 4),
-                "fees":        round(float(r["fees_total"] or 0), 4),
-                "exit_reason": r["exit_reason"],
-                "opened_at":   r["opened_at"],
-                "closed_at":   r["closed_at"],
+                "fees":         round(float(r["fees_total"] or 0), 4),
+                "exit_reason":  r["exit_reason"],
+                "opened_at":    r["opened_at"],
+                "closed_at":    r["closed_at"],
             }
             for r in sorted(closed, key=lambda x: x["closed_at"] or "", reverse=True)[:20]
         ],

@@ -424,24 +424,36 @@ def build_perp_arb_panel(arb):
             "fees_total":    fees_tot,
         })
 
-    # Recent closed
+    # Recent closed — show all 20, include dates
     closed_rows = ""
-    for r in (arb.get("recent_closed") or [])[:10]:
-        sym   = r.get("symbol", "?").replace("USDT", "")
-        strat = r.get("strategy", "")
-        rpnl  = r.get("realized_pnl", 0) or 0
-        fund  = r.get("funding_earned", 0) or 0
-        fees  = r.get("fees", 0) or 0
-        exit_ = r.get("exit_reason", "?")
-        rp_cl = "pos" if rpnl >= 0 else "neg"
+    for r in (arb.get("recent_closed") or [])[:20]:
+        sym    = r.get("symbol", "?").replace("USDT", "")
+        strat  = r.get("strategy", "")
+        rpnl   = r.get("realized_pnl", 0) or 0
+        fund   = r.get("funding_earned", 0) or 0
+        fees   = r.get("fees", 0) or 0
+        exit_  = r.get("exit_reason", "?")
+        rp_cl  = "pos" if rpnl >= 0 else "neg"
+        ann    = r.get("ann_yield", 0) or 0
+        # Parse open/close dates
+        try:
+            opn = r.get("opened_at", "")[:10] or "—"
+        except Exception:
+            opn = "—"
+        try:
+            cld = r.get("closed_at", "")[:10] or "—"
+        except Exception:
+            cld = "—"
         closed_rows += (
             f'<tr>'
             f'<td><b>{sym}</b></td>'
             f'<td class="mono" style="font-size:11px">{strat}</td>'
             f'<td class="{rp_cl}">${rpnl:+.2f}</td>'
-            f'<td class="pos">${fund:+.2f}</td>'
-            f'<td class="neg">-${fees:.2f}</td>'
+            f'<td class="pos" style="font-size:11px">${fund:+.2f}</td>'
+            f'<td class="neg" style="font-size:11px">-${fees:.2f}</td>'
             f'<td class="act" style="font-size:11px">{exit_}</td>'
+            f'<td style="color:#8095a8;font-size:10px">{opn}</td>'
+            f'<td style="color:#8095a8;font-size:10px">{cld}</td>'
             f'</tr>\n'
         )
 
@@ -449,7 +461,7 @@ def build_perp_arb_panel(arb):
     js_pos_json = _json.dumps(js_positions)
     js_summary  = _json.dumps({
         "starting_balance": start_bal,
-        "realized_pnl":     rpnl,
+        "realized_pnl":     arb.get("realized_pnl", 0) or 0,
         "capital_deployed": deployed,
         "n_open":           n_open,
     })
@@ -500,7 +512,7 @@ def build_perp_arb_panel(arb):
 </div>
 
 <!-- Live Crypto Prices Board (always visible, updates every 3s) -->
-<div id="live-prices-board" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+<div id="live-prices-board" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
   <div class="price-chip" data-sym="BTCUSDT"><span class="pc-sym">BTC</span><span class="pc-price" id="lp-BTCUSDT">—</span><span class="pc-chg" id="lc-BTCUSDT"></span></div>
   <div class="price-chip" data-sym="ETHUSDT"><span class="pc-sym">ETH</span><span class="pc-price" id="lp-ETHUSDT">—</span><span class="pc-chg" id="lc-ETHUSDT"></span></div>
   <div class="price-chip" data-sym="SOLUSDT"><span class="pc-sym">SOL</span><span class="pc-price" id="lp-SOLUSDT">—</span><span class="pc-chg" id="lc-SOLUSDT"></span></div>
@@ -509,6 +521,22 @@ def build_perp_arb_panel(arb):
   <div class="price-chip" data-sym="DOGEUSDT"><span class="pc-sym">DOGE</span><span class="pc-price" id="lp-DOGEUSDT">—</span><span class="pc-chg" id="lc-DOGEUSDT"></span></div>
   <div class="price-chip" data-sym="DOTUSDT"><span class="pc-sym">DOT</span><span class="pc-price" id="lp-DOTUSDT">—</span><span class="pc-chg" id="lc-DOTUSDT"></span></div>
   <div class="price-chip" data-sym="AVAXUSDT"><span class="pc-sym">AVAX</span><span class="pc-price" id="lp-AVAXUSDT">—</span><span class="pc-chg" id="lc-AVAXUSDT"></span></div>
+</div>
+
+<!-- Live Perp vs Spot Basis Board (updates every 5s) -->
+<div style="margin-bottom:14px">
+  <div style="font-size:10px;color:#8095a8;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px">Live Perp–Spot Basis &amp; Funding (8h rate · updates every 5s)</div>
+  <div id="live-basis-board" style="display:flex;gap:8px;flex-wrap:wrap">
+    <div class="basis-chip" id="bc-BTCUSDT"><span class="bc-sym">BTC</span><span class="bc-basis" id="bb-BTCUSDT">—</span><span class="bc-fund" id="bf-BTCUSDT"></span></div>
+    <div class="basis-chip" id="bc-ETHUSDT"><span class="bc-sym">ETH</span><span class="bc-basis" id="bb-ETHUSDT">—</span><span class="bc-fund" id="bf-ETHUSDT"></span></div>
+    <div class="basis-chip" id="bc-SOLUSDT"><span class="bc-sym">SOL</span><span class="bc-basis" id="bb-SOLUSDT">—</span><span class="bc-fund" id="bf-SOLUSDT"></span></div>
+    <div class="basis-chip" id="bc-BNBUSDT"><span class="bc-sym">BNB</span><span class="bc-basis" id="bb-BNBUSDT">—</span><span class="bc-fund" id="bf-BNBUSDT"></span></div>
+    <div class="basis-chip" id="bc-XRPUSDT"><span class="bc-sym">XRP</span><span class="bc-basis" id="bb-XRPUSDT">—</span><span class="bc-fund" id="bf-XRPUSDT"></span></div>
+    <div class="basis-chip" id="bc-DOGEUSDT"><span class="bc-sym">DOGE</span><span class="bc-basis" id="bb-DOGEUSDT">—</span><span class="bc-fund" id="bf-DOGEUSDT"></span></div>
+    <div class="basis-chip" id="bc-DOTUSDT"><span class="bc-sym">DOT</span><span class="bc-basis" id="bb-DOTUSDT">—</span><span class="bc-fund" id="bf-DOTUSDT"></span></div>
+    <div class="basis-chip" id="bc-AVAXUSDT"><span class="bc-sym">AVAX</span><span class="bc-basis" id="bb-AVAXUSDT">—</span><span class="bc-fund" id="bf-AVAXUSDT"></span></div>
+  </div>
+  <div style="font-size:10px;color:#8095a8;margin-top:4px">Entry threshold: basis ≥ 0.20% <span style="margin-left:12px">Carry entry: funding ≥ 22%/yr</span></div>
 </div>'''
 
     return f'''
@@ -559,11 +587,15 @@ window.PERP_SUMMARY   = {js_summary};
 <table class="data-table" style="margin-bottom:16px">
 <thead><tr><th>Symbol</th><th>Strategy</th><th>Direction</th><th>Ann Yield</th><th>Basis Entry→Now</th><th>Funding</th><th>Unrealized</th><th>TP / SL</th><th>Age</th></tr></thead>
 <tbody>{open_rows}</tbody>
-</table>""" if open_rows else watchlist_html + '<div class="empty-state" style="margin-top:8px">No entry-ready opportunities — scanning every minute for basis ≥ 0.20% or carry ≥ ' + f'{scan_floor:.0f}%/yr' + '</div>'}
+</table>""" if open_rows else watchlist_html + f'''<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:14px 18px;margin-top:8px">
+  <div style="font-size:12px;color:#8095a8;margin-bottom:4px">No open positions — scanner active every minute</div>
+  <div style="font-size:12px;color:#c0cfe0">Entry criteria: <span style="color:#ffd060">Basis ≥ 0.20%</span> (SPOT_DISCOUNT/PREMIUM) or <span style="color:#ffd060">Funding ≥ {scan_floor:.0f}%/yr</span> (CARRY_ARB). Current market: <span class="{regime_cls}">{scan_regime}</span> regime, BTC 24h <span class="{'pos' if scan_btc>=0 else 'red'}">{scan_btc:+.2f}%</span>.</div>
+  <div style="font-size:11px;color:#8095a8;margin-top:4px">Live perp–spot basis and funding rates are shown above, updating every 5s. Chips glow green when above entry threshold.</div>
+</div>'''}
 
-{f"""<div class="arb-sub-title">Recent Closed ({n_close})</div>
+{f"""<div class="arb-sub-title">Closed Trades ({n_close} total)</div>
 <table class="data-table">
-<thead><tr><th>Symbol</th><th>Strategy</th><th>P&L</th><th>Funding</th><th>Fees</th><th>Exit Reason</th></tr></thead>
+<thead><tr><th>Symbol</th><th>Strategy</th><th>Net P&L</th><th>Funding</th><th>Fees</th><th>Exit Reason</th><th>Opened</th><th>Closed</th></tr></thead>
 <tbody>{closed_rows}</tbody>
 </table>""" if closed_rows else ""}
 '''
@@ -572,7 +604,7 @@ window.PERP_SUMMARY   = {js_summary};
 def build_carry_table(scan):
     rows = scan.get("carry_arb") or []
     if not rows:
-        return '<div class="empty-state">No carry arb opportunities (funding rates neutral)</div>'
+        return '<div class="empty-state">No carry arb opportunities right now — scanner looks for funding ≥ 22%/yr (BEAR) or 25%/yr (BULL). Rates are currently below threshold. Live basis+funding data is shown in the Perp Arb section above.</div>'
     tbody = ""
     for r in rows:
         ann   = r.get("ann_pct", 0)
@@ -1023,6 +1055,14 @@ a{color:#00d4aa;text-decoration:none}
 .pc-sym{font-weight:700;color:#8095a8;font-size:11px;width:34px}
 .pc-price{font-weight:700;color:#e2e8f0;font-variant-numeric:tabular-nums;min-width:60px}
 .pc-chg{font-size:10px;font-variant-numeric:tabular-nums;min-width:48px;text-align:right}
+/* Live Basis+Funding Chips */
+.basis-chip{display:flex;align-items:center;gap:6px;padding:6px 12px;background:#0d1826;
+  border:1px solid rgba(255,255,255,0.08);border-radius:20px;font-size:12px;min-width:130px;
+  transition:border-color .3s}
+.basis-chip.basis-hot{border-color:rgba(0,212,170,0.4)}
+.bc-sym{font-weight:700;color:#8095a8;font-size:11px;width:34px}
+.bc-basis{font-weight:700;font-variant-numeric:tabular-nums;min-width:52px;font-size:12px}
+.bc-fund{font-size:10px;font-variant-numeric:tabular-nums;min-width:52px;text-align:right;color:#8095a8}
 /* Watchlist */
 .watchlist-grid{display:flex;flex-direction:column;gap:6px}
 .wl-row{display:grid;grid-template-columns:72px 1fr 100px 180px;align-items:center;gap:12px;
@@ -1442,6 +1482,71 @@ def build_html(scan, signals, stats, arb=None):
   fetchPrices();
   setInterval(fetchPrices, 3000);
   setInterval(recalcAndUpdate, 1000);
+}})();
+
+// ── LIVE BASIS + FUNDING RATES ────────────────────────────────────────────
+(function() {{
+  const BASIS_SYMS = ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','XRPUSDT','DOGEUSDT','DOTUSDT','AVAXUSDT'];
+  const BASIS_MIN = 0.20;  // entry threshold %
+  const CARRY_ANN = 22;    // carry floor %/yr
+
+  async function fetchBasisAndFunding() {{
+    try {{
+      // Spot prices
+      const [sRes, pRes, fRes] = await Promise.all([
+        fetch('https://api.bybit.com/v5/market/tickers?category=spot'),
+        fetch('https://api.bybit.com/v5/market/tickers?category=linear'),
+        fetch('https://api.bybit.com/v5/market/tickers?category=linear')
+      ]);
+      const sData = await sRes.json();
+      const pData = await pRes.json();
+
+      const spotMap = {{}};
+      for (const t of (sData?.result?.list || [])) spotMap[t.symbol] = parseFloat(t.lastPrice);
+      const perpMap = {{}};
+      for (const t of (pData?.result?.list || [])) {{
+        perpMap[t.symbol] = {{
+          price: parseFloat(t.lastPrice),
+          fundingRate: parseFloat(t.fundingRate || 0),
+          nextFunding: t.nextFundingTime
+        }};
+      }}
+
+      for (const sym of BASIS_SYMS) {{
+        const spot = spotMap[sym];
+        const perp = perpMap[sym];
+        if (!spot || !perp) continue;
+
+        const basis = (perp.price - spot) / spot * 100;
+        const fr8h  = perp.fundingRate * 100;
+        const frAnn = fr8h * 3 * 365;  // 3 payments/day × 365
+
+        const bEl = document.getElementById('bb-' + sym);
+        const fEl = document.getElementById('bf-' + sym);
+        const chip = document.getElementById('bc-' + sym);
+
+        if (bEl) {{
+          bEl.textContent = (basis >= 0 ? '+' : '') + basis.toFixed(3) + '%';
+          bEl.style.color = Math.abs(basis) >= BASIS_MIN ? '#00d4aa' : '#8095a8';
+        }}
+        if (fEl) {{
+          fEl.textContent = (fr8h >= 0 ? '+' : '') + fr8h.toFixed(4) + '% · ' + frAnn.toFixed(1) + '%/yr';
+          fEl.style.color = Math.abs(frAnn) >= CARRY_ANN ? '#ffd060' : '#8095a8';
+        }}
+        // Highlight chip if near entry threshold
+        if (chip) {{
+          if (Math.abs(basis) >= BASIS_MIN || Math.abs(frAnn) >= CARRY_ANN) {{
+            chip.classList.add('basis-hot');
+          }} else {{
+            chip.classList.remove('basis-hot');
+          }}
+        }}
+      }}
+    }} catch(e) {{ /* silent */ }}
+  }}
+
+  fetchBasisAndFunding();
+  setInterval(fetchBasisAndFunding, 5000);
 }})();
 </script>
 </body>
