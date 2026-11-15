@@ -1,4 +1,4 @@
-"""
+﻿"""
 Signal Accuracy Tracker
 Logs every signal from global_quant_system, checks outcomes after 4h,
 and builds a running win-rate / IC / profit-factor report.
@@ -53,7 +53,9 @@ def init_db():
         outcome       TEXT DEFAULT 'PENDING',
         exit_price    REAL,
         return_pct    REAL,
-        checked_at    TEXT
+        checked_at    TEXT,
+        inst_confirmed INTEGER DEFAULT 1,
+        gate_block     TEXT
     );
     CREATE TABLE IF NOT EXISTS accuracy_summary (
         id               INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -72,6 +74,13 @@ def init_db():
         best_symbol_wr   REAL
     );
     """)
+    # Migration: add intel columns to pre-existing DBs (backwards-compatible)
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(signals)").fetchall()]
+    if cols:
+        for col, ddl in (("inst_confirmed", "INTEGER DEFAULT 1"),
+                         ("gate_block",     "TEXT")):
+            if col not in cols:
+                conn.execute(f"ALTER TABLE signals ADD COLUMN {col} {ddl}")
     conn.commit()
     conn.close()
 
@@ -117,8 +126,11 @@ def log_signals(scan_results):
         if direction == "NEUTRAL":
             continue
 
-        # Skip signals blocked by institutional or regime gate
-        if not r.get("inst_confirmed", True):
+        # Skip signals blocked by institutional or regime gate.
+        # Belt-and-braces: honour all three gate markers the fusion layer can set.
+        if (not r.get("inst_confirmed", True)
+                or r.get("inst_blocked")
+                or r.get("gate_block")):
             skipped_inst += 1
             continue
 
@@ -143,10 +155,13 @@ def log_signals(scan_results):
         conn.execute("""
             INSERT INTO signals
               (timestamp, symbol, direction, unified_score,
-               master_score, hft_score, factor_weight, stat_arb_z, entry_price)
-            VALUES (?,?,?,?,?,?,?,?,?)
+               master_score, hft_score, factor_weight, stat_arb_z, entry_price,
+               inst_confirmed, gate_block)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?)
         """, (now, sym, direction, score,
-              master_score, hft_score, factor_w, stat_arb_z, entry_price))
+              master_score, hft_score, factor_w, stat_arb_z, entry_price,
+              1 if r.get("inst_confirmed", True) else 0,
+              r.get("gate_block")))
         logged += 1
 
     conn.commit()
@@ -185,11 +200,47 @@ def get_price_n_hours_ago(symbol, hours):
     except Exception:
         return None
 
+def get_window_extremes(symbol, hours_since, window_h):
+    """
+    High/low extremes of the 1h bars covering [signal_time, signal_time + window_h].
+    hours_since = hours elapsed since the signal. Returns (max_high, min_low) or None.
+    Used to detect decisive intra-window moves that a single 4h-close check misses.
+    """
+    try:
+        try:
+            from data_utils import fetch_klines
+            klines = fetch_klines(symbol, "1h", int(hours_since) + 6)
+        except Exception:
+            r = requests.get(f"{BINANCE}/api/v3/klines",
+                             params={"symbol": symbol, "interval": "1h",
+                                     "limit": int(hours_since) + 6},
+                             timeout=8)
+            klines = r.json()
+        if not klines or not isinstance(klines, list):
+            return None
+        # Window bars: from (hours_since) ago to (hours_since - window_h) ago
+        start_idx = -(int(round(hours_since)) + 1)
+        end_idx   = start_idx + int(window_h) + 1   # inclusive of the window's last bar
+        bars = klines[start_idx:end_idx] if end_idx < 0 else klines[start_idx:]
+        if not bars:
+            return None
+        highs = [float(b[2]) for b in bars]
+        lows  = [float(b[3]) for b in bars]
+        return max(highs), min(lows)
+    except Exception:
+        return None
+
+
 def check_pending_outcomes():
     """
     For all PENDING signals older than OUTCOME_AFTER_H hours,
     fetch the price AT signal_time + OUTCOME_AFTER_H (not current price).
     Uses klines to look back the correct number of hours.
+
+    Robustness: a signal also counts as a WIN if the price moved DECISIVELY in
+    the signal direction inside the 4h window (favorable excursion >= 2x the win
+    threshold while the adverse excursion stayed under 1x threshold), even if the
+    4h close drifted back slightly. return_pct always reports the 4h-close return.
     """
     conn = get_conn()
     cutoff = (datetime.now(timezone.utc) - timedelta(hours=OUTCOME_AFTER_H)).isoformat()
@@ -242,7 +293,24 @@ def check_pending_outcomes():
         if direction == "SHORT":
             raw_ret = -raw_ret
 
-        outcome    = "WIN" if raw_ret >= WIN_THRESHOLD else "LOSS"
+        outcome = "WIN" if raw_ret >= WIN_THRESHOLD else "LOSS"
+
+        # Decisive intra-window move check: close-based LOSS can still be a WIN
+        # if price ran >= 2x threshold in our favor within the window while never
+        # moving a full threshold against us (a real tradeable move that mean-
+        # reverted into the 4h close).
+        if outcome == "LOSS":
+            ext = get_window_extremes(sym, hours_since, OUTCOME_AFTER_H)
+            if ext:
+                max_high, min_low = ext
+                if direction == "LONG":
+                    mfe = (max_high - entry_price) / entry_price
+                    mae = (entry_price - min_low) / entry_price
+                else:
+                    mfe = (entry_price - min_low) / entry_price
+                    mae = (max_high - entry_price) / entry_price
+                if mfe >= 2 * WIN_THRESHOLD and mae < WIN_THRESHOLD:
+                    outcome = "WIN"
         return_pct = round(raw_ret * 100, 4)
         checked_at = now_utc.isoformat()
 

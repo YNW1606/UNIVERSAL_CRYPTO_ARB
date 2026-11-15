@@ -6,6 +6,22 @@ Writes docs/index.html — served free via GitHub Pages
 import sqlite3, json, os, sys
 from datetime import datetime, timezone
 
+
+def fetch_live_inst_data():
+    """Fetch live institutional flow data for major symbols from Binance FAPI."""
+    try:
+        import institutional_intel as ii
+        symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT"]
+        data = {}
+        for sym in symbols:
+            try:
+                data[sym] = ii.get_institutional_signal(sym)
+            except Exception:
+                pass
+        return data
+    except Exception:
+        return {}
+
 BASE      = os.path.dirname(os.path.abspath(__file__))
 DB_PATH   = os.path.join(BASE, "accuracy_db", "signals.db")
 JSON_PATH = os.path.join(BASE, "accuracy_db", "latest_scan.json")
@@ -626,15 +642,65 @@ def build_perp_arb_panel(arb):
 </table>'''
 
     btc_cls = "pos" if scan_btc >= 0 else "red"
-    inst_intel_html = '''<div style="background:rgba(255,208,96,0.07);border:1px solid rgba(255,208,96,0.2);border-radius:8px;padding:12px 16px;margin-bottom:12px">
-  <div style="font-size:11px;color:#ffd060;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">Institutional Intelligence Layer</div>
-  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:6px">
-    <div style="font-size:11px;color:#c0cfe0"><span style="color:#8095a8">OI Trend:</span> Live Binance OI velocity (5m / 1h / 4h / 24h)</div>
-    <div style="font-size:11px;color:#c0cfe0"><span style="color:#8095a8">Top Traders:</span> L/S ratio from institutional accounts</div>
-    <div style="font-size:11px;color:#c0cfe0"><span style="color:#8095a8">Taker Flow:</span> Aggressive buy vs sell pressure</div>
-    <div style="font-size:11px;color:#c0cfe0"><span style="color:#8095a8">Gate:</span> Blocks entries when institutional data conflicts signal</div>
-  </div>
-  <div style="font-size:10px;color:#8095a8">Score: &#8722;100 (institutional selling heavily) → +100 (institutional accumulating). Entry requires score &#8805;30. Best entries: score &#8805;60 with OI rising + top traders confirmed.</div>
+
+    # ── Live Institutional Intelligence table ─────────────────────────────────
+    live_inst = fetch_live_inst_data()
+    inst_rows = ""
+    consensus_scores = []
+    for sym, d in live_inst.items():
+        sc       = d.get("institutional_score", 0) or 0
+        oi_tr    = d.get("oi_trend", "—")
+        oi_1h    = d.get("oi_pct_1h", 0) or 0
+        tt_bias  = d.get("top_trader_bias", "—")
+        tt_ratio = d.get("top_long_ratio", 0) or 0
+        gl_ratio = d.get("global_long_ratio", 0) or 0
+        f_tr     = d.get("funding_trend", "—")
+        conf     = d.get("confidence", "")
+        sc_col   = ("#00d4aa" if sc >= 20 else "#ffd060" if sc >= -20 else "#ff6b6b")
+        oi_col   = "#00d4aa" if oi_tr == "RISING" else ("#ff6b6b" if oi_tr == "FALLING" else "#8095a8")
+        f_col    = "#00d4aa" if f_tr == "RISING" else ("#ff6b6b" if f_tr == "FALLING" else "#8095a8")
+        tt_col   = "#00d4aa" if tt_bias == "LONG" else "#ff6b6b"
+        gl_pct   = f"{gl_ratio*100:.0f}%" if gl_ratio else "—"
+        ticker   = sym.replace("USDT","")
+        consensus_scores.append(sc)
+        inst_rows += (
+            f'<tr>'
+            f'<td><b style="color:#e0eaf5">{ticker}</b></td>'
+            f'<td><span style="color:{oi_col}">{oi_tr}</span> <span style="color:#8095a8;font-size:10px">{oi_1h:+.2f}%/h</span></td>'
+            f'<td><span style="color:{tt_col}">{tt_bias}</span> <span style="color:#8095a8;font-size:10px">{tt_ratio:.1f}:1</span></td>'
+            f'<td style="color:#8095a8;font-size:11px">{gl_pct} long</td>'
+            f'<td><span style="color:{f_col}">{f_tr}</span></td>'
+            f'<td style="font-weight:700;color:{sc_col}">{sc:+d}</td>'
+            f'<td style="color:#8095a8;font-size:10px">{conf}</td>'
+            f'</tr>\n'
+        )
+    if consensus_scores:
+        avg_sc = sum(consensus_scores) / len(consensus_scores)
+        cons_lbl = ("BULLISH ACCUMULATION" if avg_sc >= 25 else
+                    "MILD BULLISH" if avg_sc >= 5 else
+                    "NEUTRAL" if avg_sc >= -15 else
+                    "MILD BEARISH" if avg_sc >= -35 else "BEARISH DISTRIBUTION")
+        cons_col = ("#00d4aa" if avg_sc >= 5 else "#ffd060" if avg_sc >= -15 else "#ff6b6b")
+        consensus_line = f'<div style="font-size:11px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,208,96,0.1)">Consensus: <b style="color:{cons_col}">{cons_lbl}</b> <span style="color:#8095a8">(avg score {avg_sc:+.0f})</span> &nbsp;·&nbsp; Gate active: entries blocked when score &lt; 30</div>'
+    else:
+        consensus_line = '<div style="font-size:11px;margin-top:8px;color:#8095a8">Fetching institutional data…</div>'
+
+    inst_intel_html = f'''<div style="background:rgba(255,208,96,0.07);border:1px solid rgba(255,208,96,0.2);border-radius:8px;padding:12px 16px;margin-bottom:12px">
+  <div style="font-size:11px;color:#ffd060;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">&#9670; Live Institutional Intelligence · Binance FAPI · Updated {datetime.now(timezone.utc).strftime("%H:%M UTC")}</div>
+  <table style="width:100%;border-collapse:collapse;font-size:11px">
+    <thead><tr style="color:#8095a8;font-size:10px;text-transform:uppercase;letter-spacing:0.5px">
+      <th style="text-align:left;padding:3px 8px 5px 0">Symbol</th>
+      <th style="text-align:left;padding:3px 8px 5px 0">OI Trend (1h)</th>
+      <th style="text-align:left;padding:3px 8px 5px 0">Top Traders</th>
+      <th style="text-align:left;padding:3px 8px 5px 0">Global L/S</th>
+      <th style="text-align:left;padding:3px 8px 5px 0">Funding</th>
+      <th style="text-align:left;padding:3px 8px 5px 0">Score</th>
+      <th style="text-align:left;padding:3px 8px 5px 0">Conf</th>
+    </tr></thead>
+    <tbody>{inst_rows if inst_rows else "<tr><td colspan='7' style='color:#8095a8;padding:8px 0'>Fetching…</td></tr>"}</tbody>
+  </table>
+  {consensus_line}
+  <div style="font-size:10px;color:#8095a8;margin-top:4px">Score: &#8722;100 (heavy institutional selling) → +100 (institutional accumulation). Entry gate requires score &#8805;30.</div>
 </div>'''
     scanner_status_html = f'''
 <div style="background:rgba(0,180,255,0.07);border:1px solid rgba(0,180,255,0.18);border-radius:8px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">

@@ -75,11 +75,55 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
-            # Restore our fresh scan data on top of the latest code
-            cp /tmp/scan_backup/signals.db          accuracy_db/ 2>/dev/null || true
+            # Smart DB merge: keep whichever DB has MORE records (pushed local DB beats stale runner DB)
+            BACKUP_TRADES=$(python3 -c "
+import sqlite3
+try:
+    c=sqlite3.connect('/tmp/scan_backup/perp_arb.db')
+    print(c.execute('SELECT COUNT(*) FROM trades').fetchone()[0])
+except: print(0)
+" 2>/dev/null || echo 0)
+            GIT_TRADES=$(python3 -c "
+import sqlite3
+try:
+    c=sqlite3.connect('accuracy_db/perp_arb.db')
+    print(c.execute('SELECT COUNT(*) FROM trades').fetchone()[0])
+except: print(0)
+" 2>/dev/null || echo 0)
+            echo "DB merge: backup=${BACKUP_TRADES} trades, git=${GIT_TRADES} trades"
+            if [ "${BACKUP_TRADES}" -gt "${GIT_TRADES}" ]; then
+              echo "→ Using backup perp_arb.db (${BACKUP_TRADES} > ${GIT_TRADES})"
+              cp /tmp/scan_backup/perp_arb.db accuracy_db/
+            else
+              echo "→ Using git perp_arb.db (${GIT_TRADES} >= ${BACKUP_TRADES})"
+              cp accuracy_db/perp_arb.db /tmp/scan_backup/perp_arb.db
+            fi
+
+            BACKUP_SIGS=$(python3 -c "
+import sqlite3
+try:
+    c=sqlite3.connect('/tmp/scan_backup/signals.db')
+    print(c.execute('SELECT COUNT(*) FROM signals').fetchone()[0])
+except: print(0)
+" 2>/dev/null || echo 0)
+            GIT_SIGS=$(python3 -c "
+import sqlite3
+try:
+    c=sqlite3.connect('accuracy_db/signals.db')
+    print(c.execute('SELECT COUNT(*) FROM signals').fetchone()[0])
+except: print(0)
+" 2>/dev/null || echo 0)
+            echo "Signal DB merge: backup=${BACKUP_SIGS} sigs, git=${GIT_SIGS} sigs"
+            if [ "${BACKUP_SIGS}" -gt "${GIT_SIGS}" ]; then
+              echo "→ Using backup signals.db"
+              cp /tmp/scan_backup/signals.db accuracy_db/
+            else
+              echo "→ Using git signals.db"
+              cp accuracy_db/signals.db /tmp/scan_backup/signals.db
+            fi
+
             cp /tmp/scan_backup/latest_scan.json    accuracy_db/ 2>/dev/null || true
             cp /tmp/scan_backup/perp_arb.json       accuracy_db/ 2>/dev/null || true
-            cp /tmp/scan_backup/perp_arb.db         accuracy_db/ 2>/dev/null || true
             cp /tmp/scan_backup/signals_history.json accuracy_db/ 2>/dev/null || true
 
             # Prune sub-threshold signals after every restore so old noise never comes back
