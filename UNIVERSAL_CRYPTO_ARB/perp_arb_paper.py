@@ -130,6 +130,13 @@ SUSTAINED_PERIODS   = 5         # last 5 prints (40h) must ALL be consistently a
 SPIKE_RATIO         = 2.0       # tighter: current > 2× avg = spike → skip
 SUSTAINED_FLOOR_PCT = 0.65      # each recent rate must be >= 65% of avg7 (was 50%)
 
+# Fee breakeven gate: refuse CARRY_ARB if round-trip fees can't be recovered within 3 days.
+# Math: breakeven_days = (size × 0.0016) / (fr × size/2 × 3) = 0.00107 / fr
+# → at 39%/yr (fr=0.000357) → 3.0 days PASS; at 30%/yr (fr=0.000274) → 3.9 days BLOCKED
+# This tightens effective minimum from 30%/yr to 39%/yr for CARRY_ARB entries.
+CARRY_FEE_BREAKEVEN_MAX_DAYS = 3.0   # 0.00107 / fr ≤ 3 → minimum fr ≥ 0.000357 = 39%/yr
+CARRY_MIN_HOLD_H    = 48        # CARRY_ARB: never exit FUNDING_DROPPED before 48h (was 24h)
+
 # Smart re-entry after portfolio take-profit
 REENTRY_MIN_ANN_PCT = 20.0      # best carry must exceed 20%/yr before redeploying
 
@@ -429,18 +436,24 @@ def scan_opportunities():
             if basis_pct < -0.15:
                 pass  # basis too negative — additional risk for long_spot position
             else:
-                opps.append({
-                    "strategy":     "CARRY_ARB",
-                    "symbol":       sym,
-                    "direction":    "LONG_SPOT_SHORT_PERP",
-                    "funding_rate": fr,
-                    "ann_pct":      ann_pct,
-                    "basis_pct":    basis_pct,
-                    "spot":         spot,
-                    "perp":         perp,
-                    "volume24h":    vol,
-                    "score":        ann_pct,
-                })
+                # Fee breakeven gate: even if fr stays flat, can we recover fees in ≤3 days?
+                # breakeven_days = 0.00107 / fr  →  require fr ≥ 0.00107 / max_days
+                _fee_be_days = 0.00107 / fr  # days to recover round-trip fees at today's rate
+                if _fee_be_days > CARRY_FEE_BREAKEVEN_MAX_DAYS:
+                    pass  # fee breakeven too far out — not worth the basis/decay risk
+                else:
+                    opps.append({
+                        "strategy":     "CARRY_ARB",
+                        "symbol":       sym,
+                        "direction":    "LONG_SPOT_SHORT_PERP",
+                        "funding_rate": fr,
+                        "ann_pct":      ann_pct,
+                        "basis_pct":    basis_pct,
+                        "spot":         spot,
+                        "perp":         perp,
+                        "volume24h":    vol,
+                        "score":        ann_pct,
+                    })
         elif fr <= -carry_min:
             opps.append({
                 "strategy":     "NEG_CARRY",
@@ -932,7 +945,8 @@ def _should_close(trade, spot_now, perp_now, fr):
         # Early exit at 11h just locks in a fee loss. Exception: if already near stop.
         near_stop = unrealized < stop_usd * 0.6  # within 60% of hard stop
         if strategy == "CARRY_ARB" and fr <= CARRY_EXIT_RATE:
-            if hours_open >= 24 or near_stop:
+            # CARRY_ARB needs 48h minimum — fees require ~2.5 days to recover at 39%/yr
+            if hours_open >= CARRY_MIN_HOLD_H or near_stop:
                 return "FUNDING_DROPPED"
         if strategy == "NEG_CARRY" and fr >= -CARRY_EXIT_RATE:
             if hours_open >= 24 or near_stop:
