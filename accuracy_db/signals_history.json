@@ -1,6 +1,24 @@
 {
-  "generated_at": "2026-11-15 08:30 UTC",
+  "generated_at": "2026-11-15 08:35 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-15T08:34",
+      "symbol": "LINKUSDT",
+      "direction": "SHORT",
+      "score": -39,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-15T08:31",
+      "symbol": "ARBUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-15T08:28",
       "symbol": "APTUSDT",
@@ -882,24 +900,6 @@
       "tier": "MODERATE",
       "outcome": "LOSS",
       "return_pct": -2.918
-    },
-    {
-      "timestamp": "2026-11-14T22:32",
-      "symbol": "BTCUSDT",
-      "direction": "SHORT",
-      "score": -39,
-      "tier": "MODERATE",
-      "outcome": "LOSS",
-      "return_pct": -1.2286
-    },
-    {
-      "timestamp": "2026-11-14T22:27",
-      "symbol": "DOTUSDT",
-      "direction": "SHORT",
-      "score": -36,
-      "tier": "MODERATE",
-      "outcome": "LOSS",
-      "return_pct": -1.511
     }
   ]
 }
