@@ -1,6 +1,33 @@
 {
-  "generated_at": "2026-11-15 09:10 UTC",
+  "generated_at": "2026-11-15 09:16 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-15T09:15",
+      "symbol": "XRPUSDT",
+      "direction": "LONG",
+      "score": 35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-15T09:14",
+      "symbol": "BTCUSDT",
+      "direction": "LONG",
+      "score": 39,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-15T09:13",
+      "symbol": "TRXUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-15T09:02",
       "symbol": "DOTUSDT",
@@ -250,8 +277,8 @@
       "direction": "SHORT",
       "score": -37,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -1.8439
     },
     {
       "timestamp": "2026-11-15T05:10",
@@ -259,8 +286,8 @@
       "direction": "SHORT",
       "score": -35,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -2.3532
     },
     {
       "timestamp": "2026-11-15T04:58",
@@ -873,33 +900,6 @@
       "tier": "MODERATE",
       "outcome": "LOSS",
       "return_pct": -3.8067
-    },
-    {
-      "timestamp": "2026-11-14T22:59",
-      "symbol": "DOTUSDT",
-      "direction": "SHORT",
-      "score": -35,
-      "tier": "MODERATE",
-      "outcome": "LOSS",
-      "return_pct": -4.048
-    },
-    {
-      "timestamp": "2026-11-14T22:57",
-      "symbol": "SUIUSDT",
-      "direction": "SHORT",
-      "score": -35,
-      "tier": "MODERATE",
-      "outcome": "LOSS",
-      "return_pct": -5.5776
-    },
-    {
-      "timestamp": "2026-11-14T22:56",
-      "symbol": "ARBUSDT",
-      "direction": "SHORT",
-      "score": -36,
-      "tier": "MODERATE",
-      "outcome": "LOSS",
-      "return_pct": -3.3307
     }
   ]
 }
