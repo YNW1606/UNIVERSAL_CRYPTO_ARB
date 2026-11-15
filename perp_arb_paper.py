@@ -99,15 +99,13 @@ CARRY_WHITELIST = {
 }
 
 # ── THRESHOLDS ────────────────────────────────────────────────────────────────
-CARRY_MIN_RATE      = 0.000229  # 0.0229%/8h = ~25%/yr base floor (raised: quality filter)
+CARRY_MIN_RATE      = 0.000274  # 0.0274%/8h = ~30%/yr base floor
 CARRY_EXIT_RATE     = 0.00005
-NEG_CARRY_MIN_RATE  = -0.000137
+NEG_CARRY_MIN_RATE  = -0.000274  # 30%/yr floor — symmetric with CARRY_ARB
 
 # Regime-adaptive carry floor
-# BEAR was 30%/yr but with INTEL GATE now live, lowered to 22%/yr — the OI velocity
-# + institutional flow analysis does the real quality filtering, not just the rate floor.
-CARRY_MIN_RATE_BULL = 0.000137  # 15%/yr — bull trend supports lower funding long-term
-CARRY_MIN_RATE_BEAR = 0.000201  # 22%/yr — intel gate replaces the strict floor
+CARRY_MIN_RATE_BULL = 0.000200  # 21.9%/yr — bull market
+CARRY_MIN_RATE_BEAR = 0.000274  # 30%/yr — bear market stricter quality bar
 REGIME_LOOKBACK_H   = 24        # BTC trend lookback (hours)
 REGIME_BULL_PCT     = 0.5       # BTC 24h change >= +0.5% → BULL
 REGIME_BEAR_PCT     = -0.5      # BTC 24h change <= -0.5% → BEAR (else SIDEWAYS)
@@ -127,10 +125,10 @@ VOL_GATE_STD        = 0.0003    # above this = highly unstable
 VOL_GATE_MIN_ANN    = 25.0      # unstable symbols must yield > 25%/yr (vs 15%)
 VOL_GATE_SIZE_MULT  = 0.5       # and get only half size
 
-# Sustained funding entry filter (KEY FIX for 0% WR on CARRY_ARB)
-SUSTAINED_PERIODS   = 3         # last N funding prints must ALL be above floor
-SPIKE_RATIO         = 2.5       # current > 2.5× 7-day avg = spike → skip (will revert)
-SUSTAINED_FLOOR_PCT = 0.50      # each recent rate must be >= 50% of avg7 to be "sustained"
+# Sustained funding entry filter
+SUSTAINED_PERIODS   = 5         # last 5 prints (40h) must ALL be consistently above floor
+SPIKE_RATIO         = 2.0       # tighter: current > 2× avg = spike → skip
+SUSTAINED_FLOOR_PCT = 0.65      # each recent rate must be >= 65% of avg7 (was 50%)
 
 # Smart re-entry after portfolio take-profit
 REENTRY_MIN_ANN_PCT = 20.0      # best carry must exceed 20%/yr before redeploying
@@ -426,18 +424,23 @@ def scan_opportunities():
         basis_pct = (perp - spot) / spot * 100
 
         if fr >= carry_min:
-            opps.append({
-                "strategy":     "CARRY_ARB",
-                "symbol":       sym,
-                "direction":    "LONG_SPOT_SHORT_PERP",
-                "funding_rate": fr,
-                "ann_pct":      ann_pct,
-                "basis_pct":    basis_pct,
-                "spot":         spot,
-                "perp":         perp,
-                "volume24h":    vol,
-                "score":        ann_pct,
-            })
+            # Gate: skip CARRY_ARB when perp is already at significant discount to spot.
+            # Long_spot_short_perp with deep negative basis = perp can fall further → headwind.
+            if basis_pct < -0.15:
+                pass  # basis too negative — additional risk for long_spot position
+            else:
+                opps.append({
+                    "strategy":     "CARRY_ARB",
+                    "symbol":       sym,
+                    "direction":    "LONG_SPOT_SHORT_PERP",
+                    "funding_rate": fr,
+                    "ann_pct":      ann_pct,
+                    "basis_pct":    basis_pct,
+                    "spot":         spot,
+                    "perp":         perp,
+                    "volume24h":    vol,
+                    "score":        ann_pct,
+                })
         elif fr <= -carry_min:
             opps.append({
                 "strategy":     "NEG_CARRY",
@@ -466,18 +469,21 @@ def scan_opportunities():
                 "score":        basis_pct * 10,
             })
         elif -BASIS_MAX_PCT <= basis_pct <= -BASIS_MIN_PCT:
-            opps.append({
-                "strategy":     "SPOT_DISCOUNT",
-                "symbol":       sym,
-                "direction":    "LONG_PERP_SHORT_SPOT",
-                "funding_rate": fr,
-                "ann_pct":      -ann_pct,   # direction-adjusted: LONG_PERP receives when fr<0
-                "basis_pct":    basis_pct,
-                "spot":         spot,
-                "perp":         perp,
-                "volume24h":    vol,
-                "score":        abs(basis_pct) * 10,
-            })
+            # Gate: LONG_PERP_SHORT_SPOT — skip if funding is significantly positive
+            # (we'd pay carry while waiting for basis convergence, eroding the edge)
+            if fr <= 0.00015:  # only enter if NOT paying > 16%/yr in carry cost
+                opps.append({
+                    "strategy":     "SPOT_DISCOUNT",
+                    "symbol":       sym,
+                    "direction":    "LONG_PERP_SHORT_SPOT",
+                    "funding_rate": fr,
+                    "ann_pct":      -ann_pct,   # direction-adjusted: LONG_PERP receives when fr<0
+                    "basis_pct":    basis_pct,
+                    "spot":         spot,
+                    "perp":         perp,
+                    "volume24h":    vol,
+                    "score":        abs(basis_pct) * 10,
+                })
         elif 0.05 <= abs(basis_pct) < BASIS_MIN_PCT:
             # Near-miss: approaching threshold — record for dashboard "watching" display
             watching.append({
@@ -921,11 +927,16 @@ def _should_close(trade, spot_now, perp_now, fr):
 
     # ── 6–9. Strategy-specific exits ─────────────────────────────────────────
     if strategy in ("CARRY_ARB", "NEG_CARRY"):
-        # Funding dropped below exit threshold
+        # Funding dropped below exit threshold.
+        # Minimum 24h hold: funding often normalizes then comes back within 24h.
+        # Early exit at 11h just locks in a fee loss. Exception: if already near stop.
+        near_stop = unrealized < stop_usd * 0.6  # within 60% of hard stop
         if strategy == "CARRY_ARB" and fr <= CARRY_EXIT_RATE:
-            return "FUNDING_DROPPED"
+            if hours_open >= 24 or near_stop:
+                return "FUNDING_DROPPED"
         if strategy == "NEG_CARRY" and fr >= -CARRY_EXIT_RATE:
-            return "FUNDING_NORMALIZED"
+            if hours_open >= 24 or near_stop:
+                return "FUNDING_NORMALIZED"
 
         # Funding decay — CONFIRMED fade only (a single low print during a
         # volatile stretch is noise; funding often snaps back next period):
@@ -961,6 +972,10 @@ def _should_close(trade, spot_now, perp_now, fr):
             return "BASIS_CONVERGED"
         if basis_now < basis_entry - BASIS_STOP_PCT:
             return "STOP_LOSS_BASIS"
+        # Exit paying-carry positions if basis isn't converging.
+        # fr_entry > 0 means we're paying carry while holding — exit if still losing after 12h.
+        if fr_entry > 0.00015 and unrealized < 0 and hours_open >= 12:
+            return "CARRY_COST_EXIT"
         if hours_open >= BASIS_MAX_HOURS:
             return "MAX_DURATION"
 
