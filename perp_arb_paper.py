@@ -1,4 +1,4 @@
-"""
+﻿"""
 Perpetual Arbitrage Paper Trader
 =================================
 Strategies:
@@ -161,6 +161,13 @@ BASIS_MIN_PCT       = 0.20   # min basis for SPOT_PREMIUM/DISCOUNT entry
 BASIS_MAX_PCT       = 2.00   # max basis — above this it's structural, not convergence play
 BASIS_EXIT_PCT      = 0.04
 BASIS_STOP_PCT      = 0.60
+# Basis convergence trend gate (SPOT_PREMIUM / SPOT_DISCOUNT entries):
+# only enter when |basis| has been NARROWING toward 0 — widening basis means the
+# dislocation is growing, not converging (root cause of stuck SPOT_DISCOUNT entries).
+BASIS_TREND_MIN_OBS    = 3    # need >= 3 recorded basis readings to judge the trend
+BASIS_TREND_LOOKBACK_H = 24   # ~3 funding periods of history considered
+BASIS_TREND_MIN_SPAN_M = 60   # readings must span >= 60 minutes (avoid 3 same-minute obs)
+BASIS_DIVERGE_EXIT_H   = 24   # SPOT_* positions: basis wider than entry after 24h → exit early
 CARRY_MAX_DAYS      = 30
 BASIS_MAX_HOURS     = 72
 FEE_PER_LEG         = 0.0004
@@ -173,6 +180,10 @@ POSITION_USD        = STARTING_BALANCE / MAX_OPEN_TRADES  # $66.7k flat fallback
 FUNDING_INTERVAL_H  = 8
 MIN_VOLUME_24H      = 5_000_000
 MAX_ANN_RATE        = 500.0
+# Annualization factor for basis-convergence yield: the basis is expected to be
+# captured over at most BASIS_MAX_HOURS, so expected annual return from a basis
+# position = |basis_pct| × (hours-in-year / BASIS_MAX_HOURS).
+BASIS_ANNUALIZE     = 24 * 365 / BASIS_MAX_HOURS   # ≈ 121.7×
 
 # ── PER-POSITION SMART EXIT (cascading take-profit) ───────────────────────────
 PROFIT_TARGET_PCT   = 0.030   # +3.0% hard ceiling on the remainder
@@ -252,6 +263,14 @@ def init_db():
         payment_usd  REAL,
         direction   TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS basis_history (
+        id        INTEGER PRIMARY KEY AUTOINCREMENT,
+        symbol    TEXT NOT NULL,
+        logged_at TEXT NOT NULL,
+        basis_pct REAL NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_basis_hist_sym_ts ON basis_history (symbol, logged_at);
 
     CREATE TABLE IF NOT EXISTS portfolio_meta (
         id               INTEGER PRIMARY KEY CHECK (id = 1),  -- singleton row
@@ -355,6 +374,60 @@ def _funding_stats(symbol):
     }
 
 
+# ── BASIS TREND TRACKING ──────────────────────────────────────────────────────
+
+def _record_basis(sym, basis_pct):
+    """Log one basis observation per scan — used by the convergence trend gate."""
+    try:
+        now = datetime.now(timezone.utc)
+        c = _conn()
+        c.execute("INSERT INTO basis_history (symbol, logged_at, basis_pct) VALUES (?,?,?)",
+                  (sym, now.isoformat(), float(basis_pct)))
+        # Prune anything older than 48h to keep the table tiny
+        c.execute("DELETE FROM basis_history WHERE logged_at < ?",
+                  ((now - timedelta(hours=48)).isoformat(),))
+        c.commit()
+        c.close()
+    except Exception:
+        pass
+
+
+def _basis_converging(sym):
+    """
+    Convergence trend check for SPOT_PREMIUM / SPOT_DISCOUNT entries.
+    Returns:
+      True  — |basis| has been narrowing (trending toward 0) → OK to enter
+      False — |basis| widening → dislocation growing, do NOT enter
+      None  — insufficient history to judge (treat as not-confirmed)
+    Method: compare the mean |basis| of the earliest third vs latest third of
+    readings over the last BASIS_TREND_LOOKBACK_H hours (≈3 funding periods).
+    """
+    try:
+        cutoff = (datetime.now(timezone.utc)
+                  - timedelta(hours=BASIS_TREND_LOOKBACK_H)).isoformat()
+        c = _conn()
+        rows = c.execute(
+            "SELECT logged_at, basis_pct FROM basis_history "
+            "WHERE symbol=? AND logged_at>=? ORDER BY logged_at",
+            (sym, cutoff)).fetchall()
+        c.close()
+    except Exception:
+        return None
+    if len(rows) < BASIS_TREND_MIN_OBS:
+        return None
+    try:
+        t0 = datetime.fromisoformat(rows[0]["logged_at"].replace("Z", "+00:00"))
+        t1 = datetime.fromisoformat(rows[-1]["logged_at"].replace("Z", "+00:00"))
+        if (t1 - t0).total_seconds() / 60 < BASIS_TREND_MIN_SPAN_M:
+            return None   # readings too clustered in time to call it a trend
+    except Exception:
+        return None
+    third = max(1, len(rows) // 3)
+    early = sum(abs(float(r["basis_pct"])) for r in rows[:third]) / third
+    late  = sum(abs(float(r["basis_pct"])) for r in rows[-third:]) / third
+    return late <= early   # narrowing (or flat) = converging
+
+
 # ── MARKET SCAN ───────────────────────────────────────────────────────────────
 
 # Global cache: near-miss candidates for dashboard display (basis 0.05-0.20%)
@@ -455,52 +528,46 @@ def scan_opportunities():
                         "score":        ann_pct,
                     })
         elif fr <= -carry_min:
-            # Institutional gate for NEG_CARRY: only enter when top traders are SHORT
-            # or OI is RISING with negative funding (confirmed short pressure, not a trap).
-            # Avoids entering when top traders are actually LONG (would squeeze us short).
-            _neg_inst_ok = True
-            try:
-                import institutional_intel as _ii
-                _ni = _ii.get_institutional_signal(sym)
-                _top_bias = _ni.get("top_trader_bias", "NEUTRAL")
-                _oi_trend = _ni.get("oi_trend", "FLAT")
-                # Block if top traders are strongly LONG and OI is rising (long squeeze risk)
-                if _top_bias == "LONG" and _oi_trend == "RISING":
-                    _neg_inst_ok = False
-                    print(f"  NEG_CARRY {sym}: blocked (top traders LONG + OI rising = squeeze risk)")
-            except Exception:
-                pass
-            if _neg_inst_ok:
-                opps.append({
-                    "strategy":     "NEG_CARRY",
-                    "symbol":       sym,
-                    "direction":    "LONG_PERP_SHORT_SPOT",
-                    "funding_rate": fr,
-                    "ann_pct":      abs(ann_pct),
-                    "basis_pct":    basis_pct,
-                    "spot":         spot,
-                    "perp":         perp,
-                    "volume24h":    vol,
-                    "score":        abs(ann_pct),
-                })
-
-        if BASIS_MIN_PCT <= basis_pct <= BASIS_MAX_PCT:
             opps.append({
-                "strategy":     "SPOT_PREMIUM",
+                "strategy":     "NEG_CARRY",
                 "symbol":       sym,
-                "direction":    "LONG_SPOT_SHORT_PERP",
+                "direction":    "LONG_PERP_SHORT_SPOT",
                 "funding_rate": fr,
-                "ann_pct":      ann_pct,
+                "ann_pct":      abs(ann_pct),
                 "basis_pct":    basis_pct,
                 "spot":         spot,
                 "perp":         perp,
                 "volume24h":    vol,
-                "score":        basis_pct * 10,
+                "score":        abs(ann_pct),
             })
+
+        # Record basis history for every symbol showing a meaningful dislocation —
+        # feeds the convergence trend gate below (needs >=3 readings over >=60 min).
+        if abs(basis_pct) >= 0.05:
+            _record_basis(sym, basis_pct)
+
+        if BASIS_MIN_PCT <= basis_pct <= BASIS_MAX_PCT:
+            # Convergence gate: only fade a premium that is already NARROWING.
+            # A widening premium = momentum-driven dislocation still growing.
+            if _basis_converging(sym):
+                opps.append({
+                    "strategy":     "SPOT_PREMIUM",
+                    "symbol":       sym,
+                    "direction":    "LONG_SPOT_SHORT_PERP",
+                    "funding_rate": fr,
+                    "ann_pct":      ann_pct,
+                    "basis_pct":    basis_pct,
+                    "basis_yield_ann_pct": round(abs(basis_pct) * BASIS_ANNUALIZE, 1),
+                    "spot":         spot,
+                    "perp":         perp,
+                    "volume24h":    vol,
+                    "score":        basis_pct * 10,
+                })
         elif -BASIS_MAX_PCT <= basis_pct <= -BASIS_MIN_PCT:
             # Gate: LONG_PERP_SHORT_SPOT — skip if funding is significantly positive
             # (we'd pay carry while waiting for basis convergence, eroding the edge)
-            if fr <= 0.00015:  # only enter if NOT paying > 16%/yr in carry cost
+            # Convergence gate: only fade a discount already narrowing toward 0.
+            if fr <= 0.00015 and _basis_converging(sym):
                 opps.append({
                     "strategy":     "SPOT_DISCOUNT",
                     "symbol":       sym,
@@ -508,6 +575,7 @@ def scan_opportunities():
                     "funding_rate": fr,
                     "ann_pct":      -ann_pct,   # direction-adjusted: LONG_PERP receives when fr<0
                     "basis_pct":    basis_pct,
+                    "basis_yield_ann_pct": round(abs(basis_pct) * BASIS_ANNUALIZE, 1),
                     "spot":         spot,
                     "perp":         perp,
                     "volume24h":    vol,
@@ -994,6 +1062,10 @@ def _should_close(trade, spot_now, perp_now, fr):
             return "BASIS_CONVERGED"
         if basis_now > basis_entry + BASIS_STOP_PCT:
             return "STOP_LOSS_BASIS"
+        # Divergence exit: after 24h, if the basis is WIDER than at entry the
+        # convergence thesis has failed — exit early, don't wait out 72h max.
+        if hours_open >= BASIS_DIVERGE_EXIT_H and abs(basis_now) > abs(basis_entry):
+            return "BASIS_DIVERGING"
         if hours_open >= BASIS_MAX_HOURS:
             return "MAX_DURATION"
 
@@ -1006,6 +1078,10 @@ def _should_close(trade, spot_now, perp_now, fr):
         # fr_entry > 0 means we're paying carry while holding — exit if still losing after 12h.
         if fr_entry > 0.00015 and unrealized < 0 and hours_open >= 12:
             return "CARRY_COST_EXIT"
+        # Divergence exit: after 24h, if the basis is WIDER (more negative) than
+        # at entry the convergence thesis has failed — exit early.
+        if hours_open >= BASIS_DIVERGE_EXIT_H and abs(basis_now) > abs(basis_entry):
+            return "BASIS_DIVERGING"
         if hours_open >= BASIS_MAX_HOURS:
             return "MAX_DURATION"
 
@@ -1240,6 +1316,9 @@ def open_new_trades():
 # ── REPORT ────────────────────────────────────────────────────────────────────
 
 def compute_report(verbose=True):
+    global _SCAN_REGIME
+    if not _SCAN_REGIME:
+        _SCAN_REGIME = get_market_regime()
     c    = _conn()
     all_ = c.execute("SELECT * FROM trades ORDER BY opened_at DESC").fetchall()
     c.close()
@@ -1416,6 +1495,11 @@ def compute_report(verbose=True):
                 "opened_at":   r["opened_at"],
                 "funding_at_open": r["funding_at_open"],
                 "ann_yield":   r["ann_yield_at_open"],
+                # For basis strategies the funding-annualized number is meaningless
+                # (extreme-funding tokens stored -2000%+/yr). Expected return comes
+                # from basis convergence: |basis_entry| × (8760h / 72h max hold).
+                "basis_yield_ann": round(abs(float(r["basis_entry_pct"] or 0)) * BASIS_ANNUALIZE, 1)
+                                   if r["strategy"] in ("SPOT_DISCOUNT", "SPOT_PREMIUM") else None,
                 "spot_entry":  r["spot_entry"],
                 "perp_entry":  r["perp_entry"],
                 "basis_entry": r["basis_entry_pct"],
