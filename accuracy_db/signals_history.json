@@ -1,6 +1,15 @@
 {
-  "generated_at": "2026-11-15 01:09 UTC",
+  "generated_at": "2026-11-15 01:15 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-15T01:14",
+      "symbol": "BTCUSDT",
+      "direction": "SHORT",
+      "score": -40,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-15T00:15",
       "symbol": "APTUSDT",
@@ -404,7 +413,7 @@
       "score": -35,
       "tier": "MODERATE",
       "outcome": "WIN",
-      "return_pct": 2.6964
+      "return_pct": 3.8411
     },
     {
       "timestamp": "2026-11-14T20:51",
@@ -413,7 +422,7 @@
       "score": -36,
       "tier": "MODERATE",
       "outcome": "WIN",
-      "return_pct": 3.4373
+      "return_pct": 5.1491
     },
     {
       "timestamp": "2026-11-14T20:51",
@@ -422,7 +431,7 @@
       "score": -36,
       "tier": "MODERATE",
       "outcome": "WIN",
-      "return_pct": 0.3248
+      "return_pct": 0.5521
     },
     {
       "timestamp": "2026-11-14T20:49",
@@ -431,7 +440,7 @@
       "score": -37,
       "tier": "MODERATE",
       "outcome": "WIN",
-      "return_pct": 2.8236
+      "return_pct": 4.2447
     },
     {
       "timestamp": "2026-11-14T20:44",
@@ -440,7 +449,7 @@
       "score": -40,
       "tier": "MODERATE",
       "outcome": "WIN",
-      "return_pct": 2.1782
+      "return_pct": 4.3144
     },
     {
       "timestamp": "2026-11-14T20:44",
@@ -449,7 +458,7 @@
       "score": -36,
       "tier": "MODERATE",
       "outcome": "WIN",
-      "return_pct": 0.3225
+      "return_pct": 2.3752
     },
     {
       "timestamp": "2026-11-14T20:38",
@@ -458,7 +467,7 @@
       "score": -37,
       "tier": "MODERATE",
       "outcome": "WIN",
-      "return_pct": 1.6383
+      "return_pct": 4.5435
     },
     {
       "timestamp": "2026-11-14T20:28",
@@ -891,15 +900,6 @@
       "tier": "MODERATE",
       "outcome": "WIN",
       "return_pct": 3.8219
-    },
-    {
-      "timestamp": "2026-11-14T17:09",
-      "symbol": "BTCUSDT",
-      "direction": "SHORT",
-      "score": -40,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 0.8525
     }
   ]
 }
