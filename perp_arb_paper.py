@@ -455,18 +455,34 @@ def scan_opportunities():
                         "score":        ann_pct,
                     })
         elif fr <= -carry_min:
-            opps.append({
-                "strategy":     "NEG_CARRY",
-                "symbol":       sym,
-                "direction":    "LONG_PERP_SHORT_SPOT",
-                "funding_rate": fr,
-                "ann_pct":      abs(ann_pct),
-                "basis_pct":    basis_pct,
-                "spot":         spot,
-                "perp":         perp,
-                "volume24h":    vol,
-                "score":        abs(ann_pct),
-            })
+            # Institutional gate for NEG_CARRY: only enter when top traders are SHORT
+            # or OI is RISING with negative funding (confirmed short pressure, not a trap).
+            # Avoids entering when top traders are actually LONG (would squeeze us short).
+            _neg_inst_ok = True
+            try:
+                import institutional_intel as _ii
+                _ni = _ii.get_institutional_signal(sym)
+                _top_bias = _ni.get("top_trader_bias", "NEUTRAL")
+                _oi_trend = _ni.get("oi_trend", "FLAT")
+                # Block if top traders are strongly LONG and OI is rising (long squeeze risk)
+                if _top_bias == "LONG" and _oi_trend == "RISING":
+                    _neg_inst_ok = False
+                    print(f"  NEG_CARRY {sym}: blocked (top traders LONG + OI rising = squeeze risk)")
+            except Exception:
+                pass
+            if _neg_inst_ok:
+                opps.append({
+                    "strategy":     "NEG_CARRY",
+                    "symbol":       sym,
+                    "direction":    "LONG_PERP_SHORT_SPOT",
+                    "funding_rate": fr,
+                    "ann_pct":      abs(ann_pct),
+                    "basis_pct":    basis_pct,
+                    "spot":         spot,
+                    "perp":         perp,
+                    "volume24h":    vol,
+                    "score":        abs(ann_pct),
+                })
 
         if BASIS_MIN_PCT <= basis_pct <= BASIS_MAX_PCT:
             opps.append({

@@ -64,7 +64,7 @@ def load_signals_db():
         return []
 
 
-ACTIONABLE_SCORE = 35  # Only score >= this counts toward WR/PF stats
+ACTIONABLE_SCORE = 50  # Raised from 35: only HIGH+PERFECT tiers (MODERATE had 17% WR = noise)
 
 
 def compute_stats(signals):
@@ -202,6 +202,26 @@ def build_signal_cards(scan):
                      f'<span class="bar-val">{float(val):+.0f}</span>'
                      f'</div>')
 
+        # Institutional data
+        inst      = s.get("inst_data") or {}
+        inst_sc   = inst.get("institutional_score", None)
+        inst_conf = inst.get("confidence", "")
+        oi_trend  = inst.get("oi_trend", "")
+        top_bias  = inst.get("top_trader_bias", "")
+        inst_html = ""
+        if inst_sc is not None:
+            inst_col = ("#00d4aa" if inst_sc >= 10 else
+                        "#ffd060" if inst_sc >= -10 else "#ff6b6b")
+            oi_sym  = "▲" if oi_trend == "RISING" else ("▼" if oi_trend == "FALLING" else "→")
+            inst_html = (
+                f'<div class="inst-row" style="font-size:10px;color:#8095a8;margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">'
+                f'<span style="color:{inst_col};font-weight:700">INST {inst_sc:+d}</span>'
+                f'<span>OI {oi_sym}</span>'
+                f'<span style="color:#c0cfe0">{top_bias}</span>'
+                f'<span style="color:#8095a8">{inst_conf}</span>'
+                f'</div>'
+            )
+
         dir_cls = "card-long" if score > 0 else "card-short"
         cards.append(f'''
 <div class="signal-card {dir_cls}">
@@ -212,6 +232,7 @@ def build_signal_cards(scan):
   {_tier_badge(score)}
   <div class="score">{score:+d}/100</div>
   {size_html}
+  {inst_html}
   <div class="bars">{bars}</div>
 </div>''')
     return "\n".join(cards)
@@ -1393,7 +1414,7 @@ def build_html(scan, signals, stats, arb=None):
 
 <!-- Active Signals -->
 <div class="section">
-  <div class="section-title">Active Signals  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">|score| ≥ 35 (actionable)</span></div>
+  <div class="section-title">Active Signals  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">|score| ≥ 50 · inst-confirmed · regime-filtered</span></div>
   <div class="cards-grid">
     {build_signal_cards(scan)}
   </div>
