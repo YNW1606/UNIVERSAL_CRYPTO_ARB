@@ -85,6 +85,10 @@ jobs:
             # Prune sub-threshold signals after every restore so old noise never comes back
             python signal_accuracy_tracker.py --prune || true
 
+            # Run one perp arb cycle: update positions, apply funding, open/close trades
+            rm -f accuracy_db/perp_arb.lock   # clear stale lock from any previous killed runner
+            python perp_arb_paper.py --once || true
+
             # Regenerate dashboard with latest code + fresh scan data
             python generate_dashboard.py
 
