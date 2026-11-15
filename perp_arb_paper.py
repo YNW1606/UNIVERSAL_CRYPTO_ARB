@@ -471,7 +471,7 @@ def scan_opportunities():
                 "symbol":       sym,
                 "direction":    "LONG_PERP_SHORT_SPOT",
                 "funding_rate": fr,
-                "ann_pct":      ann_pct,
+                "ann_pct":      -ann_pct,   # direction-adjusted: LONG_PERP receives when fr<0
                 "basis_pct":    basis_pct,
                 "spot":         spot,
                 "perp":         perp,
