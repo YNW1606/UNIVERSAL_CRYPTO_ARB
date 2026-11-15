@@ -554,7 +554,7 @@ def scan_opportunities():
                         "volume24h":    vol,
                         "score":        ann_pct,
                     })
-        elif fr <= -carry_min:
+        elif fr <= NEG_CARRY_MIN_RATE:  # use dedicated 20%/yr floor (not regime carry_min)
             opps.append({
                 "strategy":     "NEG_CARRY",
                 "symbol":       sym,
