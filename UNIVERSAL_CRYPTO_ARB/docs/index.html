@@ -173,6 +173,14 @@ a{color:#00d4aa;text-decoration:none}
 .pc-sym{font-weight:700;color:#8095a8;font-size:11px;width:34px}
 .pc-price{font-weight:700;color:#e2e8f0;font-variant-numeric:tabular-nums;min-width:60px}
 .pc-chg{font-size:10px;font-variant-numeric:tabular-nums;min-width:48px;text-align:right}
+/* Live Basis+Funding Chips */
+.basis-chip{display:flex;align-items:center;gap:6px;padding:6px 12px;background:#0d1826;
+  border:1px solid rgba(255,255,255,0.08);border-radius:20px;font-size:12px;min-width:130px;
+  transition:border-color .3s}
+.basis-chip.basis-hot{border-color:rgba(0,212,170,0.4)}
+.bc-sym{font-weight:700;color:#8095a8;font-size:11px;width:34px}
+.bc-basis{font-weight:700;font-variant-numeric:tabular-nums;min-width:52px;font-size:12px}
+.bc-fund{font-size:10px;font-variant-numeric:tabular-nums;min-width:52px;text-align:right;color:#8095a8}
 /* Watchlist */
 .watchlist-grid{display:flex;flex-direction:column;gap:6px}
 .wl-row{display:grid;grid-template-columns:72px 1fr 100px 180px;align-items:center;gap:12px;
@@ -665,7 +673,7 @@ a{color:#00d4aa;text-decoration:none}
   
 <script>
 window.PERP_POSITIONS = [{"id": "SPOT_WIFUSDT_1114_0733", "symbol": "WIFUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 0.1455, "perp_entry": 0.14494, "size_usd": 55000.0, "funding_total": 0, "fees_total": 44.0}, {"id": "SPOT_APTUSDT_1114_0733", "symbol": "APTUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 0.5153, "perp_entry": 0.5135, "size_usd": 55000.0, "funding_total": 0, "fees_total": 44.0}, {"id": "SPOT_TRUMPUSDT_1114_0938", "symbol": "TRUMPUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 1.053, "perp_entry": 1.05, "size_usd": 55000.0, "funding_total": 0, "fees_total": 44.0}, {"id": "SPOT_AKEUSDT_1114_1404", "symbol": "AKEUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 0.0122047, "perp_entry": 0.0121008, "size_usd": 55000.0, "funding_total": 0, "fees_total": 44.0}, {"id": "SPOT_WLDUSDT_1114_0942", "symbol": "WLDUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 0.2814, "perp_entry": 0.2808, "size_usd": 55000.0, "funding_total": 0, "fees_total": 44.0}, {"id": "SPOT_TIAUSDT_1114_0938", "symbol": "TIAUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 0.3687, "perp_entry": 0.3679, "size_usd": 55000.0, "funding_total": 0, "fees_total": 44.0}, {"id": "SPOT_ARBUSDT_1114_0938", "symbol": "ARBUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 0.1393, "perp_entry": 0.13889, "size_usd": 55000.0, "funding_total": 0, "fees_total": 44.0}, {"id": "SPOT_OPUSDT_1114_0938", "symbol": "OPUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 0.089, "perp_entry": 0.08861, "size_usd": 55000.0, "funding_total": 0, "fees_total": 44.0}, {"id": "SPOT_BERAUSDT_1114_0938", "symbol": "BERAUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 0.1092, "perp_entry": 0.1087, "size_usd": 100000.0, "funding_total": 0, "fees_total": 80.0}];
-window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": -116.4096, "capital_deployed": 540000.0, "n_open": 9};
+window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": 2718.87, "capital_deployed": 540000.0, "n_open": 9};
 </script>
 
 <div style="background:rgba(0,180,255,0.07);border:1px solid rgba(0,180,255,0.18);border-radius:8px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
@@ -681,7 +689,7 @@ window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": -116.409
 </div>
 
 <!-- Live Crypto Prices Board (always visible, updates every 3s) -->
-<div id="live-prices-board" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+<div id="live-prices-board" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
   <div class="price-chip" data-sym="BTCUSDT"><span class="pc-sym">BTC</span><span class="pc-price" id="lp-BTCUSDT">—</span><span class="pc-chg" id="lc-BTCUSDT"></span></div>
   <div class="price-chip" data-sym="ETHUSDT"><span class="pc-sym">ETH</span><span class="pc-price" id="lp-ETHUSDT">—</span><span class="pc-chg" id="lc-ETHUSDT"></span></div>
   <div class="price-chip" data-sym="SOLUSDT"><span class="pc-sym">SOL</span><span class="pc-price" id="lp-SOLUSDT">—</span><span class="pc-chg" id="lc-SOLUSDT"></span></div>
@@ -690,6 +698,22 @@ window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": -116.409
   <div class="price-chip" data-sym="DOGEUSDT"><span class="pc-sym">DOGE</span><span class="pc-price" id="lp-DOGEUSDT">—</span><span class="pc-chg" id="lc-DOGEUSDT"></span></div>
   <div class="price-chip" data-sym="DOTUSDT"><span class="pc-sym">DOT</span><span class="pc-price" id="lp-DOTUSDT">—</span><span class="pc-chg" id="lc-DOTUSDT"></span></div>
   <div class="price-chip" data-sym="AVAXUSDT"><span class="pc-sym">AVAX</span><span class="pc-price" id="lp-AVAXUSDT">—</span><span class="pc-chg" id="lc-AVAXUSDT"></span></div>
+</div>
+
+<!-- Live Perp vs Spot Basis Board (updates every 5s) -->
+<div style="margin-bottom:14px">
+  <div style="font-size:10px;color:#8095a8;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px">Live Perp–Spot Basis &amp; Funding (8h rate · updates every 5s)</div>
+  <div id="live-basis-board" style="display:flex;gap:8px;flex-wrap:wrap">
+    <div class="basis-chip" id="bc-BTCUSDT"><span class="bc-sym">BTC</span><span class="bc-basis" id="bb-BTCUSDT">—</span><span class="bc-fund" id="bf-BTCUSDT"></span></div>
+    <div class="basis-chip" id="bc-ETHUSDT"><span class="bc-sym">ETH</span><span class="bc-basis" id="bb-ETHUSDT">—</span><span class="bc-fund" id="bf-ETHUSDT"></span></div>
+    <div class="basis-chip" id="bc-SOLUSDT"><span class="bc-sym">SOL</span><span class="bc-basis" id="bb-SOLUSDT">—</span><span class="bc-fund" id="bf-SOLUSDT"></span></div>
+    <div class="basis-chip" id="bc-BNBUSDT"><span class="bc-sym">BNB</span><span class="bc-basis" id="bb-BNBUSDT">—</span><span class="bc-fund" id="bf-BNBUSDT"></span></div>
+    <div class="basis-chip" id="bc-XRPUSDT"><span class="bc-sym">XRP</span><span class="bc-basis" id="bb-XRPUSDT">—</span><span class="bc-fund" id="bf-XRPUSDT"></span></div>
+    <div class="basis-chip" id="bc-DOGEUSDT"><span class="bc-sym">DOGE</span><span class="bc-basis" id="bb-DOGEUSDT">—</span><span class="bc-fund" id="bf-DOGEUSDT"></span></div>
+    <div class="basis-chip" id="bc-DOTUSDT"><span class="bc-sym">DOT</span><span class="bc-basis" id="bb-DOTUSDT">—</span><span class="bc-fund" id="bf-DOTUSDT"></span></div>
+    <div class="basis-chip" id="bc-AVAXUSDT"><span class="bc-sym">AVAX</span><span class="bc-basis" id="bb-AVAXUSDT">—</span><span class="bc-fund" id="bf-AVAXUSDT"></span></div>
+  </div>
+  <div style="font-size:10px;color:#8095a8;margin-top:4px">Entry threshold: basis ≥ 0.20% <span style="margin-left:12px">Carry entry: funding ≥ 22%/yr</span></div>
 </div>
 <!-- Account Balance Bar -->
 <div class="acct-bar">
@@ -707,7 +731,7 @@ window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": -116.409
   </div>
   <div class="acct-right">
     <div class="acct-label">Total P&L</div>
-    <div class="acct-pnl green">$-116.41 <span style="font-size:12px;color:#8095a8">realized</span></div>
+    <div class="acct-pnl green">$-48.61 <span style="font-size:12px;color:#8095a8">realized</span></div>
     <div id="live-upnl" class="acct-pnl neg" style="font-size:16px">$-283.45 <span style="font-size:12px;color:#8095a8">unrealized</span></div>
   </div>
 </div>
@@ -716,7 +740,7 @@ window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": -116.409
   <div class="arb-stat"><div class="arb-label">Open Positions</div><div class="arb-val">9/15</div><div class="arb-sub">$540,000 deployed · $463,127 free</div></div>
   <div class="arb-stat"><div class="arb-label">Projected Daily</div><div class="arb-val green">$1,229.52</div><div class="arb-sub">funding income / day</div></div>
   <div class="arb-stat"><div class="arb-label">Projected Annual</div><div class="arb-val green">$448,774 <span style="font-size:12px">(44.9%/yr)</span></div><div class="arb-sub">on $1M account</div></div>
-  <div class="arb-stat"><div class="arb-label">Realized P&L</div><div class="arb-val green">$-116.41</div><div class="arb-sub">closed trades</div></div>
+  <div class="arb-stat"><div class="arb-label">Realized P&L</div><div class="arb-val green">$-48.61</div><div class="arb-sub">closed trades</div></div>
   <div class="arb-stat"><div class="arb-label">Win Rate</div><div class="arb-val red">36.0%</div><div class="arb-sub">9W / 16L · PF 2.21×</div></div>
 </div>
 
@@ -769,31 +793,41 @@ window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": -116.409
 <div class="arb-sub-title">Open Positions (9)</div>
 <table class="data-table" style="margin-bottom:16px">
 <thead><tr><th>Symbol</th><th>Strategy</th><th>Direction</th><th>Ann Yield</th><th>Basis Entry→Now</th><th>Funding</th><th>Unrealized</th><th>TP / SL</th><th>Age</th></tr></thead>
-<tbody><tr data-trade="SPOT_WIFUSDT_1114_0733"><td><b>WIF</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+0.0%/yr</td><td class="mono">-0.385% → <span class="live-basis">-0.171%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+70.13</td><td class="act" style="font-size:10px">TP $1,650 | SL $-825</td><td class="act">7h</td></tr>
-<tr data-trade="SPOT_APTUSDT_1114_0733"><td><b>APT</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">-2.5%/yr</td><td class="mono">-0.349% → <span class="live-basis">-0.240%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+14.69</td><td class="act" style="font-size:10px">TP $1,650 | SL $-825</td><td class="act">7h</td></tr>
-<tr data-trade="SPOT_TRUMPUSDT_1114_0938"><td><b>TRUMP</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+2.7%/yr</td><td class="mono">-0.285% → <span class="live-basis">-0.196%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+3.90</td><td class="act" style="font-size:10px">TP $1,650 | SL $-825</td><td class="act">4h</td></tr>
-<tr data-trade="SPOT_AKEUSDT_1114_1404"><td><b>AKE</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">-4.7%/yr</td><td class="mono">-0.851% → <span class="live-basis">-0.851%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $1,650 | SL $-825</td><td class="act">0h</td></tr>
-<tr data-trade="SPOT_WLDUSDT_1114_0942"><td><b>WLD</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">-24.7%/yr</td><td class="mono">-0.213% → <span class="live-basis">-0.146%</span></td><td class="pos">$+0.00</td><td class="live-unreal neg">$-8.00</td><td class="act" style="font-size:10px">TP $1,650 | SL $-825</td><td class="act">4h</td></tr>
-<tr data-trade="SPOT_TIAUSDT_1114_0938"><td><b>TIA</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+5.5%/yr</td><td class="mono">-0.217% → <span class="live-basis">-0.163%</span></td><td class="pos">$+0.00</td><td class="live-unreal neg">$-14.17</td><td class="act" style="font-size:10px">TP $1,650 | SL $-825</td><td class="act">4h</td></tr>
-<tr data-trade="SPOT_ARBUSDT_1114_0938"><td><b>ARB</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">-3.0%/yr</td><td class="mono">-0.294% → <span class="live-basis">-0.264%</span></td><td class="pos">$+0.00</td><td class="live-unreal neg">$-27.23</td><td class="act" style="font-size:10px">TP $1,650 | SL $-825</td><td class="act">4h</td></tr>
-<tr data-trade="SPOT_OPUSDT_1114_0938"><td><b>OP</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">-24.9%/yr</td><td class="mono">-0.438% → <span class="live-basis">-0.426%</span></td><td class="pos">$+0.00</td><td class="live-unreal neg">$-37.30</td><td class="act" style="font-size:10px">TP $1,650 | SL $-825</td><td class="act">4h</td></tr>
-<tr data-trade="SPOT_BERAUSDT_1114_0938"><td><b>BERA</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">-411.4%/yr</td><td class="mono">-0.458% → <span class="live-basis">-0.672%</span></td><td class="pos">$+0.00</td><td class="live-unreal neg">$-285.48</td><td class="act" style="font-size:10px">TP $3,000 | SL $-1,500</td><td class="act">4h</td></tr>
+<tbody><tr data-trade="SPOT_WIFUSDT_1114_0733"><td><b>WIF</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+0.0%/yr</td><td class="mono">-0.385% → <span class="live-basis">-0.171%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+70.13</td><td class="act" style="font-size:10px">TP $1,650 | SL $-825</td><td class="act">24h</td></tr>
+<tr data-trade="SPOT_APTUSDT_1114_0733"><td><b>APT</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">-2.5%/yr</td><td class="mono">-0.349% → <span class="live-basis">-0.240%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+14.69</td><td class="act" style="font-size:10px">TP $1,650 | SL $-825</td><td class="act">24h</td></tr>
+<tr data-trade="SPOT_TRUMPUSDT_1114_0938"><td><b>TRUMP</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+2.7%/yr</td><td class="mono">-0.285% → <span class="live-basis">-0.196%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+3.90</td><td class="act" style="font-size:10px">TP $1,650 | SL $-825</td><td class="act">22h</td></tr>
+<tr data-trade="SPOT_AKEUSDT_1114_1404"><td><b>AKE</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">-4.7%/yr</td><td class="mono">-0.851% → <span class="live-basis">-0.851%</span></td><td class="pos">$+0.00</td><td class="live-unreal pos">$+0.00</td><td class="act" style="font-size:10px">TP $1,650 | SL $-825</td><td class="act">18h</td></tr>
+<tr data-trade="SPOT_WLDUSDT_1114_0942"><td><b>WLD</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">-24.7%/yr</td><td class="mono">-0.213% → <span class="live-basis">-0.146%</span></td><td class="pos">$+0.00</td><td class="live-unreal neg">$-8.00</td><td class="act" style="font-size:10px">TP $1,650 | SL $-825</td><td class="act">22h</td></tr>
+<tr data-trade="SPOT_TIAUSDT_1114_0938"><td><b>TIA</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">+5.5%/yr</td><td class="mono">-0.217% → <span class="live-basis">-0.163%</span></td><td class="pos">$+0.00</td><td class="live-unreal neg">$-14.17</td><td class="act" style="font-size:10px">TP $1,650 | SL $-825</td><td class="act">22h</td></tr>
+<tr data-trade="SPOT_ARBUSDT_1114_0938"><td><b>ARB</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">-3.0%/yr</td><td class="mono">-0.294% → <span class="live-basis">-0.264%</span></td><td class="pos">$+0.00</td><td class="live-unreal neg">$-27.23</td><td class="act" style="font-size:10px">TP $1,650 | SL $-825</td><td class="act">22h</td></tr>
+<tr data-trade="SPOT_OPUSDT_1114_0938"><td><b>OP</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">-24.9%/yr</td><td class="mono">-0.438% → <span class="live-basis">-0.426%</span></td><td class="pos">$+0.00</td><td class="live-unreal neg">$-37.30</td><td class="act" style="font-size:10px">TP $1,650 | SL $-825</td><td class="act">22h</td></tr>
+<tr data-trade="SPOT_BERAUSDT_1114_0938"><td><b>BERA</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td class="pos">-411.4%/yr</td><td class="mono">-0.458% → <span class="live-basis">-0.672%</span></td><td class="pos">$+0.00</td><td class="live-unreal neg">$-285.48</td><td class="act" style="font-size:10px">TP $3,000 | SL $-1,500</td><td class="act">22h</td></tr>
 </tbody>
 </table>
 
-<div class="arb-sub-title">Recent Closed (25)</div>
+<div class="arb-sub-title">Closed Trades (25 total)</div>
 <table class="data-table">
-<thead><tr><th>Symbol</th><th>Strategy</th><th>P&L</th><th>Funding</th><th>Fees</th><th>Exit Reason</th></tr></thead>
-<tbody><tr><td><b>PLAYSOUT</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="neg">$-71.65</td><td class="pos">$+0.00</td><td class="neg">-$71.65</td><td class="act" style="font-size:11px">WHITELIST_EVICT</td></tr>
-<tr><td><b>SKHYNIX</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="neg">$-75.25</td><td class="pos">$+0.00</td><td class="neg">-$75.25</td><td class="act" style="font-size:11px">WHITELIST_EVICT</td></tr>
-<tr><td><b>SAMSUNG</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="neg">$-76.41</td><td class="pos">$+0.00</td><td class="neg">-$76.41</td><td class="act" style="font-size:11px">WHITELIST_EVICT</td></tr>
-<tr><td><b>MXL</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="neg">$-70.37</td><td class="pos">$+0.00</td><td class="neg">-$70.37</td><td class="act" style="font-size:11px">WHITELIST_EVICT</td></tr>
-<tr><td><b>AMDSTOCK</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="neg">$-73.32</td><td class="pos">$+0.00</td><td class="neg">-$73.32</td><td class="act" style="font-size:11px">WHITELIST_EVICT</td></tr>
-<tr><td><b>NVDA</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="neg">$-83.31</td><td class="pos">$+0.00</td><td class="neg">-$83.31</td><td class="act" style="font-size:11px">WHITELIST_EVICT</td></tr>
-<tr><td><b>SAMSUNG</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="neg">$-103.31</td><td class="pos">$+0.00</td><td class="neg">-$103.31</td><td class="act" style="font-size:11px">WHITELIST_EVICT</td></tr>
-<tr><td><b>CL</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="neg">$-157.53</td><td class="pos">$+0.00</td><td class="neg">-$157.53</td><td class="act" style="font-size:11px">WHITELIST_EVICT</td></tr>
-<tr><td><b>BZ</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="neg">$-251.37</td><td class="pos">$+0.00</td><td class="neg">-$251.37</td><td class="act" style="font-size:11px">WHITELIST_EVICT</td></tr>
-<tr><td><b>IDOL</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="neg">$-116.41</td><td class="pos">$+0.00</td><td class="neg">-$132.00</td><td class="act" style="font-size:11px">WHITELIST_EVICT</td></tr>
+<thead><tr><th>Symbol</th><th>Strategy</th><th>Net P&L</th><th>Funding</th><th>Fees</th><th>Exit Reason</th><th>Opened</th><th>Closed</th></tr></thead>
+<tbody><tr><td><b>PLAYSOUT</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="neg">$-71.65</td><td class="pos" style="font-size:11px">$+0.00</td><td class="neg" style="font-size:11px">-$71.65</td><td class="act" style="font-size:11px">WHITELIST_EVICT</td><td style="color:#8095a8;font-size:10px">2026-11-13</td><td style="color:#8095a8;font-size:10px">2026-11-14</td></tr>
+<tr><td><b>SKHYNIX</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="neg">$-75.25</td><td class="pos" style="font-size:11px">$+0.00</td><td class="neg" style="font-size:11px">-$75.25</td><td class="act" style="font-size:11px">WHITELIST_EVICT</td><td style="color:#8095a8;font-size:10px">2026-11-13</td><td style="color:#8095a8;font-size:10px">2026-11-14</td></tr>
+<tr><td><b>SAMSUNG</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="neg">$-76.41</td><td class="pos" style="font-size:11px">$+0.00</td><td class="neg" style="font-size:11px">-$76.41</td><td class="act" style="font-size:11px">WHITELIST_EVICT</td><td style="color:#8095a8;font-size:10px">2026-11-13</td><td style="color:#8095a8;font-size:10px">2026-11-14</td></tr>
+<tr><td><b>MXL</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="neg">$-70.37</td><td class="pos" style="font-size:11px">$+0.00</td><td class="neg" style="font-size:11px">-$70.37</td><td class="act" style="font-size:11px">WHITELIST_EVICT</td><td style="color:#8095a8;font-size:10px">2026-11-12</td><td style="color:#8095a8;font-size:10px">2026-11-14</td></tr>
+<tr><td><b>AMDSTOCK</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="neg">$-73.32</td><td class="pos" style="font-size:11px">$+0.00</td><td class="neg" style="font-size:11px">-$73.32</td><td class="act" style="font-size:11px">WHITELIST_EVICT</td><td style="color:#8095a8;font-size:10px">2026-11-12</td><td style="color:#8095a8;font-size:10px">2026-11-14</td></tr>
+<tr><td><b>NVDA</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="neg">$-83.31</td><td class="pos" style="font-size:11px">$+0.00</td><td class="neg" style="font-size:11px">-$83.31</td><td class="act" style="font-size:11px">WHITELIST_EVICT</td><td style="color:#8095a8;font-size:10px">2026-11-12</td><td style="color:#8095a8;font-size:10px">2026-11-14</td></tr>
+<tr><td><b>SAMSUNG</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="neg">$-103.31</td><td class="pos" style="font-size:11px">$+0.00</td><td class="neg" style="font-size:11px">-$103.31</td><td class="act" style="font-size:11px">WHITELIST_EVICT</td><td style="color:#8095a8;font-size:10px">2026-11-12</td><td style="color:#8095a8;font-size:10px">2026-11-14</td></tr>
+<tr><td><b>CL</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="neg">$-157.53</td><td class="pos" style="font-size:11px">$+0.00</td><td class="neg" style="font-size:11px">-$157.53</td><td class="act" style="font-size:11px">WHITELIST_EVICT</td><td style="color:#8095a8;font-size:10px">2026-11-12</td><td style="color:#8095a8;font-size:10px">2026-11-14</td></tr>
+<tr><td><b>BZ</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="neg">$-251.37</td><td class="pos" style="font-size:11px">$+0.00</td><td class="neg" style="font-size:11px">-$251.37</td><td class="act" style="font-size:11px">WHITELIST_EVICT</td><td style="color:#8095a8;font-size:10px">2026-11-12</td><td style="color:#8095a8;font-size:10px">2026-11-14</td></tr>
+<tr><td><b>IDOL</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="neg">$-116.41</td><td class="pos" style="font-size:11px">$+0.00</td><td class="neg" style="font-size:11px">-$132.00</td><td class="act" style="font-size:11px">WHITELIST_EVICT</td><td style="color:#8095a8;font-size:10px">2026-11-14</td><td style="color:#8095a8;font-size:10px">2026-11-14</td></tr>
+<tr><td><b>GRASS</b></td><td class="mono" style="font-size:11px">SPOT_PREMIUM</td><td class="pos">$+205.41</td><td class="pos" style="font-size:11px">$+0.00</td><td class="neg" style="font-size:11px">-$88.00</td><td class="act" style="font-size:11px">BASIS_CONVERGED</td><td style="color:#8095a8;font-size:10px">2026-11-14</td><td style="color:#8095a8;font-size:10px">2026-11-14</td></tr>
+<tr><td><b>JCT</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="pos">$+213.66</td><td class="pos" style="font-size:11px">$+0.00</td><td class="neg" style="font-size:11px">-$88.00</td><td class="act" style="font-size:11px">BASIS_CONVERGED</td><td style="color:#8095a8;font-size:10px">2026-11-14</td><td style="color:#8095a8;font-size:10px">2026-11-14</td></tr>
+<tr><td><b>UAI</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="pos">$+476.24</td><td class="pos" style="font-size:11px">$+0.00</td><td class="neg" style="font-size:11px">-$88.00</td><td class="act" style="font-size:11px">BASIS_CONVERGED</td><td style="color:#8095a8;font-size:10px">2026-11-14</td><td style="color:#8095a8;font-size:10px">2026-11-14</td></tr>
+<tr><td><b>ERA</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="pos">$+155.11</td><td class="pos" style="font-size:11px">$+182.94</td><td class="neg" style="font-size:11px">-$146.88</td><td class="act" style="font-size:11px">PORT_TRAILING_STOP</td><td style="color:#8095a8;font-size:10px">2026-11-12</td><td style="color:#8095a8;font-size:10px">2026-11-14</td></tr>
+<tr><td><b>JCT</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="neg">$-144.56</td><td class="pos" style="font-size:11px">$+6.67</td><td class="neg" style="font-size:11px">-$160.00</td><td class="act" style="font-size:11px">FUNDING_DROPPED</td><td style="color:#8095a8;font-size:10px">2026-11-13</td><td style="color:#8095a8;font-size:10px">2026-11-14</td></tr>
+<tr><td><b>AKE</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="neg">$-464.23</td><td class="pos" style="font-size:11px">$+220.74</td><td class="neg" style="font-size:11px">-$106.67</td><td class="act" style="font-size:11px">STOP_LOSS_BASIS</td><td style="color:#8095a8;font-size:10px">2026-11-13</td><td style="color:#8095a8;font-size:10px">2026-11-14</td></tr>
+<tr><td><b>BMT</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="pos">$+413.20</td><td class="pos" style="font-size:11px">$+1283.23</td><td class="neg" style="font-size:11px">-$181.86</td><td class="act" style="font-size:11px">FUNDING_ROI_MET</td><td style="color:#8095a8;font-size:10px">2026-11-13</td><td style="color:#8095a8;font-size:10px">2026-11-14</td></tr>
+<tr><td><b>NIGHT</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="neg">$-154.30</td><td class="pos" style="font-size:11px">$+13.90</td><td class="neg" style="font-size:11px">-$123.89</td><td class="act" style="font-size:11px">FUNDING_NORMALIZED</td><td style="color:#8095a8;font-size:10px">2026-11-12</td><td style="color:#8095a8;font-size:10px">2026-11-14</td></tr>
+<tr><td><b>INIT</b></td><td class="mono" style="font-size:11px">NEG_CARRY</td><td class="pos">$+3388.48</td><td class="pos" style="font-size:11px">$+900.55</td><td class="neg" style="font-size:11px">-$94.17</td><td class="act" style="font-size:11px">PROFIT_TARGET</td><td style="color:#8095a8;font-size:10px">2026-11-12</td><td style="color:#8095a8;font-size:10px">2026-11-14</td></tr>
+<tr><td><b>PIEVERSE</b></td><td class="mono" style="font-size:11px">CARRY_ARB</td><td class="neg">$-48.61</td><td class="pos" style="font-size:11px">$+2.20</td><td class="neg" style="font-size:11px">-$70.42</td><td class="act" style="font-size:11px">FUNDING_DROPPED</td><td style="color:#8095a8;font-size:10px">2026-11-12</td><td style="color:#8095a8;font-size:10px">2026-11-13</td></tr>
 </tbody>
 </table>
 
@@ -1107,7 +1141,7 @@ window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": -116.409
 </div>
 
 <div class="footer">
-  Generated at 2026-11-14 14:05 UTC &nbsp;·&nbsp;
+  Generated at 2026-11-15 07:36 UTC &nbsp;·&nbsp;
   Auto-scan every ~1 min &nbsp;·&nbsp; Tracking 20 symbols &nbsp;·&nbsp;
   BloomAI Quant System &nbsp;·&nbsp; <a href="https://bloomai.technology/quant/" target="_blank">bloomai.technology/quant</a>
 </div>
@@ -1299,6 +1333,71 @@ new Chart(wrCtx, {
   fetchPrices();
   setInterval(fetchPrices, 3000);
   setInterval(recalcAndUpdate, 1000);
+})();
+
+// ── LIVE BASIS + FUNDING RATES ────────────────────────────────────────────
+(function() {
+  const BASIS_SYMS = ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','XRPUSDT','DOGEUSDT','DOTUSDT','AVAXUSDT'];
+  const BASIS_MIN = 0.20;  // entry threshold %
+  const CARRY_ANN = 22;    // carry floor %/yr
+
+  async function fetchBasisAndFunding() {
+    try {
+      // Spot prices
+      const [sRes, pRes, fRes] = await Promise.all([
+        fetch('https://api.bybit.com/v5/market/tickers?category=spot'),
+        fetch('https://api.bybit.com/v5/market/tickers?category=linear'),
+        fetch('https://api.bybit.com/v5/market/tickers?category=linear')
+      ]);
+      const sData = await sRes.json();
+      const pData = await pRes.json();
+
+      const spotMap = {};
+      for (const t of (sData?.result?.list || [])) spotMap[t.symbol] = parseFloat(t.lastPrice);
+      const perpMap = {};
+      for (const t of (pData?.result?.list || [])) {
+        perpMap[t.symbol] = {
+          price: parseFloat(t.lastPrice),
+          fundingRate: parseFloat(t.fundingRate || 0),
+          nextFunding: t.nextFundingTime
+        };
+      }
+
+      for (const sym of BASIS_SYMS) {
+        const spot = spotMap[sym];
+        const perp = perpMap[sym];
+        if (!spot || !perp) continue;
+
+        const basis = (perp.price - spot) / spot * 100;
+        const fr8h  = perp.fundingRate * 100;
+        const frAnn = fr8h * 3 * 365;  // 3 payments/day × 365
+
+        const bEl = document.getElementById('bb-' + sym);
+        const fEl = document.getElementById('bf-' + sym);
+        const chip = document.getElementById('bc-' + sym);
+
+        if (bEl) {
+          bEl.textContent = (basis >= 0 ? '+' : '') + basis.toFixed(3) + '%';
+          bEl.style.color = Math.abs(basis) >= BASIS_MIN ? '#00d4aa' : '#8095a8';
+        }
+        if (fEl) {
+          fEl.textContent = (fr8h >= 0 ? '+' : '') + fr8h.toFixed(4) + '% · ' + frAnn.toFixed(1) + '%/yr';
+          fEl.style.color = Math.abs(frAnn) >= CARRY_ANN ? '#ffd060' : '#8095a8';
+        }
+        // Highlight chip if near entry threshold
+        if (chip) {
+          if (Math.abs(basis) >= BASIS_MIN || Math.abs(frAnn) >= CARRY_ANN) {
+            chip.classList.add('basis-hot');
+          } else {
+            chip.classList.remove('basis-hot');
+          }
+        }
+      }
+    } catch(e) { /* silent */ }
+  }
+
+  fetchBasisAndFunding();
+  setInterval(fetchBasisAndFunding, 5000);
 })();
 </script>
 </body>
