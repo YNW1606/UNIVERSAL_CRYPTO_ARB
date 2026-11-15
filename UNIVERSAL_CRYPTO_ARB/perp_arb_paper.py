@@ -1425,6 +1425,37 @@ def compute_report(verbose=True):
             }
             for r in sorted(closed, key=lambda x: x["closed_at"] or "", reverse=True)[:20]
         ],
+        # Full journal: ALL closed trades oldest→newest for timeline + complete log
+        "trade_journal": (lambda trades: [
+            {
+                "trade_no":     i + 1,
+                "id":           r["id"],
+                "strategy":     r["strategy"],
+                "symbol":       r["symbol"],
+                "direction":    r["direction"],
+                "size_usd":     round(float(r["size_usd"] or 0), 2),
+                "ann_yield":    round(float(r.get("ann_yield_at_open") or 0), 2),
+                "spot_entry":   round(float(r["spot_entry"] or 0), 6),
+                "perp_entry":   round(float(r["perp_entry"] or 0), 6),
+                "spot_exit":    round(float(r.get("spot_exit") or 0), 6),
+                "perp_exit":    round(float(r.get("perp_exit") or 0), 6),
+                "basis_entry":  round(float(r.get("basis_entry_pct") or 0), 4),
+                "realized_pnl": round(float(r["realized_pnl"] or 0), 4),
+                "funding_earned": round(float(r["funding_total"] or 0), 4),
+                "fees":         round(float(r["fees_total"] or 0), 4),
+                "exit_reason":  r["exit_reason"],
+                "opened_at":    r["opened_at"],
+                "closed_at":    r["closed_at"],
+                "hold_hours":   round((
+                    (datetime.fromisoformat(r["closed_at"].replace("Z","+00:00")) -
+                     datetime.fromisoformat(r["opened_at"].replace("Z","+00:00"))).total_seconds() / 3600
+                ) if r["closed_at"] and r["opened_at"] else 0, 1),
+                "is_win":       (float(r["realized_pnl"] or 0) > 0),
+                "cum_wr":       round((sum(1 for x in trades[:i+1] if (float(x["realized_pnl"] or 0)) > 0) / (i + 1)) * 100, 1),
+                "cum_pnl":      round(sum(float(x["realized_pnl"] or 0) for x in trades[:i+1]), 2),
+            }
+            for i, r in enumerate(trades)
+        ])(sorted(closed, key=lambda x: x["closed_at"] or "")),
         # Live scanner state — always populated, even with 0 open positions
         "scan_time":        datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         "scan_regime":      _SCAN_REGIME.get("regime", "UNKNOWN"),
