@@ -1,6 +1,33 @@
 {
-  "generated_at": "2026-11-15 10:12 UTC",
+  "generated_at": "2026-11-15 10:17 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-15T10:17",
+      "symbol": "AVAXUSDT",
+      "direction": "SHORT",
+      "score": -36,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-15T10:15",
+      "symbol": "BTCUSDT",
+      "direction": "LONG",
+      "score": 37,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-15T10:15",
+      "symbol": "XRPUSDT",
+      "direction": "LONG",
+      "score": 36,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-15T10:11",
       "symbol": "SUIUSDT",
@@ -873,33 +900,6 @@
       "tier": "MODERATE",
       "outcome": "LOSS",
       "return_pct": -3.676
-    },
-    {
-      "timestamp": "2026-11-14T23:31",
-      "symbol": "ETHUSDT",
-      "direction": "SHORT",
-      "score": -35,
-      "tier": "MODERATE",
-      "outcome": "LOSS",
-      "return_pct": -4.0796
-    },
-    {
-      "timestamp": "2026-11-14T23:28",
-      "symbol": "SUIUSDT",
-      "direction": "SHORT",
-      "score": -37,
-      "tier": "MODERATE",
-      "outcome": "LOSS",
-      "return_pct": -4.6586
-    },
-    {
-      "timestamp": "2026-11-14T23:28",
-      "symbol": "SOLUSDT",
-      "direction": "SHORT",
-      "score": -36,
-      "tier": "MODERATE",
-      "outcome": "LOSS",
-      "return_pct": -3.3955
     }
   ]
 }
