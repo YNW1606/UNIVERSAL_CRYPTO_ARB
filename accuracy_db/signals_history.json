@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-15 03:42 UTC",
+  "generated_at": "2026-11-15 03:48 UTC",
   "signals": [
     {
       "timestamp": "2026-11-15T03:42",
@@ -394,8 +394,8 @@
       "direction": "SHORT",
       "score": -36,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -1.7114
     },
     {
       "timestamp": "2026-11-14T23:47",
@@ -403,8 +403,8 @@
       "direction": "SHORT",
       "score": -36,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "LOSS",
+      "return_pct": -2.1769
     },
     {
       "timestamp": "2026-11-14T23:40",
