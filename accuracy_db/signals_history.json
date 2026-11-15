@@ -1,4 +1,59 @@
 {
-  "generated_at": "2026-11-15 16:50 UTC",
-  "signals": []
+  "generated_at": "2026-11-15 16:59 UTC",
+  "signals": [
+    {
+      "timestamp": "2026-11-15T16:59",
+      "symbol": "DOTUSDT",
+      "direction": "SHORT",
+      "score": -57,
+      "tier": "HIGH",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-15T16:59",
+      "symbol": "BTCUSDT",
+      "direction": "SHORT",
+      "score": -55,
+      "tier": "HIGH",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-15T16:59",
+      "symbol": "DOGEUSDT",
+      "direction": "SHORT",
+      "score": -55,
+      "tier": "HIGH",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-15T16:59",
+      "symbol": "SUIUSDT",
+      "direction": "SHORT",
+      "score": -54,
+      "tier": "HIGH",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-15T16:59",
+      "symbol": "BNBUSDT",
+      "direction": "SHORT",
+      "score": -52,
+      "tier": "HIGH",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-15T16:59",
+      "symbol": "AVAXUSDT",
+      "direction": "SHORT",
+      "score": -52,
+      "tier": "HIGH",
+      "outcome": "PENDING",
+      "return_pct": null
+    }
+  ]
 }

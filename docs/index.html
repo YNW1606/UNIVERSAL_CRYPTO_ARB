@@ -267,25 +267,70 @@ a{color:#00d4aa;text-decoration:none}
     <div class="subtitle">5-Engine Institutional Crypto Trading Dashboard</div>
   </div>
   <div class="header-right">
-    <div class="ts">2026-11-15 12:11 UTC</div>
+    <div class="ts">2026-11-15 16:59 UTC</div>
     <div class="sub">Last scan &nbsp;|&nbsp; <span class="engines-pill">6/5 Engines Online</span></div>
     <div class="sub" style="margin-top:4px;font-size:10px">Auto-refreshes every 10 min &nbsp;|&nbsp; BloomAI Quant System</div>
   </div>
 </div>
 
 <!-- Stats Bar (ACTIONABLE signals only: |score| >= 50) -->
-<div class="stats-bar" style="grid-template-columns:1fr">
-  <div class="stat-card" style="text-align:center;padding:24px">
-    <div class="stat-label">Signal Tracker Status</div>
-    <div class="stat-val" style="font-size:18px;color:#00d4aa">Starting fresh — building quality signal history</div>
-    <div class="stat-sub" style="margin-top:6px">Only HIGH/PERFECT tier signals (|score| &ge; 50, institutionally confirmed) are logged.
-    Weaker MODERATE-tier signals (35-49) were pruned after proving to be noise (17% WR).
-    Win-rate statistics will appear once the first qualifying signals resolve (4h after logging).</div>
+<div class="stats-bar">
+  <div class="stat-card">
+    <div class="stat-label">Actionable Signals <span style="font-size:10px;color:#8095a8">(score &ge;50)</span></div>
+    <div class="stat-val">6</div>
+    <div class="stat-sub">0 resolved &middot; 6 pending &middot; 6 total logged</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Win Rate <span style="font-size:10px;color:#8095a8">(score &ge;50)</span></div>
+    <div class="stat-val red">—</div>
+    <div class="stat-sub">no resolved signals yet — first outcomes land 4h after logging</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Profit Factor</div>
+    <div class="stat-val red">—</div>
+    <div class="stat-sub">Gains &divide; Losses (need &gt;1.0)</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Avg Return / Signal</div>
+    <div class="stat-val red">—</div>
+    <div class="stat-sub">Net of 0.3% fee threshold</div>
   </div>
 </div>
 
 <!-- Score Tier Breakdown -->
-
+<div class="section tier-breakdown-section" style="margin-bottom:20px">
+  <div class="section-title">Signal Quality Breakdown
+    <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">
+      Win Rate / Avg Return per tier · only ★ ACTIONABLE tiers count toward main stats
+    </span>
+  </div>
+  <div class="tier-grid">
+<div class="tier-row" style="opacity:1">
+  <div class="tier-stars" style="color:#00d4aa">★★</div>
+  <div class="tier-label">HIGH (50-64)</div>
+  <div class="tier-n">6 signals</div>
+  <div class="tier-res">0 resolved</div>
+  <div class="tier-wr" style="color:#ff6b6b">0.0% WR</div>
+  <div class="tier-ret" style="color:#ff6b6b">+0.000%</div>
+  <div class="tier-note" style="color:#8095a8;font-size:10px"></div>
+</div></div>
+  
+</div>
+<style>
+.tier-grid {display:flex;flex-direction:column;gap:6px}
+.tier-row {display:grid;grid-template-columns:28px 110px 90px 90px 80px 80px 1fr;
+           align-items:center;gap:10px;padding:8px 12px;border-radius:7px;
+           background:#111928;border:1px solid rgba(255,255,255,0.05)}
+.tier-stars {font-size:13px;text-align:center}
+.tier-label {font-size:12px;font-weight:700;color:#fff}
+.tier-n {font-size:12px;color:#8095a8}
+.tier-res {font-size:12px;color:#8095a8}
+.tier-wr {font-size:13px;font-weight:700}
+.tier-ret {font-size:12px;font-weight:600}
+.tier-note {font-size:10px}
+@media(max-width:700px){.tier-row{grid-template-columns:28px 1fr 60px 60px}
+  .tier-res,.tier-note{display:none}}
+</style>
 
 <!-- Charts -->
 <div class="charts-grid">
@@ -305,7 +350,102 @@ a{color:#00d4aa;text-decoration:none}
 <div class="section">
   <div class="section-title">Active Signals  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">|score| ≥ 50 · inst-confirmed · regime-filtered</span></div>
   <div class="cards-grid">
-    <div class="empty-state">No signals at HIGH/PERFECT conviction (|score| &ge; 50) right now — the engines are in agreement that no high-quality setup exists. Sub-threshold activity is visible in the Market Watchlist below.</div>
+    
+<div class="signal-card card-short">
+  <div class="card-header">
+    <span class="sym">OPUSDT</span>
+    <span class="dir short">▼ SHORT</span>
+  </div>
+  <span class="badge badge-high">★★ HIGH</span>
+  <div class="score">-61/100</div>
+  <div class="size rejected">RISK REJECTED</div>
+  
+  <div class="bars"><div class="bar-row"><span class="bar-label">master</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:45%"></div></div><span class="bar-val">-45</span></div><div class="bar-row"><span class="bar-label">hft</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:48%"></div></div><span class="bar-val">-48</span></div><div class="bar-row"><span class="bar-label">factor</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:100%"></div></div><span class="bar-val">-100</span></div><div class="bar-row"><span class="bar-label">stat_a</span><div class="bar-track"><div class="bar-fill bar-bull" style="width:0%"></div></div><span class="bar-val">+0</span></div><div class="bar-row"><span class="bar-label">moment</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:62%"></div></div><span class="bar-val">-62</span></div></div>
+</div>
+
+<div class="signal-card card-short">
+  <div class="card-header">
+    <span class="sym">DOTUSDT</span>
+    <span class="dir short">▼ SHORT</span>
+  </div>
+  <span class="badge badge-high">★★ HIGH</span>
+  <div class="score">-57/100</div>
+  <div class="size approved">$6,634 &nbsp;(6.6%)</div>
+  
+  <div class="bars"><div class="bar-row"><span class="bar-label">master</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:38%"></div></div><span class="bar-val">-38</span></div><div class="bar-row"><span class="bar-label">hft</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:51%"></div></div><span class="bar-val">-51</span></div><div class="bar-row"><span class="bar-label">factor</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:100%"></div></div><span class="bar-val">-100</span></div><div class="bar-row"><span class="bar-label">stat_a</span><div class="bar-track"><div class="bar-fill bar-bull" style="width:0%"></div></div><span class="bar-val">+0</span></div><div class="bar-row"><span class="bar-label">moment</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:55%"></div></div><span class="bar-val">-55</span></div></div>
+</div>
+
+<div class="signal-card card-short">
+  <div class="card-header">
+    <span class="sym">BTCUSDT</span>
+    <span class="dir short">▼ SHORT</span>
+  </div>
+  <span class="badge badge-high">★★ HIGH</span>
+  <div class="score">-55/100</div>
+  <div class="size approved">$6,300 &nbsp;(6.3%)</div>
+  
+  <div class="bars"><div class="bar-row"><span class="bar-label">master</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:39%"></div></div><span class="bar-val">-39</span></div><div class="bar-row"><span class="bar-label">hft</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:63%"></div></div><span class="bar-val">-63</span></div><div class="bar-row"><span class="bar-label">factor</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:73%"></div></div><span class="bar-val">-73</span></div><div class="bar-row"><span class="bar-label">stat_a</span><div class="bar-track"><div class="bar-fill bar-bull" style="width:0%"></div></div><span class="bar-val">+0</span></div><div class="bar-row"><span class="bar-label">moment</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:62%"></div></div><span class="bar-val">-62</span></div></div>
+</div>
+
+<div class="signal-card card-short">
+  <div class="card-header">
+    <span class="sym">APTUSDT</span>
+    <span class="dir short">▼ SHORT</span>
+  </div>
+  <span class="badge badge-high">★★ HIGH</span>
+  <div class="score">-55/100</div>
+  <div class="size rejected">RISK REJECTED</div>
+  
+  <div class="bars"><div class="bar-row"><span class="bar-label">master</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:40%"></div></div><span class="bar-val">-40</span></div><div class="bar-row"><span class="bar-label">hft</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:21%"></div></div><span class="bar-val">-21</span></div><div class="bar-row"><span class="bar-label">factor</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:100%"></div></div><span class="bar-val">-100</span></div><div class="bar-row"><span class="bar-label">stat_a</span><div class="bar-track"><div class="bar-fill bar-bull" style="width:0%"></div></div><span class="bar-val">+0</span></div><div class="bar-row"><span class="bar-label">moment</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:62%"></div></div><span class="bar-val">-62</span></div></div>
+</div>
+
+<div class="signal-card card-short">
+  <div class="card-header">
+    <span class="sym">DOGEUSDT</span>
+    <span class="dir short">▼ SHORT</span>
+  </div>
+  <span class="badge badge-high">★★ HIGH</span>
+  <div class="score">-55/100</div>
+  <div class="size approved">$6,300 &nbsp;(6.3%)</div>
+  
+  <div class="bars"><div class="bar-row"><span class="bar-label">master</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:38%"></div></div><span class="bar-val">-38</span></div><div class="bar-row"><span class="bar-label">hft</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:30%"></div></div><span class="bar-val">-30</span></div><div class="bar-row"><span class="bar-label">factor</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:100%"></div></div><span class="bar-val">-100</span></div><div class="bar-row"><span class="bar-label">stat_a</span><div class="bar-track"><div class="bar-fill bar-bull" style="width:0%"></div></div><span class="bar-val">+0</span></div><div class="bar-row"><span class="bar-label">moment</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:62%"></div></div><span class="bar-val">-62</span></div></div>
+</div>
+
+<div class="signal-card card-short">
+  <div class="card-header">
+    <span class="sym">SUIUSDT</span>
+    <span class="dir short">▼ SHORT</span>
+  </div>
+  <span class="badge badge-high">★★ HIGH</span>
+  <div class="score">-54/100</div>
+  <div class="size approved">$6,136 &nbsp;(6.1%)</div>
+  
+  <div class="bars"><div class="bar-row"><span class="bar-label">master</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:38%"></div></div><span class="bar-val">-38</span></div><div class="bar-row"><span class="bar-label">hft</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:35%"></div></div><span class="bar-val">-35</span></div><div class="bar-row"><span class="bar-label">factor</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:100%"></div></div><span class="bar-val">-100</span></div><div class="bar-row"><span class="bar-label">stat_a</span><div class="bar-track"><div class="bar-fill bar-bull" style="width:0%"></div></div><span class="bar-val">+0</span></div><div class="bar-row"><span class="bar-label">moment</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:55%"></div></div><span class="bar-val">-55</span></div></div>
+</div>
+
+<div class="signal-card card-short">
+  <div class="card-header">
+    <span class="sym">BNBUSDT</span>
+    <span class="dir short">▼ SHORT</span>
+  </div>
+  <span class="badge badge-high">★★ HIGH</span>
+  <div class="score">-52/100</div>
+  <div class="size approved">$5,814 &nbsp;(5.8%)</div>
+  
+  <div class="bars"><div class="bar-row"><span class="bar-label">master</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:42%"></div></div><span class="bar-val">-42</span></div><div class="bar-row"><span class="bar-label">hft</span><div class="bar-track"><div class="bar-fill bar-bull" style="width:6%"></div></div><span class="bar-val">+6</span></div><div class="bar-row"><span class="bar-label">factor</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:100%"></div></div><span class="bar-val">-100</span></div><div class="bar-row"><span class="bar-label">stat_a</span><div class="bar-track"><div class="bar-fill bar-bull" style="width:0%"></div></div><span class="bar-val">+0</span></div><div class="bar-row"><span class="bar-label">moment</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:62%"></div></div><span class="bar-val">-62</span></div></div>
+</div>
+
+<div class="signal-card card-short">
+  <div class="card-header">
+    <span class="sym">AVAXUSDT</span>
+    <span class="dir short">▼ SHORT</span>
+  </div>
+  <span class="badge badge-high">★★ HIGH</span>
+  <div class="score">-52/100</div>
+  <div class="size approved">$5,814 &nbsp;(5.8%)</div>
+  
+  <div class="bars"><div class="bar-row"><span class="bar-label">master</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:38%"></div></div><span class="bar-val">-38</span></div><div class="bar-row"><span class="bar-label">hft</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:11%"></div></div><span class="bar-val">-11</span></div><div class="bar-row"><span class="bar-label">factor</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:100%"></div></div><span class="bar-val">-100</span></div><div class="bar-row"><span class="bar-label">stat_a</span><div class="bar-track"><div class="bar-fill bar-bull" style="width:0%"></div></div><span class="bar-val">+0</span></div><div class="bar-row"><span class="bar-label">moment</span><div class="bar-track"><div class="bar-fill bar-bear" style="width:61%"></div></div><span class="bar-val">-61</span></div></div>
+</div>
   </div>
 </div>
 
@@ -314,184 +454,184 @@ a{color:#00d4aa;text-decoration:none}
   <div class="section-title">Market Watchlist  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">all 20 symbols — sorted by conviction</span></div>
   <div class="watchlist-grid">
 <div class="wl-row">
+  <div class="wl-sym">OP</div>
+  <div class="wl-score-wrap">
+    <div class="wl-track"><div class="wl-fill bar-bear" style="width:61%"></div></div>
+    <span class="wl-val short">-61</span>
+  </div>
+  <div class="wl-tier"><span class="badge badge-high">★★ HIGH</span></div>
+  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:22%"></div></div><span class="mini-val">-45</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:24%"></div></div><span class="mini-val">-48</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:50%"></div></div><span class="mini-val">-100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:31%"></div></div><span class="mini-val">-62</span></div></div>
+</div>
+<div class="wl-row">
+  <div class="wl-sym">DOT</div>
+  <div class="wl-score-wrap">
+    <div class="wl-track"><div class="wl-fill bar-bear" style="width:57%"></div></div>
+    <span class="wl-val short">-57</span>
+  </div>
+  <div class="wl-tier"><span class="badge badge-high">★★ HIGH</span></div>
+  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:19%"></div></div><span class="mini-val">-38</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:26%"></div></div><span class="mini-val">-51</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:50%"></div></div><span class="mini-val">-100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:28%"></div></div><span class="mini-val">-55</span></div></div>
+</div>
+<div class="wl-row">
   <div class="wl-sym">BTC</div>
+  <div class="wl-score-wrap">
+    <div class="wl-track"><div class="wl-fill bar-bear" style="width:55%"></div></div>
+    <span class="wl-val short">-55</span>
+  </div>
+  <div class="wl-tier"><span class="badge badge-high">★★ HIGH</span></div>
+  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:20%"></div></div><span class="mini-val">-39</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:32%"></div></div><span class="mini-val">-63</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:37%"></div></div><span class="mini-val">-73</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:31%"></div></div><span class="mini-val">-62</span></div></div>
+</div>
+<div class="wl-row">
+  <div class="wl-sym">APT</div>
+  <div class="wl-score-wrap">
+    <div class="wl-track"><div class="wl-fill bar-bear" style="width:55%"></div></div>
+    <span class="wl-val short">-55</span>
+  </div>
+  <div class="wl-tier"><span class="badge badge-high">★★ HIGH</span></div>
+  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:20%"></div></div><span class="mini-val">-40</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:10%"></div></div><span class="mini-val">-21</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:50%"></div></div><span class="mini-val">-100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:31%"></div></div><span class="mini-val">-62</span></div></div>
+</div>
+<div class="wl-row">
+  <div class="wl-sym">DOGE</div>
+  <div class="wl-score-wrap">
+    <div class="wl-track"><div class="wl-fill bar-bear" style="width:55%"></div></div>
+    <span class="wl-val short">-55</span>
+  </div>
+  <div class="wl-tier"><span class="badge badge-high">★★ HIGH</span></div>
+  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:19%"></div></div><span class="mini-val">-38</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:15%"></div></div><span class="mini-val">-30</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:50%"></div></div><span class="mini-val">-100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:31%"></div></div><span class="mini-val">-62</span></div></div>
+</div>
+<div class="wl-row">
+  <div class="wl-sym">SUI</div>
+  <div class="wl-score-wrap">
+    <div class="wl-track"><div class="wl-fill bar-bear" style="width:54%"></div></div>
+    <span class="wl-val short">-54</span>
+  </div>
+  <div class="wl-tier"><span class="badge badge-high">★★ HIGH</span></div>
+  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:19%"></div></div><span class="mini-val">-38</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:18%"></div></div><span class="mini-val">-35</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:50%"></div></div><span class="mini-val">-100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:28%"></div></div><span class="mini-val">-55</span></div></div>
+</div>
+<div class="wl-row">
+  <div class="wl-sym">BNB</div>
+  <div class="wl-score-wrap">
+    <div class="wl-track"><div class="wl-fill bar-bear" style="width:52%"></div></div>
+    <span class="wl-val short">-52</span>
+  </div>
+  <div class="wl-tier"><span class="badge badge-high">★★ HIGH</span></div>
+  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:21%"></div></div><span class="mini-val">-42</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:3%"></div></div><span class="mini-val">+6</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:50%"></div></div><span class="mini-val">-100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:31%"></div></div><span class="mini-val">-62</span></div></div>
+</div>
+<div class="wl-row">
+  <div class="wl-sym">AVAX</div>
+  <div class="wl-score-wrap">
+    <div class="wl-track"><div class="wl-fill bar-bear" style="width:52%"></div></div>
+    <span class="wl-val short">-52</span>
+  </div>
+  <div class="wl-tier"><span class="badge badge-high">★★ HIGH</span></div>
+  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:19%"></div></div><span class="mini-val">-38</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:6%"></div></div><span class="mini-val">-11</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:50%"></div></div><span class="mini-val">-100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:30%"></div></div><span class="mini-val">-61</span></div></div>
+</div>
+<div class="wl-row">
+  <div class="wl-sym">ADA</div>
   <div class="wl-score-wrap">
     <div class="wl-track"><div class="wl-fill bar-bear" style="width:46%"></div></div>
     <span class="wl-val short">-46</span>
   </div>
   <div class="wl-tier"><span class="badge badge-moderate">★ MODERATE</span></div>
-  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:32%"></div></div><span class="mini-val">-63</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:50%"></div></div><span class="mini-val">-100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:31%"></div></div><span class="mini-val">-62</span></div></div>
+  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:18%"></div></div><span class="mini-val">-36</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:0%"></div></div><span class="mini-val">-1</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:38%"></div></div><span class="mini-val">-77</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:31%"></div></div><span class="mini-val">-62</span></div></div>
 </div>
 <div class="wl-row">
-  <div class="wl-sym">BNB</div>
+  <div class="wl-sym">LTC</div>
+  <div class="wl-score-wrap">
+    <div class="wl-track"><div class="wl-fill bar-bear" style="width:45%"></div></div>
+    <span class="wl-val short">-45</span>
+  </div>
+  <div class="wl-tier"><span class="badge badge-moderate">★ MODERATE</span></div>
+  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:18%"></div></div><span class="mini-val">-37</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:20%"></div></div><span class="mini-val">+39</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:50%"></div></div><span class="mini-val">-100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:31%"></div></div><span class="mini-val">-62</span></div></div>
+</div>
+<div class="wl-row">
+  <div class="wl-sym">XRP</div>
+  <div class="wl-score-wrap">
+    <div class="wl-track"><div class="wl-fill bar-bear" style="width:42%"></div></div>
+    <span class="wl-val short">-42</span>
+  </div>
+  <div class="wl-tier"><span class="badge badge-moderate">★ MODERATE</span></div>
+  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:18%"></div></div><span class="mini-val">-37</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:18%"></div></div><span class="mini-val">+37</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:44%"></div></div><span class="mini-val">-87</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:31%"></div></div><span class="mini-val">-62</span></div></div>
+</div>
+<div class="wl-row">
+  <div class="wl-sym">ETH</div>
   <div class="wl-score-wrap">
     <div class="wl-track"><div class="wl-fill bar-bear" style="width:41%"></div></div>
     <span class="wl-val short">-41</span>
   </div>
   <div class="wl-tier"><span class="badge badge-moderate">★ MODERATE</span></div>
-  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:14%"></div></div><span class="mini-val">-28</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:50%"></div></div><span class="mini-val">-100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:31%"></div></div><span class="mini-val">-62</span></div></div>
-</div>
-<div class="wl-row">
-  <div class="wl-sym">DOGE</div>
-  <div class="wl-score-wrap">
-    <div class="wl-track"><div class="wl-fill bar-bear" style="width:39%"></div></div>
-    <span class="wl-val short">-39</span>
-  </div>
-  <div class="wl-tier"><span class="badge badge-moderate">★ MODERATE</span></div>
-  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:9%"></div></div><span class="mini-val">-18</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:50%"></div></div><span class="mini-val">-100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:31%"></div></div><span class="mini-val">-62</span></div></div>
-</div>
-<div class="wl-row">
-  <div class="wl-sym">XRP</div>
-  <div class="wl-score-wrap">
-    <div class="wl-track"><div class="wl-fill bar-bear" style="width:37%"></div></div>
-    <span class="wl-val short">-37</span>
-  </div>
-  <div class="wl-tier"><span class="badge badge-moderate">★ MODERATE</span></div>
-  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:10%"></div></div><span class="mini-val">-21</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:50%"></div></div><span class="mini-val">-100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:26%"></div></div><span class="mini-val">-52</span></div></div>
-</div>
-<div class="wl-row">
-  <div class="wl-sym">UNI</div>
-  <div class="wl-score-wrap">
-    <div class="wl-track"><div class="wl-fill bar-bear" style="width:37%"></div></div>
-    <span class="wl-val short">-37</span>
-  </div>
-  <div class="wl-tier"><span class="badge badge-moderate">★ MODERATE</span></div>
-  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:27%"></div></div><span class="mini-val">-54</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:37%"></div></div><span class="mini-val">-74</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:26%"></div></div><span class="mini-val">-52</span></div></div>
-</div>
-<div class="wl-row">
-  <div class="wl-sym">OP</div>
-  <div class="wl-score-wrap">
-    <div class="wl-track"><div class="wl-fill bar-bear" style="width:37%"></div></div>
-    <span class="wl-val short">-37</span>
-  </div>
-  <div class="wl-tier"><span class="badge badge-moderate">★ MODERATE</span></div>
-  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:4%"></div></div><span class="mini-val">-7</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:50%"></div></div><span class="mini-val">-100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:31%"></div></div><span class="mini-val">-62</span></div></div>
-</div>
-<div class="wl-row">
-  <div class="wl-sym">LINK</div>
-  <div class="wl-score-wrap">
-    <div class="wl-track"><div class="wl-fill bar-bear" style="width:36%"></div></div>
-    <span class="wl-val short">-36</span>
-  </div>
-  <div class="wl-tier"><span class="badge badge-moderate">★ MODERATE</span></div>
-  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:13%"></div></div><span class="mini-val">-26</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:50%"></div></div><span class="mini-val">-100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:22%"></div></div><span class="mini-val">-45</span></div></div>
-</div>
-<div class="wl-row">
-  <div class="wl-sym">SUI</div>
-  <div class="wl-score-wrap">
-    <div class="wl-track"><div class="wl-fill bar-bear" style="width:34%"></div></div>
-    <span class="wl-val short">-34</span>
-  </div>
-  <div class="wl-tier"><span class="badge badge-monitor">○ MONITORING</span></div>
-  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:7%"></div></div><span class="mini-val">-14</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:50%"></div></div><span class="mini-val">-100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:22%"></div></div><span class="mini-val">-45</span></div></div>
-</div>
-<div class="wl-row">
-  <div class="wl-sym">APT</div>
-  <div class="wl-score-wrap">
-    <div class="wl-track"><div class="wl-fill bar-bear" style="width:33%"></div></div>
-    <span class="wl-val short">-33</span>
-  </div>
-  <div class="wl-tier"><span class="badge badge-monitor">○ MONITORING</span></div>
-  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:3%"></div></div><span class="mini-val">+6</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:50%"></div></div><span class="mini-val">-100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:28%"></div></div><span class="mini-val">-55</span></div></div>
-</div>
-<div class="wl-row">
-  <div class="wl-sym">ADA</div>
-  <div class="wl-score-wrap">
-    <div class="wl-track"><div class="wl-fill bar-bear" style="width:33%"></div></div>
-    <span class="wl-val short">-33</span>
-  </div>
-  <div class="wl-tier"><span class="badge badge-monitor">○ MONITORING</span></div>
-  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:3%"></div></div><span class="mini-val">+6</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:50%"></div></div><span class="mini-val">-100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:26%"></div></div><span class="mini-val">-52</span></div></div>
-</div>
-<div class="wl-row">
-  <div class="wl-sym">AVAX</div>
-  <div class="wl-score-wrap">
-    <div class="wl-track"><div class="wl-fill bar-bear" style="width:31%"></div></div>
-    <span class="wl-val short">-31</span>
-  </div>
-  <div class="wl-tier"><span class="badge badge-monitor">○ MONITORING</span></div>
-  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:18%"></div></div><span class="mini-val">+35</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:50%"></div></div><span class="mini-val">-100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:30%"></div></div><span class="mini-val">-60</span></div></div>
-</div>
-<div class="wl-row">
-  <div class="wl-sym">ATOM</div>
-  <div class="wl-score-wrap">
-    <div class="wl-track"><div class="wl-fill bar-bear" style="width:29%"></div></div>
-    <span class="wl-val short">-29</span>
-  </div>
-  <div class="wl-tier"><span class="badge badge-monitor">○ MONITORING</span></div>
-  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:10%"></div></div><span class="mini-val">+21</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:50%"></div></div><span class="mini-val">-100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:24%"></div></div><span class="mini-val">-47</span></div></div>
-</div>
-<div class="wl-row">
-  <div class="wl-sym">LTC</div>
-  <div class="wl-score-wrap">
-    <div class="wl-track"><div class="wl-fill bar-bear" style="width:28%"></div></div>
-    <span class="wl-val short">-28</span>
-  </div>
-  <div class="wl-tier"><span class="badge badge-monitor">○ MONITORING</span></div>
-  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:30%"></div></div><span class="mini-val">+59</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:50%"></div></div><span class="mini-val">-100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:31%"></div></div><span class="mini-val">-62</span></div></div>
-</div>
-<div class="wl-row">
-  <div class="wl-sym">ARB</div>
-  <div class="wl-score-wrap">
-    <div class="wl-track"><div class="wl-fill bar-bear" style="width:26%"></div></div>
-    <span class="wl-val short">-26</span>
-  </div>
-  <div class="wl-tier"><span class="badge badge-monitor">○ MONITORING</span></div>
-  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:26%"></div></div><span class="mini-val">+52</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:50%"></div></div><span class="mini-val">-100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:26%"></div></div><span class="mini-val">-52</span></div></div>
-</div>
-<div class="wl-row">
-  <div class="wl-sym">INJ</div>
-  <div class="wl-score-wrap">
-    <div class="wl-track"><div class="wl-fill bar-bear" style="width:24%"></div></div>
-    <span class="wl-val short">-24</span>
-  </div>
-  <div class="wl-tier"><span class="badge badge-monitor">○ MONITORING</span></div>
-  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:19%"></div></div><span class="mini-val">+38</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:50%"></div></div><span class="mini-val">-100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:18%"></div></div><span class="mini-val">-36</span></div></div>
-</div>
-<div class="wl-row">
-  <div class="wl-sym">ETH</div>
-  <div class="wl-score-wrap">
-    <div class="wl-track"><div class="wl-fill bar-bear" style="width:21%"></div></div>
-    <span class="wl-val short">-21</span>
-  </div>
-  <div class="wl-tier"><span class="badge badge-monitor">○ MONITORING</span></div>
-  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:15%"></div></div><span class="mini-val">-30</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:2%"></div></div><span class="mini-val">-3</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:31%"></div></div><span class="mini-val">-62</span></div></div>
+  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:21%"></div></div><span class="mini-val">-42</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:16%"></div></div><span class="mini-val">-33</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:10%"></div></div><span class="mini-val">-20</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:31%"></div></div><span class="mini-val">-62</span></div></div>
 </div>
 <div class="wl-row">
   <div class="wl-sym">NEAR</div>
   <div class="wl-score-wrap">
-    <div class="wl-track"><div class="wl-fill bar-bear" style="width:21%"></div></div>
-    <span class="wl-val short">-21</span>
+    <div class="wl-track"><div class="wl-fill bar-bear" style="width:38%"></div></div>
+    <span class="wl-val short">-38</span>
   </div>
-  <div class="wl-tier"><span class="badge badge-monitor">○ MONITORING</span></div>
-  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:1%"></div></div><span class="mini-val">-2</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:21%"></div></div><span class="mini-val">-41</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:24%"></div></div><span class="mini-val">-48</span></div></div>
+  <div class="wl-tier"><span class="badge badge-moderate">★ MODERATE</span></div>
+  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:23%"></div></div><span class="mini-val">-45</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:18%"></div></div><span class="mini-val">-37</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:2%"></div></div><span class="mini-val">+3</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:29%"></div></div><span class="mini-val">-59</span></div></div>
 </div>
 <div class="wl-row">
-  <div class="wl-sym">DOT</div>
+  <div class="wl-sym">INJ</div>
+  <div class="wl-score-wrap">
+    <div class="wl-track"><div class="wl-fill bar-bear" style="width:25%"></div></div>
+    <span class="wl-val short">-25</span>
+  </div>
+  <div class="wl-tier"><span class="badge badge-monitor">○ MONITORING</span></div>
+  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:19%"></div></div><span class="mini-val">-38</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:20%"></div></div><span class="mini-val">-40</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:12%"></div></div><span class="mini-val">+23</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:18%"></div></div><span class="mini-val">-36</span></div></div>
+</div>
+<div class="wl-row">
+  <div class="wl-sym">UNI</div>
+  <div class="wl-score-wrap">
+    <div class="wl-track"><div class="wl-fill bar-bear" style="width:15%"></div></div>
+    <span class="wl-val short">-15</span>
+  </div>
+  <div class="wl-tier"><span class="badge badge-monitor">○ MONITORING</span></div>
+  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:20%"></div></div><span class="mini-val">-40</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:22%"></div></div><span class="mini-val">-44</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:50%"></div></div><span class="mini-val">+100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:26%"></div></div><span class="mini-val">-52</span></div></div>
+</div>
+<div class="wl-row">
+  <div class="wl-sym">SOL</div>
   <div class="wl-score-wrap">
     <div class="wl-track"><div class="wl-fill bar-bear" style="width:14%"></div></div>
     <span class="wl-val short">-14</span>
   </div>
   <div class="wl-tier"><span class="badge badge-wait">WAIT</span></div>
-  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:5%"></div></div><span class="mini-val">-10</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:1%"></div></div><span class="mini-val">-2</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:22%"></div></div><span class="mini-val">-45</span></div></div>
+  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:17%"></div></div><span class="mini-val">-34</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:14%"></div></div><span class="mini-val">+27</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:28%"></div></div><span class="mini-val">+57</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:31%"></div></div><span class="mini-val">-62</span></div></div>
 </div>
 <div class="wl-row">
-  <div class="wl-sym">SOL</div>
+  <div class="wl-sym">LINK</div>
   <div class="wl-score-wrap">
     <div class="wl-track"><div class="wl-fill bar-bear" style="width:12%"></div></div>
     <span class="wl-val short">-12</span>
   </div>
   <div class="wl-tier"><span class="badge badge-wait">WAIT</span></div>
-  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:16%"></div></div><span class="mini-val">+31</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:7%"></div></div><span class="mini-val">-14</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:26%"></div></div><span class="mini-val">-52</span></div></div>
+  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:18%"></div></div><span class="mini-val">-36</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:14%"></div></div><span class="mini-val">-27</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:50%"></div></div><span class="mini-val">+100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:28%"></div></div><span class="mini-val">-55</span></div></div>
 </div>
 <div class="wl-row">
   <div class="wl-sym">TRX</div>
   <div class="wl-score-wrap">
-    <div class="wl-track"><div class="wl-fill bar-bull" style="width:5%"></div></div>
-    <span class="wl-val long">+5</span>
+    <div class="wl-track"><div class="wl-fill bar-bear" style="width:12%"></div></div>
+    <span class="wl-val short">-12</span>
   </div>
   <div class="wl-tier"><span class="badge badge-wait">WAIT</span></div>
-  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:12%"></div></div><span class="mini-val">-23</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:50%"></div></div><span class="mini-val">+100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:20%"></div></div><span class="mini-val">-41</span></div></div>
+  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:19%"></div></div><span class="mini-val">-39</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:13%"></div></div><span class="mini-val">-26</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:50%"></div></div><span class="mini-val">+100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:26%"></div></div><span class="mini-val">-52</span></div></div>
+</div>
+<div class="wl-row">
+  <div class="wl-sym">ARB</div>
+  <div class="wl-score-wrap">
+    <div class="wl-track"><div class="wl-fill bar-bear" style="width:10%"></div></div>
+    <span class="wl-val short">-10</span>
+  </div>
+  <div class="wl-tier"><span class="badge badge-wait">WAIT</span></div>
+  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:22%"></div></div><span class="mini-val">-45</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:2%"></div></div><span class="mini-val">+3</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:50%"></div></div><span class="mini-val">+100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:26%"></div></div><span class="mini-val">-52</span></div></div>
+</div>
+<div class="wl-row">
+  <div class="wl-sym">ATOM</div>
+  <div class="wl-score-wrap">
+    <div class="wl-track"><div class="wl-fill bar-bear" style="width:9%"></div></div>
+    <span class="wl-val short">-9</span>
+  </div>
+  <div class="wl-tier"><span class="badge badge-wait">WAIT</span></div>
+  <div class="wl-engines"><div class="mini-bar-row"><span class="mini-label">MAS</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:21%"></div></div><span class="mini-val">-43</span></div><div class="mini-bar-row"><span class="mini-label">HFT</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:4%"></div></div><span class="mini-val">-7</span></div><div class="mini-bar-row"><span class="mini-label">FAC</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:50%"></div></div><span class="mini-val">+100</span></div><div class="mini-bar-row"><span class="mini-label">STA</span><div class="mini-track"><div class="mini-fill bar-bull" style="width:0%"></div></div><span class="mini-val">+0</span></div><div class="mini-bar-row"><span class="mini-label">MOM</span><div class="mini-track"><div class="mini-fill bar-bear" style="width:23%"></div></div><span class="mini-val">-47</span></div></div>
 </div></div>
 </div>
 
@@ -518,7 +658,7 @@ a{color:#00d4aa;text-decoration:none}
   </div>
   <div class="risk-item">
     <div class="risk-label">Avg Correlation</div>
-    <div class="risk-val ok">0.542</div>
+    <div class="risk-val ok">0.541</div>
   </div>
   <div class="risk-item">
     <div class="risk-label">Eff. Positions</div>
@@ -540,11 +680,11 @@ a{color:#00d4aa;text-decoration:none}
   <div class="section-title">Perpetual Arb — Paper Trading  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">sandbox · carry + basis + funding reversion · $1k per leg</span></div>
   
 <script>
-window.PERP_POSITIONS = [{"id": "SPOT_APTUSDT_1114_0733", "symbol": "APTUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 0.5153, "perp_entry": 0.5135, "size_usd": 55000.0, "funding_total": 14.6476, "fees_total": 44.0}, {"id": "SPOT_WIFUSDT_1114_0733", "symbol": "WIFUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 0.1455, "perp_entry": 0.14494, "size_usd": 55000.0, "funding_total": -2.75, "fees_total": 44.0}, {"id": "SPOT_ARBUSDT_1114_0938", "symbol": "ARBUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 0.1393, "perp_entry": 0.13889, "size_usd": 55000.0, "funding_total": -5.5, "fees_total": 44.0}];
-window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": 1908.68, "capital_deployed": 165000.0, "n_open": 3};
+window.PERP_POSITIONS = [{"id": "SPOT_WIFUSDT_1114_0733", "symbol": "WIFUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 0.1455, "perp_entry": 0.14494, "size_usd": 55000.0, "funding_total": -2.75, "fees_total": 44.0}, {"id": "SPOT_ARBUSDT_1114_0938", "symbol": "ARBUSDT", "direction": "LONG_PERP_SHORT_SPOT", "spot_entry": 0.1393, "perp_entry": 0.13889, "size_usd": 55000.0, "funding_total": -5.5, "fees_total": 44.0}];
+window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": 2003.31, "capital_deployed": 110000.0, "n_open": 2};
 </script>
 <div style="background:rgba(255,208,96,0.07);border:1px solid rgba(255,208,96,0.2);border-radius:8px;padding:12px 16px;margin-bottom:12px">
-  <div style="font-size:11px;color:#ffd060;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">&#9670; Live Institutional Intelligence · Binance FAPI · Updated 16:57 UTC</div>
+  <div style="font-size:11px;color:#ffd060;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">&#9670; Live Institutional Intelligence · Binance FAPI · Updated 17:01 UTC</div>
   <table style="width:100%;border-collapse:collapse;font-size:11px">
     <thead><tr style="color:#8095a8;font-size:10px;text-transform:uppercase;letter-spacing:0.5px">
       <th style="text-align:left;padding:3px 8px 5px 0">Symbol</th>
@@ -558,11 +698,11 @@ window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": 1908.68,
     <tbody><tr><td><b style="color:#e0eaf5">BTC</b></td><td><span style="color:#ff6b6b">FALLING</span> <span style="color:#8095a8;font-size:10px">-0.93%/h</span></td><td><span style="color:#00d4aa">LONG</span> <span style="color:#8095a8;font-size:10px">3.2:1</span></td><td style="color:#8095a8;font-size:11px">74% long</td><td><span style="color:#ff6b6b">FALLING</span></td><td style="font-weight:700;color:#ff6b6b">-25</td><td style="color:#8095a8;font-size:10px">MEDIUM</td></tr>
 <tr><td><b style="color:#e0eaf5">ETH</b></td><td><span style="color:#8095a8">FLAT</span> <span style="color:#8095a8;font-size:10px">+0.18%/h</span></td><td><span style="color:#00d4aa">LONG</span> <span style="color:#8095a8;font-size:10px">3.4:1</span></td><td style="color:#8095a8;font-size:11px">71% long</td><td><span style="color:#ff6b6b">FALLING</span></td><td style="font-weight:700;color:#ffd060">-15</td><td style="color:#8095a8;font-size:10px">LOW</td></tr>
 <tr><td><b style="color:#e0eaf5">BNB</b></td><td><span style="color:#00d4aa">RISING</span> <span style="color:#8095a8;font-size:10px">+0.57%/h</span></td><td><span style="color:#00d4aa">LONG</span> <span style="color:#8095a8;font-size:10px">2.7:1</span></td><td style="color:#8095a8;font-size:11px">70% long</td><td><span style="color:#8095a8">STABLE</span></td><td style="font-weight:700;color:#ffd060">+15</td><td style="color:#8095a8;font-size:10px">MEDIUM</td></tr>
-<tr><td><b style="color:#e0eaf5">SOL</b></td><td><span style="color:#00d4aa">RISING</span> <span style="color:#8095a8;font-size:10px">+0.94%/h</span></td><td><span style="color:#00d4aa">LONG</span> <span style="color:#8095a8;font-size:10px">4.1:1</span></td><td style="color:#8095a8;font-size:11px">77% long</td><td><span style="color:#ff6b6b">FALLING</span></td><td style="font-weight:700;color:#ffd060">+15</td><td style="color:#8095a8;font-size:10px">MEDIUM</td></tr>
-<tr><td><b style="color:#e0eaf5">XRP</b></td><td><span style="color:#8095a8">FLAT</span> <span style="color:#8095a8;font-size:10px">+0.40%/h</span></td><td><span style="color:#00d4aa">LONG</span> <span style="color:#8095a8;font-size:10px">3.2:1</span></td><td style="color:#8095a8;font-size:11px">72% long</td><td><span style="color:#ff6b6b">FALLING</span></td><td style="font-weight:700;color:#ffd060">-15</td><td style="color:#8095a8;font-size:10px">LOW</td></tr>
+<tr><td><b style="color:#e0eaf5">SOL</b></td><td><span style="color:#00d4aa">RISING</span> <span style="color:#8095a8;font-size:10px">+0.94%/h</span></td><td><span style="color:#00d4aa">LONG</span> <span style="color:#8095a8;font-size:10px">4.1:1</span></td><td style="color:#8095a8;font-size:11px">78% long</td><td><span style="color:#ff6b6b">FALLING</span></td><td style="font-weight:700;color:#ffd060">+15</td><td style="color:#8095a8;font-size:10px">MEDIUM</td></tr>
+<tr><td><b style="color:#e0eaf5">XRP</b></td><td><span style="color:#00d4aa">RISING</span> <span style="color:#8095a8;font-size:10px">+0.89%/h</span></td><td><span style="color:#00d4aa">LONG</span> <span style="color:#8095a8;font-size:10px">3.1:1</span></td><td style="color:#8095a8;font-size:11px">73% long</td><td><span style="color:#ff6b6b">FALLING</span></td><td style="font-weight:700;color:#ffd060">+15</td><td style="color:#8095a8;font-size:10px">MEDIUM</td></tr>
 </tbody>
   </table>
-  <div style="font-size:11px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,208,96,0.1)">Consensus: <b style="color:#ffd060">NEUTRAL</b> <span style="color:#8095a8">(avg score -5)</span> &nbsp;·&nbsp; Gate active: entries blocked when score &lt; 30</div>
+  <div style="font-size:11px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,208,96,0.1)">Consensus: <b style="color:#ffd060">NEUTRAL</b> <span style="color:#8095a8">(avg score +1)</span> &nbsp;·&nbsp; Gate active: entries blocked when score &lt; 30</div>
   <div style="font-size:10px;color:#8095a8;margin-top:4px">Score: &#8722;100 (heavy institutional selling) → +100 (institutional accumulation). Entry gate requires score &#8805;30.</div>
 </div>
 
@@ -571,11 +711,11 @@ window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": 1908.68,
     <span style="width:8px;height:8px;border-radius:50%;background:#00b4ff;display:inline-block;animation:pulse-dot 1.4s ease-in-out infinite"></span>
     <b style="color:#00b4ff;font-size:13px">Scanner Running</b>
   </span>
-  <span style="color:#8095a8;font-size:12px">2026-11-15 16:57 UTC</span>
-  <span class="red" style="font-size:12px">Regime: BEAR · BTC 24h <span class="red">-1.01%</span></span>
+  <span style="color:#8095a8;font-size:12px">2026-11-15 17:00 UTC</span>
+  <span class="red" style="font-size:12px">Regime: BEAR · BTC 24h <span class="red">-1.73%</span></span>
   <span style="color:#8095a8;font-size:12px">Carry floor: 30.0%/yr · Basis min: 0.20%</span>
   
-  <span class='pos' style='font-size:12px'>3 positions open</span>
+  <span class='pos' style='font-size:12px'>2 positions open</span>
 </div>
 
 <!-- Live Crypto Prices Board (always visible, updates every 3s) -->
@@ -613,25 +753,25 @@ window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": 1908.68,
   </div>
   <div class="acct-mid">
     <div class="acct-label">Account Equity &nbsp;<span id="live-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#8095a8;vertical-align:middle"></span></div>
-    <div id="live-equity" class="acct-equity green">$1,002,126.17 <span class="acct-ret">(+0.2126%)</span></div>
+    <div id="live-equity" class="acct-equity green">$1,002,131.03 <span class="acct-ret">(+0.2131%)</span></div>
     <div class="acct-deploy-wrap">
-      <div class="acct-deploy-bar"><div class="acct-deploy-fill" style="width:16.5%"></div></div>
-      <span class="acct-deploy-lbl">16.5% deployed — $165,000 in 3 positions · $836,909 available</span>
+      <div class="acct-deploy-bar"><div class="acct-deploy-fill" style="width:11.0%"></div></div>
+      <span class="acct-deploy-lbl">11.0% deployed — $110,000 in 2 positions · $892,003 available</span>
     </div>
   </div>
   <div class="acct-right">
     <div class="acct-label">Total P&L</div>
-    <div class="acct-pnl green">$+1,908.68 <span style="font-size:12px;color:#8095a8">realized</span></div>
-    <div id="live-upnl" class="acct-pnl pos" style="font-size:16px">$+217.50 <span style="font-size:12px;color:#8095a8">unrealized</span></div>
+    <div class="acct-pnl green">$+2,003.31 <span style="font-size:12px;color:#8095a8">realized</span></div>
+    <div id="live-upnl" class="acct-pnl pos" style="font-size:16px">$+127.72 <span style="font-size:12px;color:#8095a8">unrealized</span></div>
   </div>
 </div>
 
 <div class="arb-stats">
-  <div class="arb-stat"><div class="arb-label">Open Positions</div><div class="arb-val">3/15</div><div class="arb-sub">$165,000 deployed · $836,909 free</div></div>
-  <div class="arb-stat"><div class="arb-label">Projected Daily</div><div class="arb-val green">$8.28</div><div class="arb-sub">funding income / day</div></div>
-  <div class="arb-stat"><div class="arb-label">Projected Annual</div><div class="arb-val green">$3,023 <span style="font-size:12px">(0.3%/yr)</span></div><div class="arb-sub">on $1M account</div></div>
-  <div class="arb-stat"><div class="arb-label">Realized P&L</div><div class="arb-val green">$+1,908.68</div><div class="arb-sub">closed trades</div></div>
-  <div class="arb-stat"><div class="arb-label">Win Rate</div><div class="arb-val red">37.5%</div><div class="arb-sub">12W / 20L · PF 1.53×</div></div>
+  <div class="arb-stat"><div class="arb-label">Open Positions</div><div class="arb-val">2/15</div><div class="arb-sub">$110,000 deployed · $892,003 free</div></div>
+  <div class="arb-stat"><div class="arb-label">Projected Daily</div><div class="arb-val green">$4.59</div><div class="arb-sub">funding income / day</div></div>
+  <div class="arb-stat"><div class="arb-label">Projected Annual</div><div class="arb-val green">$1,674 <span style="font-size:12px">(0.2%/yr)</span></div><div class="arb-sub">on $1M account</div></div>
+  <div class="arb-stat"><div class="arb-label">Realized P&L</div><div class="arb-val green">$+2,003.31</div><div class="arb-sub">closed trades</div></div>
+  <div class="arb-stat"><div class="arb-label">Win Rate</div><div class="arb-val red">39.4%</div><div class="arb-sub">13W / 20L · PF 1.56×</div></div>
 </div>
 
 <!-- Portfolio Protection Banner -->
@@ -642,7 +782,7 @@ window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": 1908.68,
     <div style="margin-top:6px">
       <div style="font-size:11px;color:#8095a8;margin-bottom:3px">Progress to lock target (56%)</div>
       <div style="background:#1e293b;border-radius:4px;height:8px;width:100%;overflow:hidden">
-        <div style="background:#f59e0b;height:100%;width:56.3%;border-radius:4px;transition:width 1s"></div>
+        <div style="background:#f59e0b;height:100%;width:56.4%;border-radius:4px;transition:width 1s"></div>
       </div>
     </div>
   </div>
@@ -693,17 +833,16 @@ window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": 1908.68,
 <thead><tr><th>Strategy</th><th>Trades</th><th>Win Rate</th><th>P&L</th></tr></thead>
 <tbody><tr><td><b>NEG_CARRY</b> <span style="background:#00d4aa22;color:#00d4aa;border:1px solid #00d4aa44;border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700;margin-left:4px">BEST</span></td><td>13</td><td class="neg">46%</td><td class="pos">$+2808.43</td></tr>
 <tr><td><b>SPOT_PREMIUM</b></td><td>1</td><td class="pos">100%</td><td class="pos">$+205.41</td></tr>
-<tr><td><b>SPOT_DISCOUNT</b><div style="font-size:10px;color:#8095a8;margin-top:2px">BERAUSDT anomaly (&#8722;$1,074) — extreme-funding token removed from whitelist. Without BERA: SPOT_DISCOUNT WR=71%, P&amp;L=+$1,061. Entry criteria now blocks extreme-funding tokens and applies 48h stop-loss cooldown.</div></td><td>10</td><td class="pos">50%</td><td class="neg">$-236.71</td></tr>
+<tr><td><b>SPOT_DISCOUNT</b><div style="font-size:10px;color:#8095a8;margin-top:2px">BERAUSDT anomaly (&#8722;$1,074) — extreme-funding token removed from whitelist. Without BERA: SPOT_DISCOUNT WR=71%, P&amp;L=+$1,061. Entry criteria now blocks extreme-funding tokens and applies 48h stop-loss cooldown.</div></td><td>11</td><td class="pos">54%</td><td class="neg">$-142.07</td></tr>
 <tr><td><b>CARRY_ARB</b><div style="font-size:10px;color:#8095a8;margin-top:2px">historical pre-fix losses — spike entries before the fee-breakeven gate (now requires funding &ge; 39%/yr sustained + intel confirmation; new entries are protected)</div></td><td>8</td><td class="neg">0%</td><td class="neg">$-868.46</td></tr>
 </tbody>
 </table>
 
-<div class="arb-sub-title">Open Positions (3)</div>
+<div class="arb-sub-title">Open Positions (2)</div>
 <table class="data-table" style="margin-bottom:16px">
 <thead><tr><th>Symbol</th><th>Strategy</th><th>Direction</th><th>Ann Yield</th><th>Basis Entry→Now</th><th>Funding</th><th>Unrealized</th><th>TP / SL</th><th>Age</th></tr></thead>
-<tbody><tr data-trade="SPOT_APTUSDT_1114_0733"><td><b>APT</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td><span class="pos">+42.5%/yr</span><br><span style="font-size:9px;color:#8095a8">basis conv.</span></td><td class="mono">-0.349% → <span class="live-basis">-0.044%</span></td><td class="pos">$+14.65</td><td class="live-unreal pos">$+118.52</td><td class="act" style="font-size:10px">TP $1,650 | SL $-825</td><td class="act">33h</td></tr>
-<tr data-trade="SPOT_WIFUSDT_1114_0733"><td><b>WIF</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td><span class="pos">+46.8%/yr</span><br><span style="font-size:9px;color:#8095a8">basis conv.</span></td><td class="mono">-0.385% → <span class="live-basis">-0.150%</span></td><td class="neg">$-2.75</td><td class="live-unreal pos">$+72.19</td><td class="act" style="font-size:10px">TP $1,650 | SL $-825</td><td class="act">33h</td></tr>
-<tr data-trade="SPOT_ARBUSDT_1114_0938"><td><b>ARB</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td><span class="pos">+35.8%/yr</span><br><span style="font-size:9px;color:#8095a8">basis conv.</span></td><td class="mono">-0.294% → <span class="live-basis">-0.154%</span></td><td class="neg">$-5.50</td><td class="live-unreal pos">$+26.79</td><td class="act" style="font-size:10px">TP $1,650 | SL $-825</td><td class="act">31h</td></tr>
+<tbody><tr data-trade="SPOT_WIFUSDT_1114_0733"><td><b>WIF</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td><span class="pos">+46.8%/yr</span><br><span style="font-size:9px;color:#8095a8">basis conv.</span></td><td class="mono">-0.385% → <span class="live-basis">-0.075%</span></td><td class="neg">$-2.75</td><td class="live-unreal pos">$+109.55</td><td class="act" style="font-size:10px">TP $1,650 | SL $-825</td><td class="act">33h</td></tr>
+<tr data-trade="SPOT_ARBUSDT_1114_0938"><td><b>ARB</b></td><td class="mono" style="font-size:11px">SPOT_DISCOUNT</td><td class="mono" style="font-size:11px">↑Perp↓Spot</td><td><span class="pos">+35.8%/yr</span><br><span style="font-size:9px;color:#8095a8">basis conv.</span></td><td class="mono">-0.294% → <span class="live-basis">-0.169%</span></td><td class="neg">$-5.50</td><td class="live-unreal pos">$+18.17</td><td class="act" style="font-size:10px">TP $1,650 | SL $-825</td><td class="act">31h</td></tr>
 </tbody>
 </table>
 
@@ -713,36 +852,36 @@ window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": 1908.68,
   <div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:10px">
     <div>
       <div style="font-size:10px;color:#8095a8;text-transform:uppercase;letter-spacing:.5px">Overall WR</div>
-      <div style="font-size:22px;font-weight:700;color:#ff6b6b">38%</div>
-      <div style="font-size:10px;color:#8095a8">12W / 20L  (32 closed)</div>
+      <div style="font-size:22px;font-weight:700;color:#ff6b6b">39%</div>
+      <div style="font-size:10px;color:#8095a8">13W / 20L  (33 closed)</div>
     </div>
     <div>
       <div style="font-size:10px;color:#8095a8;text-transform:uppercase;letter-spacing:.5px">Strategy WR (excl. evictions)</div>
-      <div style="font-size:22px;font-weight:700;color:#00d4aa">57%</div>
-      <div style="font-size:10px;color:#8095a8">12W / 9L  (21 non-evict trades)</div>
+      <div style="font-size:22px;font-weight:700;color:#00d4aa">59%</div>
+      <div style="font-size:10px;color:#8095a8">13W / 9L  (22 non-evict trades)</div>
     </div>
     <div>
       <div style="font-size:10px;color:#8095a8;text-transform:uppercase;letter-spacing:.5px">Profit Factor</div>
-      <div style="font-size:22px;font-weight:700;color:#00d4aa">1.53×</div>
+      <div style="font-size:22px;font-weight:700;color:#00d4aa">1.56×</div>
       <div style="font-size:10px;color:#8095a8">avg win / avg loss ratio</div>
     </div>
     <div style="flex:1;min-width:200px">
-      <div style="font-size:10px;color:#8095a8;margin-bottom:4px">Why overall WR shows 38%:</div>
-      <div style="font-size:11px;color:#c0cfe0;line-height:1.5">11 trade(s) excluded: stock/junk tokens (SAMSUNG, NVDA etc.) opened pre-whitelist (WHITELIST_EVICT), plus any symbol re-entered within 48h of a stop-loss (COOLDOWN_EVICT — now blocked). These had no real trading signal. Excluding them, real strategy WR = <span style="color:#00d4aa;font-weight:700">57%</span>.</div>
+      <div style="font-size:10px;color:#8095a8;margin-bottom:4px">Why overall WR shows 39%:</div>
+      <div style="font-size:11px;color:#c0cfe0;line-height:1.5">11 trade(s) excluded: stock/junk tokens (SAMSUNG, NVDA etc.) opened pre-whitelist (WHITELIST_EVICT), plus any symbol re-entered within 48h of a stop-loss (COOLDOWN_EVICT — now blocked). These had no real trading signal. Excluding them, real strategy WR = <span style="color:#00d4aa;font-weight:700">59%</span>.</div>
     </div>
   </div>
   <div style="margin-top:8px">
-    <div style="font-size:10px;color:#8095a8;margin-bottom:4px">Cumulative Win Rate Over All 32 Trades</div>
+    <div style="font-size:10px;color:#8095a8;margin-bottom:4px">Cumulative Win Rate Over All 33 Trades</div>
     <svg width="420" height="80" style="display:block;overflow:visible">
       <line x1="0" y1="20" x2="420" y2="20" stroke="rgba(255,255,255,0.08)" stroke-dasharray="3,3"/>
-      <polyline points="0,60 13,20 27,6 40,0 54,12 67,20 81,14 94,20 108,15 121,20 135,23 149,20 162,16 176,14 189,12 203,15 216,17 230,20 243,22 257,24 270,25 284,27 298,28 311,30 325,31 338,32 352,30 365,31 379,32 392,30 406,29 420,30" fill="none" stroke="#00d4aa" stroke-width="1.5" opacity="0.9"/>
-      <text x="0" y="74" font-size="8" fill="#8095a8" text-anchor="middle">11-13</text><text x="54" y="74" font-size="8" fill="#8095a8" text-anchor="middle">11-13</text><text x="121" y="74" font-size="8" fill="#8095a8" text-anchor="middle">11-14</text><text x="189" y="74" font-size="8" fill="#8095a8" text-anchor="middle">11-14</text><text x="257" y="74" font-size="8" fill="#8095a8" text-anchor="middle">11-14</text><text x="325" y="74" font-size="8" fill="#8095a8" text-anchor="middle">11-14</text><text x="392" y="74" font-size="8" fill="#8095a8" text-anchor="middle">11-15</text><text x="420" y="74" font-size="8" fill="#8095a8" text-anchor="middle">11-15</text>
+      <polyline points="0,60 13,20 26,6 39,0 52,12 65,20 78,14 91,20 105,15 118,20 131,23 144,20 157,16 170,14 183,12 196,15 210,17 223,20 236,22 249,24 262,25 275,27 288,28 301,30 315,31 328,32 341,30 354,31 367,32 380,30 393,29 406,30 420,28" fill="none" stroke="#00d4aa" stroke-width="1.5" opacity="0.9"/>
+      <text x="0" y="74" font-size="8" fill="#8095a8" text-anchor="middle">11-13</text><text x="52" y="74" font-size="8" fill="#8095a8" text-anchor="middle">11-13</text><text x="118" y="74" font-size="8" fill="#8095a8" text-anchor="middle">11-14</text><text x="183" y="74" font-size="8" fill="#8095a8" text-anchor="middle">11-14</text><text x="249" y="74" font-size="8" fill="#8095a8" text-anchor="middle">11-14</text><text x="315" y="74" font-size="8" fill="#8095a8" text-anchor="middle">11-14</text><text x="380" y="74" font-size="8" fill="#8095a8" text-anchor="middle">11-15</text><text x="420" y="74" font-size="8" fill="#8095a8" text-anchor="middle">11-15</text>
       <text x="0" y="23" font-size="8" fill="rgba(255,255,255,0.3)">50%</text>
     </svg>
   </div>
 </div>
 
-<div class="arb-sub-title">Complete Trade Journal (32 trades, newest first)</div>
+<div class="arb-sub-title">Complete Trade Journal (33 trades, newest first)</div>
 <div style="font-size:11px;color:#8095a8;margin-bottom:8px">Entry/Exit: Spot price / Perp price &nbsp;|&nbsp; ↑S↓P = Long Spot Short Perp &nbsp;|&nbsp; ↑P↓S = Long Perp Short Spot &nbsp;|&nbsp; Faded rows = pre-whitelist historical evictions</div>
 <div style="overflow-x:auto">
 <table class="data-table" style="font-size:11px;min-width:900px">
@@ -753,7 +892,8 @@ window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": 1908.68,
   <th>Hold</th><th>Funding</th><th>Fees</th>
   <th>Net P&amp;L</th><th>Cum WR</th><th>Exit Reason</th>
 </tr></thead>
-<tbody><tr><td style="color:#8095a8;font-size:10px">#32</td><td><span style="background:#ff4d4d22;color:#ff6b6b;border:1px solid #ff4d4d44;border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700">LOSS</span></td><td><b>BERA</b></td><td class="mono" style="font-size:10px">SPOT<br><span style="color:#8095a8;font-size:9px">↑P↓S</span></td><td style="font-size:10px;color:#c0cfe0">  <span style="color:#00d4aa">▶</span> 0.092000 / 0.091500<br>  <span style="color:#ffd060">■</span> 0.092000 / 0.091500</td><td style="font-size:10px;color:#8095a8">  2026-11-15 16:38<br>  2026-11-15 16:44</td><td class="act" style="font-size:10px">0.1h</td><td class="pos" style="font-size:11px">$+0.00</td><td class="neg" style="font-size:11px">-$107.20</td><td class="neg" style="font-weight:700">$-107.20</td><td class="neg" style="font-size:10px">37.5%</td><td class="act" style="font-size:10px">COOLDOWN_EVICT</td></tr>
+<tbody><tr><td style="color:#8095a8;font-size:10px">#33</td><td><span style="background:#00d4aa22;color:#00d4aa;border:1px solid #00d4aa44;border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700">WIN</span></td><td><b>APT</b></td><td class="mono" style="font-size:10px">SPOT<br><span style="color:#8095a8;font-size:9px">↑P↓S</span></td><td style="font-size:10px;color:#c0cfe0">  <span style="color:#00d4aa">▶</span> 0.515300 / 0.513500<br>  <span style="color:#ffd060">■</span> 0.449000 / 0.449000</td><td style="font-size:10px;color:#8095a8">  2026-11-14 07:33<br>  2026-11-15 16:59</td><td class="act" style="font-size:10px">33.4h</td><td class="pos" style="font-size:11px">$+14.65</td><td class="neg" style="font-size:11px">-$88.00</td><td class="pos" style="font-weight:700">$+94.64</td><td class="neg" style="font-size:10px">39.4%</td><td class="act" style="font-size:10px">BASIS_CONVERGED</td></tr>
+<tr><td style="color:#8095a8;font-size:10px">#32</td><td><span style="background:#ff4d4d22;color:#ff6b6b;border:1px solid #ff4d4d44;border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700">LOSS</span></td><td><b>BERA</b></td><td class="mono" style="font-size:10px">SPOT<br><span style="color:#8095a8;font-size:9px">↑P↓S</span></td><td style="font-size:10px;color:#c0cfe0">  <span style="color:#00d4aa">▶</span> 0.092000 / 0.091500<br>  <span style="color:#ffd060">■</span> 0.092000 / 0.091500</td><td style="font-size:10px;color:#8095a8">  2026-11-15 16:38<br>  2026-11-15 16:44</td><td class="act" style="font-size:10px">0.1h</td><td class="pos" style="font-size:11px">$+0.00</td><td class="neg" style="font-size:11px">-$107.20</td><td class="neg" style="font-weight:700">$-107.20</td><td class="neg" style="font-size:10px">37.5%</td><td class="act" style="font-size:10px">COOLDOWN_EVICT</td></tr>
 <tr><td style="color:#8095a8;font-size:10px">#31</td><td><span style="background:#00d4aa22;color:#00d4aa;border:1px solid #00d4aa44;border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700">WIN</span></td><td><b>AKE</b></td><td class="mono" style="font-size:10px">SPOT<br><span style="color:#8095a8;font-size:9px">↑P↓S</span></td><td style="font-size:10px;color:#c0cfe0">  <span style="color:#00d4aa">▶</span> 0.012205 / 0.012101<br>  <span style="color:#ffd060">■</span> 0.010322 / 0.010334</td><td style="font-size:10px;color:#8095a8">  2026-11-14 14:04<br>  2026-11-15 12:11</td><td class="act" style="font-size:10px">22.1h</td><td class="pos" style="font-size:11px">$-2.75</td><td class="neg" style="font-size:11px">-$88.00</td><td class="pos" style="font-weight:700">$+362.26</td><td class="neg" style="font-size:10px">38.7%</td><td class="act" style="font-size:10px">BASIS_CONVERGED</td></tr>
 <tr><td style="color:#8095a8;font-size:10px">#30</td><td><span style="background:#00d4aa22;color:#00d4aa;border:1px solid #00d4aa44;border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700">WIN</span></td><td><b>TRUMP</b></td><td class="mono" style="font-size:10px">SPOT<br><span style="color:#8095a8;font-size:9px">↑P↓S</span></td><td style="font-size:10px;color:#c0cfe0">  <span style="color:#00d4aa">▶</span> 1.0530 / 1.0500<br>  <span style="color:#ffd060">■</span> 0.973000 / 0.973000</td><td style="font-size:10px;color:#8095a8">  2026-11-14 09:38<br>  2026-11-15 12:11</td><td class="act" style="font-size:10px">26.6h</td><td class="pos" style="font-size:11px">$-2.75</td><td class="neg" style="font-size:11px">-$88.00</td><td class="pos" style="font-weight:700">$+54.45</td><td class="neg" style="font-size:10px">36.7%</td><td class="act" style="font-size:10px">BASIS_CONVERGED</td></tr>
 <tr><td style="color:#8095a8;font-size:10px">#29</td><td><span style="background:#ff4d4d22;color:#ff6b6b;border:1px solid #ff4d4d44;border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700">LOSS</span></td><td><b>WLD</b></td><td class="mono" style="font-size:10px">SPOT<br><span style="color:#8095a8;font-size:9px">↑P↓S</span></td><td style="font-size:10px;color:#c0cfe0">  <span style="color:#00d4aa">▶</span> 0.281400 / 0.280800<br>  <span style="color:#ffd060">■</span> 0.266000 / 0.265300</td><td style="font-size:10px;color:#8095a8">  2026-11-14 09:42<br>  2026-11-15 12:04</td><td class="act" style="font-size:10px">26.4h</td><td class="pos" style="font-size:11px">$+54.07</td><td class="neg" style="font-size:11px">-$88.00</td><td class="neg" style="font-weight:700">$-59.95</td><td class="neg" style="font-size:10px">34.5%</td><td class="act" style="font-size:10px">BASIS_DIVERGING</td></tr>
@@ -798,24 +938,20 @@ window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": 1908.68,
   
 <table class="data-table">
 <thead><tr><th>Symbol</th><th>Ann %/yr</th><th>Basis %</th><th>Action</th></tr></thead>
-<tbody><tr><td><b>TRXUSDT</b></td><td class="neg">-38.60%</td><td>+0.0000%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
-<tr><td><b>ADAUSDT</b></td><td class="neg">-30.00%</td><td>-0.0642%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
-<tr><td><b>XRPUSDT</b></td><td class="neg">-28.70%</td><td>-0.0725%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
-<tr><td><b>SOLUSDT</b></td><td class="neg">-28.60%</td><td>-0.0690%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
-<tr><td><b>APTUSDT</b></td><td class="neg">-28.30%</td><td>-0.1314%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
-<tr><td><b>UNIUSDT</b></td><td class="neg">-24.00%</td><td>-0.0967%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
-<tr><td><b>AVAXUSDT</b></td><td class="neg">-23.90%</td><td>-0.1106%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
-<tr><td><b>SUIUSDT</b></td><td class="neg">-17.50%</td><td>-0.0685%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
-<tr><td><b>INJUSDT</b></td><td class="neg">-17.40%</td><td>-0.0700%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
-<tr><td><b>DOGEUSDT</b></td><td class="neg">-12.10%</td><td>-0.0508%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
-<tr><td><b>BNBUSDT</b></td><td class="pos">+11.00%</td><td>-0.0536%</td><td class="act">LONG SPOT SHORT PERP</td></tr>
-<tr><td><b>ARBUSDT</b></td><td class="pos">+11.00%</td><td>-0.0886%</td><td class="act">LONG SPOT SHORT PERP</td></tr>
-<tr><td><b>ATOMUSDT</b></td><td class="pos">+11.00%</td><td>-0.0762%</td><td class="act">LONG SPOT SHORT PERP</td></tr>
-<tr><td><b>LTCUSDT</b></td><td class="pos">+9.30%</td><td>-0.0442%</td><td class="act">LONG SPOT SHORT PERP</td></tr>
-<tr><td><b>ETHUSDT</b></td><td class="neg">-7.80%</td><td>-0.0471%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
-<tr><td><b>DOTUSDT</b></td><td class="neg">-7.30%</td><td>-0.0677%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
-<tr><td><b>LINKUSDT</b></td><td class="neg">-4.20%</td><td>-0.0648%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
-<tr><td><b>OPUSDT</b></td><td class="pos">+3.70%</td><td>-0.1580%</td><td class="act">LONG SPOT SHORT PERP</td></tr>
+<tbody><tr><td><b>TRXUSDT</b></td><td class="neg">-29.20%</td><td>-0.1214%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
+<tr><td><b>OPUSDT</b></td><td class="neg">-25.30%</td><td>-0.1472%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
+<tr><td><b>ARBUSDT</b></td><td class="neg">-21.00%</td><td>-0.1247%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
+<tr><td><b>AVAXUSDT</b></td><td class="neg">-17.90%</td><td>-0.0835%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
+<tr><td><b>ADAUSDT</b></td><td class="neg">-15.70%</td><td>-0.1305%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
+<tr><td><b>SOLUSDT</b></td><td class="neg">-14.80%</td><td>-0.0672%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
+<tr><td><b>XRPUSDT</b></td><td class="neg">-11.20%</td><td>-0.0525%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
+<tr><td><b>LINKUSDT</b></td><td class="neg">-10.90%</td><td>-0.0326%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
+<tr><td><b>APTUSDT</b></td><td class="neg">-7.60%</td><td>-0.0889%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
+<tr><td><b>ATOMUSDT</b></td><td class="neg">-5.40%</td><td>-0.0760%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
+<tr><td><b>UNIUSDT</b></td><td class="neg">-5.10%</td><td>-0.1356%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
+<tr><td><b>INJUSDT</b></td><td class="neg">-4.50%</td><td>-0.0569%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
+<tr><td><b>BTCUSDT</b></td><td class="neg">-4.00%</td><td>-0.0518%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
+<tr><td><b>ETHUSDT</b></td><td class="neg">-3.90%</td><td>-0.0507%</td><td class="act">SHORT SPOT LONG PERP</td></tr>
 </tbody>
 </table>
 </div>
@@ -826,11 +962,11 @@ window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": 1908.68,
   
 <table class="data-table">
 <thead><tr><th>Pair</th><th>Z-Score</th><th>β Hedge</th><th>Half-Life</th><th>p-value</th><th>Action</th></tr></thead>
-<tbody><tr><td><b>BTCUSDT/TRXUSDT</b></td><td class="pos">+0.539</td><td>0.136</td><td>1.2h</td><td>0.0100</td><td class="act">HOLD — spread within neutral zone</td></tr>
-<tr><td><b>ETHUSDT/TRXUSDT</b></td><td class="pos">+0.218</td><td>1.100</td><td>1.2h</td><td>0.0100</td><td class="act">EXIT — spread has mean-reverted</td></tr>
-<tr><td><b>BNBUSDT/TRXUSDT</b></td><td class="pos">+0.230</td><td>0.946</td><td>1.4h</td><td>0.0100</td><td class="act">EXIT — spread has mean-reverted</td></tr>
-<tr><td><b>SOLUSDT/TRXUSDT</b></td><td class="pos">+0.599</td><td>1.449</td><td>1.2h</td><td>0.0100</td><td class="act">HOLD — spread within neutral zone</td></tr>
-<tr><td><b>UNIUSDT/TRXUSDT</b></td><td class="pos">+0.369</td><td>2.721</td><td>1.3h</td><td>0.0100</td><td class="act">EXIT — spread has mean-reverted</td></tr>
+<tbody><tr><td><b>BTCUSDT/TRXUSDT</b></td><td class="pos">+0.009</td><td>0.181</td><td>1.3h</td><td>0.0100</td><td class="act">EXIT — spread has mean-reverted</td></tr>
+<tr><td><b>ETHUSDT/XRPUSDT</b></td><td class="pos">+1.144</td><td>0.835</td><td>1.6h</td><td>0.0100</td><td class="act">HOLD — spread within neutral zone</td></tr>
+<tr><td><b>NEARUSDT/SUIUSDT</b></td><td class="pos">+0.945</td><td>1.060</td><td>1.2h</td><td>0.0100</td><td class="act">HOLD — spread within neutral zone</td></tr>
+<tr><td><b>NEARUSDT/OPUSDT</b></td><td class="pos">+0.099</td><td>0.832</td><td>0.5h</td><td>0.0100</td><td class="act">EXIT — spread has mean-reverted</td></tr>
+<tr><td><b>NEARUSDT/APTUSDT</b></td><td class="pos">+0.247</td><td>0.854</td><td>1.0h</td><td>0.0100</td><td class="act">EXIT — spread has mean-reverted</td></tr>
 </tbody>
 </table>
 </div>
@@ -849,11 +985,67 @@ window.PERP_SUMMARY   = {"starting_balance": 1000000.0, "realized_pnl": 1908.68,
 <!-- Daily Trade Log -->
 <div class="section">
   <div class="section-title">Daily Trade Log  <span style="color:#8095a8;font-size:11px;text-transform:none;letter-spacing:0">all signals · grouped by day · newest first</span></div>
-  <div class="empty-state">No signal history yet — first scan pending.</div>
+  <div class="dlog-wrap"><div class="dlog-day-header">
+  <span class="dlog-date">&#128197; 2026-11-15</span>
+  <span class="dlog-daystats">
+    <span class="ds-badge ds-total">6 signals</span>
+    <span class="ds-badge ds-win">&#9650; 0 WIN</span>
+    <span class="ds-badge ds-loss">&#9660; 0 LOSS</span>
+    <span class="ds-badge ds-pend">6 pending</span>
+  </span>
+</div><div class="dlog-row dlog-row-pend">
+  <span class="dlog-time mono">16:59 UTC</span>
+  <span class="dlog-sym"><b>DOT</b></span>
+  <span class="dlog-dir short">SHORT</span>
+  <span class="dlog-tier"><span class="badge badge-high">★★ HIGH</span></span>
+  <span class="dlog-score mono">-57</span>
+  <span class="dlog-oc"><span class="outcome pending">PENDING</span></span>
+  <span class="dlog-ret  mono">—</span>
+</div><div class="dlog-row dlog-row-pend">
+  <span class="dlog-time mono">16:59 UTC</span>
+  <span class="dlog-sym"><b>BTC</b></span>
+  <span class="dlog-dir short">SHORT</span>
+  <span class="dlog-tier"><span class="badge badge-high">★★ HIGH</span></span>
+  <span class="dlog-score mono">-55</span>
+  <span class="dlog-oc"><span class="outcome pending">PENDING</span></span>
+  <span class="dlog-ret  mono">—</span>
+</div><div class="dlog-row dlog-row-pend">
+  <span class="dlog-time mono">16:59 UTC</span>
+  <span class="dlog-sym"><b>DOGE</b></span>
+  <span class="dlog-dir short">SHORT</span>
+  <span class="dlog-tier"><span class="badge badge-high">★★ HIGH</span></span>
+  <span class="dlog-score mono">-55</span>
+  <span class="dlog-oc"><span class="outcome pending">PENDING</span></span>
+  <span class="dlog-ret  mono">—</span>
+</div><div class="dlog-row dlog-row-pend">
+  <span class="dlog-time mono">16:59 UTC</span>
+  <span class="dlog-sym"><b>SUI</b></span>
+  <span class="dlog-dir short">SHORT</span>
+  <span class="dlog-tier"><span class="badge badge-high">★★ HIGH</span></span>
+  <span class="dlog-score mono">-54</span>
+  <span class="dlog-oc"><span class="outcome pending">PENDING</span></span>
+  <span class="dlog-ret  mono">—</span>
+</div><div class="dlog-row dlog-row-pend">
+  <span class="dlog-time mono">16:59 UTC</span>
+  <span class="dlog-sym"><b>BNB</b></span>
+  <span class="dlog-dir short">SHORT</span>
+  <span class="dlog-tier"><span class="badge badge-high">★★ HIGH</span></span>
+  <span class="dlog-score mono">-52</span>
+  <span class="dlog-oc"><span class="outcome pending">PENDING</span></span>
+  <span class="dlog-ret  mono">—</span>
+</div><div class="dlog-row dlog-row-pend">
+  <span class="dlog-time mono">16:59 UTC</span>
+  <span class="dlog-sym"><b>AVAX</b></span>
+  <span class="dlog-dir short">SHORT</span>
+  <span class="dlog-tier"><span class="badge badge-high">★★ HIGH</span></span>
+  <span class="dlog-score mono">-52</span>
+  <span class="dlog-oc"><span class="outcome pending">PENDING</span></span>
+  <span class="dlog-ret  mono">—</span>
+</div></div>
 </div>
 
 <div class="footer">
-  Generated at 2026-11-15 16:57 UTC &nbsp;·&nbsp;
+  Generated at 2026-11-15 17:00 UTC &nbsp;·&nbsp;
   Auto-scan every ~1 min &nbsp;·&nbsp; Tracking 20 symbols &nbsp;·&nbsp;
   BloomAI Quant System &nbsp;·&nbsp; <a href="https://bloomai.technology/quant/" target="_blank">bloomai.technology/quant</a>
 </div>
