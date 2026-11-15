@@ -1,6 +1,33 @@
 {
-  "generated_at": "2026-11-15 02:21 UTC",
+  "generated_at": "2026-11-15 02:26 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-15T02:26",
+      "symbol": "AVAXUSDT",
+      "direction": "SHORT",
+      "score": -36,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-15T02:25",
+      "symbol": "LINKUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
+    {
+      "timestamp": "2026-11-15T02:24",
+      "symbol": "DOGEUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-15T02:16",
       "symbol": "BTCUSDT",
@@ -873,33 +900,6 @@
       "tier": "MODERATE",
       "outcome": "WIN",
       "return_pct": 6.1446
-    },
-    {
-      "timestamp": "2026-11-14T18:13",
-      "symbol": "BTCUSDT",
-      "direction": "SHORT",
-      "score": -35,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 3.1525
-    },
-    {
-      "timestamp": "2026-11-14T18:12",
-      "symbol": "UNIUSDT",
-      "direction": "SHORT",
-      "score": -37,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 6.6217
-    },
-    {
-      "timestamp": "2026-11-14T18:11",
-      "symbol": "ADAUSDT",
-      "direction": "SHORT",
-      "score": -35,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 7.2072
     }
   ]
 }
