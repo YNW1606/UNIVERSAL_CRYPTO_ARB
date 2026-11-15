@@ -907,9 +907,9 @@
       "cum_pnl": 875.38
     }
   ],
-  "scan_time": "2026-11-15 16:09 UTC",
-  "scan_regime": "UNKNOWN",
-  "scan_btc_24h": 0,
-  "scan_carry_floor": 0,
+  "scan_time": "2026-11-15 16:14 UTC",
+  "scan_regime": "BEAR",
+  "scan_btc_24h": -1.06,
+  "scan_carry_floor": 30.0,
   "scan_watchlist": []
 }
