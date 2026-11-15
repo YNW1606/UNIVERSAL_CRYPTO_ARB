@@ -47,7 +47,7 @@ jobs:
 
     - name: Run 1-minute scan loop (50 iterations ≈ 50 min)
       run: |
-        # One-time prune: remove MONITORING tier noise signals (score < 35)
+        # Prune sub-threshold signals (score < MIN_SCORE=50) + stale PENDING at job start
         python signal_accuracy_tracker.py --prune || true
 
         for i in $(seq 1 50); do
@@ -81,6 +81,9 @@ jobs:
             cp /tmp/scan_backup/perp_arb.json       accuracy_db/ 2>/dev/null || true
             cp /tmp/scan_backup/perp_arb.db         accuracy_db/ 2>/dev/null || true
             cp /tmp/scan_backup/signals_history.json accuracy_db/ 2>/dev/null || true
+
+            # Prune sub-threshold signals after every restore so old noise never comes back
+            python signal_accuracy_tracker.py --prune || true
 
             # Regenerate dashboard with latest code + fresh scan data
             python generate_dashboard.py
