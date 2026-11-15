@@ -1,6 +1,15 @@
 {
-  "generated_at": "2026-11-15 00:12 UTC",
+  "generated_at": "2026-11-15 00:17 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-15T00:15",
+      "symbol": "APTUSDT",
+      "direction": "SHORT",
+      "score": -35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-15T00:07",
       "symbol": "BNBUSDT",
@@ -502,8 +511,8 @@
       "direction": "SHORT",
       "score": -37,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 3.7498
     },
     {
       "timestamp": "2026-11-14T20:12",
@@ -511,8 +520,8 @@
       "direction": "SHORT",
       "score": -36,
       "tier": "MODERATE",
-      "outcome": "PENDING",
-      "return_pct": null
+      "outcome": "WIN",
+      "return_pct": 2.7156
     },
     {
       "timestamp": "2026-11-14T20:09",
@@ -891,15 +900,6 @@
       "tier": "MODERATE",
       "outcome": "WIN",
       "return_pct": 0.8525
-    },
-    {
-      "timestamp": "2026-11-14T17:08",
-      "symbol": "ATOMUSDT",
-      "direction": "SHORT",
-      "score": -36,
-      "tier": "MODERATE",
-      "outcome": "WIN",
-      "return_pct": 3.6675
     }
   ]
 }
