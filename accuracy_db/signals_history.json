@@ -1,6 +1,15 @@
 {
-  "generated_at": "2026-11-15 09:31 UTC",
+  "generated_at": "2026-11-15 09:36 UTC",
   "signals": [
+    {
+      "timestamp": "2026-11-15T09:32",
+      "symbol": "ETHUSDT",
+      "direction": "LONG",
+      "score": 35,
+      "tier": "MODERATE",
+      "outcome": "PENDING",
+      "return_pct": null
+    },
     {
       "timestamp": "2026-11-15T09:20",
       "symbol": "AVAXUSDT",
@@ -891,15 +900,6 @@
       "tier": "MODERATE",
       "outcome": "LOSS",
       "return_pct": -6.4456
-    },
-    {
-      "timestamp": "2026-11-14T23:13",
-      "symbol": "BTCUSDT",
-      "direction": "SHORT",
-      "score": -39,
-      "tier": "MODERATE",
-      "outcome": "LOSS",
-      "return_pct": -2.2604
     }
   ]
 }
