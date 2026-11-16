@@ -20,7 +20,7 @@ DB_PATH = os.path.join(DB_DIR, "signals.db")
 BINANCE = "https://api.binance.com"
 
 WIN_THRESHOLD   = 0.003  # 0.3% net of fees to call it a WIN
-OUTCOME_AFTER_H = 4      # hours after signal → check price
+OUTCOME_AFTER_H = 24     # hours after signal → check price (24h gives trend time to play out)
 MIN_SCORE       = 50     # log only HIGH (50-64) + PERFECT (65+) tiers
 ACTIONABLE_MIN  = 35     # display ALL resolved signals in KPIs (includes MODERATE historical wins)
 DEDUP_MINS      = 60     # raised from 30: same symbol+direction dedup window (minutes)

@@ -389,7 +389,13 @@ def build_perp_arb_panel(arb):
     last_book_r = arb.get("last_book_reason", "-") or "-"
     total_equity_gain = booked + (arb.get("realized_pnl", 0) or 0) + (arb.get("unrealized_pnl", 0) or 0)
 
-    wr_cls   = "green" if wr >= 55 else ("yellow" if wr >= 45 else "red")
+    # Compute real WR early (excluding administrative evictions — WHITELIST_EVICT / COOLDOWN_EVICT)
+    _journal_early   = arb.get("trade_journal") or []
+    _real_trades_e   = [t for t in _journal_early if t.get("exit_reason") not in ("WHITELIST_EVICT", "COOLDOWN_EVICT")]
+    _real_wins_e     = [t for t in _real_trades_e if t.get("is_win")]
+    real_wr_main     = round(len(_real_wins_e) / len(_real_trades_e) * 100, 1) if _real_trades_e else wr
+
+    wr_cls   = "green" if real_wr_main >= 55 else ("yellow" if real_wr_main >= 45 else "red")
     pf_cls   = "green" if pf >= 1.5 else ("yellow" if pf >= 1.0 else "red")
     rp_cls   = "green" if rpnl >= 0 else "red"
     up_cls   = "green" if upnl >= 0 else "red"
@@ -776,7 +782,7 @@ window.PERP_SUMMARY   = {js_summary};
   <div class="arb-stat"><div class="arb-label">Projected Daily</div><div class="arb-val green">${proj_day:,.2f}</div><div class="arb-sub">funding income / day</div></div>
   <div class="arb-stat"><div class="arb-label">Projected Annual</div><div class="arb-val green">${proj_ann:,.0f} <span style="font-size:12px">({proj_pct:.1f}%/yr)</span></div><div class="arb-sub">on $1M account</div></div>
   <div class="arb-stat"><div class="arb-label">Realized P&L</div><div class="arb-val {rp_cls}">${rpnl:+,.2f}</div><div class="arb-sub">closed trades</div></div>
-  <div class="arb-stat"><div class="arb-label">Win Rate</div><div class="arb-val {wr_cls}">{wr:.1f}%</div><div class="arb-sub">{arb.get("wins",0)}W / {arb.get("losses",0)}L · PF {pf:.2f}×</div></div>
+  <div class="arb-stat"><div class="arb-label">Win Rate</div><div class="arb-val {wr_cls}">{real_wr_main:.0f}%</div><div class="arb-sub">{len(_real_wins_e)}W / {len(_real_trades_e)-len(_real_wins_e)}L · PF {pf:.2f}× <span style="font-size:9px;color:#8095a8">(excl. evictions)</span></div></div>
 </div>
 
 <!-- Portfolio Protection Banner -->
