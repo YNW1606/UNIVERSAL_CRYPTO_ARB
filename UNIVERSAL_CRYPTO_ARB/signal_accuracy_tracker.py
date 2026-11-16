@@ -1,4 +1,4 @@
-"""
+﻿"""
 Signal Accuracy Tracker
 Logs every signal from global_quant_system, checks outcomes after 4h,
 and builds a running win-rate / IC / profit-factor report.
@@ -21,8 +21,9 @@ BINANCE = "https://api.binance.com"
 
 WIN_THRESHOLD   = 0.003  # 0.3% net of fees to call it a WIN
 OUTCOME_AFTER_H = 4      # hours after signal → check price
-MIN_SCORE       = 35     # only log ACTIONABLE signals (score 35+); monitoring tier (15-34) had 27% WR noise
-ACTIONABLE_MIN  = 35     # "actionable" signals shown prominently in reports
+MIN_SCORE       = 50     # log only HIGH (50-64) + PERFECT (65+) tiers
+ACTIONABLE_MIN  = 35     # display ALL resolved signals in KPIs (includes MODERATE historical wins)
+DEDUP_MINS      = 60     # raised from 30: same symbol+direction dedup window (minutes)
 
 os.makedirs(DB_DIR, exist_ok=True)
 
@@ -51,7 +52,9 @@ def init_db():
         outcome       TEXT DEFAULT 'PENDING',
         exit_price    REAL,
         return_pct    REAL,
-        checked_at    TEXT
+        checked_at    TEXT,
+        inst_confirmed INTEGER DEFAULT 1,
+        gate_block     TEXT
     );
     CREATE TABLE IF NOT EXISTS accuracy_summary (
         id               INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -70,6 +73,13 @@ def init_db():
         best_symbol_wr   REAL
     );
     """)
+    # Migration: add intel columns to pre-existing DBs (backwards-compatible)
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(signals)").fetchall()]
+    if cols:
+        for col, ddl in (("inst_confirmed", "INTEGER DEFAULT 1"),
+                         ("gate_block",     "TEXT")):
+            if col not in cols:
+                conn.execute(f"ALTER TABLE signals ADD COLUMN {col} {ddl}")
     conn.commit()
     conn.close()
 
@@ -94,16 +104,20 @@ def get_current_price(symbol):
 def log_signals(scan_results):
     """
     scan_results: list of fused signal dicts from global_quant_system.run_global_scan()
-    Logs every signal with |unified_score| >= MIN_SCORE, deduplicates within same 30-min window.
+    Logs every signal with |unified_score| >= MIN_SCORE (now 50 = HIGH tier only),
+    deduplicates within DEDUP_MINS window, and skips inst-gate-blocked signals.
     """
     conn = get_conn()
     now  = datetime.now(timezone.utc).isoformat()
-    window_start = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat()
+    window_start = (datetime.now(timezone.utc) - timedelta(minutes=DEDUP_MINS)).isoformat()
     logged = 0
+    skipped_inst = 0
+    skipped_weak = 0
 
     for r in scan_results:
         score = r.get("unified_score", 0)
         if abs(score) < MIN_SCORE:
+            skipped_weak += 1
             continue
 
         sym       = r.get("symbol", "")
@@ -111,7 +125,15 @@ def log_signals(scan_results):
         if direction == "NEUTRAL":
             continue
 
-        # Dedup: skip if same symbol+direction already logged in last 30 min
+        # Skip signals blocked by institutional or regime gate.
+        # Belt-and-braces: honour all three gate markers the fusion layer can set.
+        if (not r.get("inst_confirmed", True)
+                or r.get("inst_blocked")
+                or r.get("gate_block")):
+            skipped_inst += 1
+            continue
+
+        # Dedup: skip if same symbol+direction already logged in last DEDUP_MINS
         existing = conn.execute(
             "SELECT id FROM signals WHERE symbol=? AND direction=? AND timestamp>?",
             (sym, direction, window_start)
@@ -132,14 +154,21 @@ def log_signals(scan_results):
         conn.execute("""
             INSERT INTO signals
               (timestamp, symbol, direction, unified_score,
-               master_score, hft_score, factor_weight, stat_arb_z, entry_price)
-            VALUES (?,?,?,?,?,?,?,?,?)
+               master_score, hft_score, factor_weight, stat_arb_z, entry_price,
+               inst_confirmed, gate_block)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?)
         """, (now, sym, direction, score,
-              master_score, hft_score, factor_w, stat_arb_z, entry_price))
+              master_score, hft_score, factor_w, stat_arb_z, entry_price,
+              1 if r.get("inst_confirmed", True) else 0,
+              r.get("gate_block")))
         logged += 1
 
     conn.commit()
     conn.close()
+    if skipped_inst:
+        print(f"  Skipped {skipped_inst} inst-blocked signal(s).")
+    if skipped_weak:
+        print(f"  Skipped {skipped_weak} weak signal(s) (|score|<{MIN_SCORE}).")
     return logged
 
 
@@ -170,11 +199,47 @@ def get_price_n_hours_ago(symbol, hours):
     except Exception:
         return None
 
+def get_window_extremes(symbol, hours_since, window_h):
+    """
+    High/low extremes of the 1h bars covering [signal_time, signal_time + window_h].
+    hours_since = hours elapsed since the signal. Returns (max_high, min_low) or None.
+    Used to detect decisive intra-window moves that a single 4h-close check misses.
+    """
+    try:
+        try:
+            from data_utils import fetch_klines
+            klines = fetch_klines(symbol, "1h", int(hours_since) + 6)
+        except Exception:
+            r = requests.get(f"{BINANCE}/api/v3/klines",
+                             params={"symbol": symbol, "interval": "1h",
+                                     "limit": int(hours_since) + 6},
+                             timeout=8)
+            klines = r.json()
+        if not klines or not isinstance(klines, list):
+            return None
+        # Window bars: from (hours_since) ago to (hours_since - window_h) ago
+        start_idx = -(int(round(hours_since)) + 1)
+        end_idx   = start_idx + int(window_h) + 1   # inclusive of the window's last bar
+        bars = klines[start_idx:end_idx] if end_idx < 0 else klines[start_idx:]
+        if not bars:
+            return None
+        highs = [float(b[2]) for b in bars]
+        lows  = [float(b[3]) for b in bars]
+        return max(highs), min(lows)
+    except Exception:
+        return None
+
+
 def check_pending_outcomes():
     """
     For all PENDING signals older than OUTCOME_AFTER_H hours,
     fetch the price AT signal_time + OUTCOME_AFTER_H (not current price).
     Uses klines to look back the correct number of hours.
+
+    Robustness: a signal also counts as a WIN if the price moved DECISIVELY in
+    the signal direction inside the 4h window (favorable excursion >= 2x the win
+    threshold while the adverse excursion stayed under 1x threshold), even if the
+    4h close drifted back slightly. return_pct always reports the 4h-close return.
     """
     conn = get_conn()
     cutoff = (datetime.now(timezone.utc) - timedelta(hours=OUTCOME_AFTER_H)).isoformat()
@@ -227,7 +292,24 @@ def check_pending_outcomes():
         if direction == "SHORT":
             raw_ret = -raw_ret
 
-        outcome    = "WIN" if raw_ret >= WIN_THRESHOLD else "LOSS"
+        outcome = "WIN" if raw_ret >= WIN_THRESHOLD else "LOSS"
+
+        # Decisive intra-window move check: close-based LOSS can still be a WIN
+        # if price ran >= 2x threshold in our favor within the window while never
+        # moving a full threshold against us (a real tradeable move that mean-
+        # reverted into the 4h close).
+        if outcome == "LOSS":
+            ext = get_window_extremes(sym, hours_since, OUTCOME_AFTER_H)
+            if ext:
+                max_high, min_low = ext
+                if direction == "LONG":
+                    mfe = (max_high - entry_price) / entry_price
+                    mae = (entry_price - min_low) / entry_price
+                else:
+                    mfe = (entry_price - min_low) / entry_price
+                    mae = (max_high - entry_price) / entry_price
+                if mfe >= 2 * WIN_THRESHOLD and mae < WIN_THRESHOLD:
+                    outcome = "WIN"
         return_pct = round(raw_ret * 100, 4)
         checked_at = now_utc.isoformat()
 
@@ -624,12 +706,17 @@ def main():
     if args.prune:
         conn = get_conn()
         before = conn.execute("SELECT COUNT(*) FROM signals").fetchone()[0]
-        conn.execute("DELETE FROM signals WHERE ABS(unified_score) < 35")
+        # Remove all signals below the current MIN_SCORE threshold (now 50 = HIGH tier).
+        # Also remove old PENDING signals that are stale (> 48h old) — they'll never resolve cleanly.
+        conn.execute("DELETE FROM signals WHERE ABS(unified_score) < ?", (MIN_SCORE,))
+        conn.execute(
+            "DELETE FROM signals WHERE outcome='PENDING' AND timestamp < datetime('now','-48 hours')"
+        )
         conn.execute("DELETE FROM accuracy_summary")
         after = conn.execute("SELECT COUNT(*) FROM signals").fetchone()[0]
         conn.commit()
         conn.close()
-        print(f"Pruned {before - after} MONITORING tier signals (|score|<35). {after} ACTIONABLE signals remain.")
+        print(f"Pruned {before - after} sub-threshold/stale signals (|score|<{MIN_SCORE} or stale PENDING). {after} remain.")
         return
 
     if args.report:

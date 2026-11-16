@@ -1,4 +1,4 @@
-"""
+﻿"""
 Perpetual Arbitrage Paper Trader
 =================================
 Strategies:
@@ -88,26 +88,48 @@ CARRY_WHITELIST = {
     "AAVEUSDT","LDOUSDT","SHIBUSDT","1000PEPEUSDT","WIFUSDT",
     "BONKUSDT","JASMYUSDT","MINAUSDT","GALAUSDT","SANDUSDT",
     "AXSUSDT","MANAUSDT","APEUSDT","GMTUSDT","FLOWUSDT",
-    # Additional established DeFi / infrastructure projects added 2026-11-14
-    "AKEUSDT",   # Akash Network — $400M+/day, cloud compute L1
-    "TRUMPUSDT", # TRUMP meme coin — $15M+/day, speculative carry
-    "BERAUSDT",  # Berachain — $30M+/day, new L1 w/ deep OI
+    # High-carry established projects (expanded 2026-11-15 to capture bear-market NEG_CARRY)
+    "AKEUSDT",   # Akash Network — cloud compute L1
+    "TRUMPUSDT", # TRUMP meme coin — speculative carry
+    "IOSTUSDT",  # IOST blockchain — consistent neg carry in bear markets
+    "KAVAUSDT",  # Kava Protocol — DeFi L1
+    "ZRXUSDT",   # 0x Protocol — DEX infrastructure
+    "ARKMUSDT",  # Arkham Intelligence — on-chain analytics
+    "SKLUSDT",   # SKALE Network — Ethereum L2
+    "ANKRUSDT",  # Ankr Network — web3 infra
+    "CRVUSDT",   # Curve Finance — DeFi blue chip
+    "MASKUSDT",  # Mask Network — web3 social
+    "CTKUSDT",   # CertiK — blockchain security
+    "IOTXUSDT",  # IoTeX — DePIN blockchain
+    "CELRUSDT",  # Celer Network — multi-chain
+    # Bear-market NEG_CARRY expansion (2026-11-15) — established projects with organic neg funding
+    "ZILUSDT",   # Zilliqa — established L1 (since 2017)
+    "ENSUSDT",   # Ethereum Name Service — DeFi blue chip
+    "AEROUSDT",  # Aerodrome Finance — Base chain DEX (Velodrome fork)
+    "LSKUSDT",   # Lisk — rebranded established blockchain (since 2016)
+    "ORCAUSDT",  # Orca — Solana DEX blue chip
+    "HUMAUSDT",  # Huma Finance — RWA DeFi lending protocol
+    "SOPHUSDT",  # Sophon — ZK infrastructure layer ($70M+ Bybit volume)
+    "BARDUSDT",  # Bard Protocol — bear market structural carry ($18M volume)
+    "GRAMUSDT",  # Gram — TON ecosystem token ($10M+ Bybit volume)
+    "0GUSDT",    # 0G (Zero Gravity) — decentralized AI infrastructure chain
+    "XCNUSDT",   # Onyxcoin — web3 infrastructure ($2M+ volume)
+    # BERAUSDT removed: extreme funding + basis never converged → STOP_LOSS_BASIS -$1074
     # Intentionally excluded (exchange-set funding, not speculative demand):
     # SOXLUSDT/SOXSUSDT/NVDAUSDT/MSTRUSDT/SKHYUSDT (tokenized stocks/ETFs)
     # SNXXUSDT (possible leveraged token, unconfirmed)
     # ERAUSDT (too new, insufficient track record)
+    # KAVAUSDT note: extreme funding (-600%+/yr) is structural in bear — intel gate will size down
 }
 
 # ── THRESHOLDS ────────────────────────────────────────────────────────────────
-CARRY_MIN_RATE      = 0.000229  # 0.0229%/8h = ~25%/yr base floor (raised: quality filter)
+CARRY_MIN_RATE      = 0.000228  # 0.0228%/8h = ~25%/yr base floor (was 30%/yr)
 CARRY_EXIT_RATE     = 0.00005
-NEG_CARRY_MIN_RATE  = -0.000137
+NEG_CARRY_MIN_RATE  = -0.000182  # 20%/yr floor (was -30%/yr) — bear market has abundant NEG_CARRY
 
 # Regime-adaptive carry floor
-# BEAR was 30%/yr but with INTEL GATE now live, lowered to 22%/yr — the OI velocity
-# + institutional flow analysis does the real quality filtering, not just the rate floor.
-CARRY_MIN_RATE_BULL = 0.000137  # 15%/yr — bull trend supports lower funding long-term
-CARRY_MIN_RATE_BEAR = 0.000201  # 22%/yr — intel gate replaces the strict floor
+CARRY_MIN_RATE_BULL = 0.000182  # 20%/yr — bull market
+CARRY_MIN_RATE_BEAR = 0.000228  # 25%/yr — bear market (intel gate does quality filtering)
 REGIME_LOOKBACK_H   = 24        # BTC trend lookback (hours)
 REGIME_BULL_PCT     = 0.5       # BTC 24h change >= +0.5% → BULL
 REGIME_BEAR_PCT     = -0.5      # BTC 24h change <= -0.5% → BEAR (else SIDEWAYS)
@@ -124,13 +146,23 @@ MAX_ENRICH          = 30        # max candidates enriched with funding history p
 # Funding-rate volatility gate (unstable funding = unreliable carry)
 VOL_GATE_PERIODS    = 10        # std-dev over last 10 funding prints
 VOL_GATE_STD        = 0.0003    # above this = highly unstable
-VOL_GATE_MIN_ANN    = 25.0      # unstable symbols must yield > 25%/yr (vs 15%)
+VOL_GATE_MIN_ANN    = 20.0      # unstable symbols must yield > 20%/yr (was 25%)
 VOL_GATE_SIZE_MULT  = 0.5       # and get only half size
 
-# Sustained funding entry filter (KEY FIX for 0% WR on CARRY_ARB)
-SUSTAINED_PERIODS   = 3         # last N funding prints must ALL be above floor
-SPIKE_RATIO         = 2.5       # current > 2.5× 7-day avg = spike → skip (will revert)
-SUSTAINED_FLOOR_PCT = 0.50      # each recent rate must be >= 50% of avg7 to be "sustained"
+# Sustained funding entry filter
+# Bear markets generate structural negative funding — 3 periods (24h) confirms the trend.
+# CARRY_ARB still needs 5 periods (40h) since positive funding spikes are more common.
+SUSTAINED_PERIODS         = 3   # NEG_CARRY + general: last 3 prints (24h) must be consistent
+SUSTAINED_PERIODS_CARRY   = 5   # CARRY_ARB: stricter — last 5 prints (40h)
+SPIKE_RATIO               = 3.0 # bear-market NEG_CARRY can legitimately be 3× 7-day avg
+SPIKE_RATIO_NEG           = 5.0 # NEG_CARRY spikes — allow up to 5× (structural bear squeeze)
+SUSTAINED_FLOOR_PCT       = 0.50 # each recent rate must be >= 50% of avg7 (was 65%)
+
+# Fee breakeven gate: refuse CARRY_ARB if round-trip fees can't be recovered within 4 days.
+# Math: breakeven_days = 0.00107 / fr
+# → at 32%/yr (fr=0.000293) → 3.65 days PASS; at 25%/yr (fr=0.000228) → 4.7 days BLOCKED
+CARRY_FEE_BREAKEVEN_MAX_DAYS = 4.0   # was 3.0; allows fr ≥ 0.000267 = 29%/yr
+CARRY_MIN_HOLD_H    = 48        # CARRY_ARB: never exit FUNDING_DROPPED before 48h
 
 # Smart re-entry after portfolio take-profit
 REENTRY_MIN_ANN_PCT = 20.0      # best carry must exceed 20%/yr before redeploying
@@ -156,6 +188,13 @@ BASIS_MIN_PCT       = 0.20   # min basis for SPOT_PREMIUM/DISCOUNT entry
 BASIS_MAX_PCT       = 2.00   # max basis — above this it's structural, not convergence play
 BASIS_EXIT_PCT      = 0.04
 BASIS_STOP_PCT      = 0.60
+# Basis convergence trend gate (SPOT_PREMIUM / SPOT_DISCOUNT entries):
+# only enter when |basis| has been NARROWING toward 0 — widening basis means the
+# dislocation is growing, not converging (root cause of stuck SPOT_DISCOUNT entries).
+BASIS_TREND_MIN_OBS    = 3    # need >= 3 recorded basis readings to judge the trend
+BASIS_TREND_LOOKBACK_H = 24   # ~3 funding periods of history considered
+BASIS_TREND_MIN_SPAN_M = 60   # readings must span >= 60 minutes (avoid 3 same-minute obs)
+BASIS_DIVERGE_EXIT_H   = 24   # SPOT_* positions: basis wider than entry after 24h → exit early
 CARRY_MAX_DAYS      = 30
 BASIS_MAX_HOURS     = 72
 FEE_PER_LEG         = 0.0004
@@ -166,8 +205,12 @@ MIN_POSITION_USD    = 30_000
 MAX_POSITION_USD    = 250_000
 POSITION_USD        = STARTING_BALANCE / MAX_OPEN_TRADES  # $66.7k flat fallback
 FUNDING_INTERVAL_H  = 8
-MIN_VOLUME_24H      = 5_000_000
+MIN_VOLUME_24H      = 1_000_000
 MAX_ANN_RATE        = 500.0
+# Annualization factor for basis-convergence yield: the basis is expected to be
+# captured over at most BASIS_MAX_HOURS, so expected annual return from a basis
+# position = |basis_pct| × (hours-in-year / BASIS_MAX_HOURS).
+BASIS_ANNUALIZE     = 24 * 365 / BASIS_MAX_HOURS   # ≈ 121.7×
 
 # ── PER-POSITION SMART EXIT (cascading take-profit) ───────────────────────────
 PROFIT_TARGET_PCT   = 0.030   # +3.0% hard ceiling on the remainder
@@ -247,6 +290,14 @@ def init_db():
         payment_usd  REAL,
         direction   TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS basis_history (
+        id        INTEGER PRIMARY KEY AUTOINCREMENT,
+        symbol    TEXT NOT NULL,
+        logged_at TEXT NOT NULL,
+        basis_pct REAL NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_basis_hist_sym_ts ON basis_history (symbol, logged_at);
 
     CREATE TABLE IF NOT EXISTS portfolio_meta (
         id               INTEGER PRIMARY KEY CHECK (id = 1),  -- singleton row
@@ -350,6 +401,60 @@ def _funding_stats(symbol):
     }
 
 
+# ── BASIS TREND TRACKING ──────────────────────────────────────────────────────
+
+def _record_basis(sym, basis_pct):
+    """Log one basis observation per scan — used by the convergence trend gate."""
+    try:
+        now = datetime.now(timezone.utc)
+        c = _conn()
+        c.execute("INSERT INTO basis_history (symbol, logged_at, basis_pct) VALUES (?,?,?)",
+                  (sym, now.isoformat(), float(basis_pct)))
+        # Prune anything older than 48h to keep the table tiny
+        c.execute("DELETE FROM basis_history WHERE logged_at < ?",
+                  ((now - timedelta(hours=48)).isoformat(),))
+        c.commit()
+        c.close()
+    except Exception:
+        pass
+
+
+def _basis_converging(sym):
+    """
+    Convergence trend check for SPOT_PREMIUM / SPOT_DISCOUNT entries.
+    Returns:
+      True  — |basis| has been narrowing (trending toward 0) → OK to enter
+      False — |basis| widening → dislocation growing, do NOT enter
+      None  — insufficient history to judge (treat as not-confirmed)
+    Method: compare the mean |basis| of the earliest third vs latest third of
+    readings over the last BASIS_TREND_LOOKBACK_H hours (≈3 funding periods).
+    """
+    try:
+        cutoff = (datetime.now(timezone.utc)
+                  - timedelta(hours=BASIS_TREND_LOOKBACK_H)).isoformat()
+        c = _conn()
+        rows = c.execute(
+            "SELECT logged_at, basis_pct FROM basis_history "
+            "WHERE symbol=? AND logged_at>=? ORDER BY logged_at",
+            (sym, cutoff)).fetchall()
+        c.close()
+    except Exception:
+        return None
+    if len(rows) < BASIS_TREND_MIN_OBS:
+        return None
+    try:
+        t0 = datetime.fromisoformat(rows[0]["logged_at"].replace("Z", "+00:00"))
+        t1 = datetime.fromisoformat(rows[-1]["logged_at"].replace("Z", "+00:00"))
+        if (t1 - t0).total_seconds() / 60 < BASIS_TREND_MIN_SPAN_M:
+            return None   # readings too clustered in time to call it a trend
+    except Exception:
+        return None
+    third = max(1, len(rows) // 3)
+    early = sum(abs(float(r["basis_pct"])) for r in rows[:third]) / third
+    late  = sum(abs(float(r["basis_pct"])) for r in rows[-third:]) / third
+    return late <= early   # narrowing (or flat) = converging
+
+
 # ── MARKET SCAN ───────────────────────────────────────────────────────────────
 
 # Global cache: near-miss candidates for dashboard display (basis 0.05-0.20%)
@@ -426,19 +531,30 @@ def scan_opportunities():
         basis_pct = (perp - spot) / spot * 100
 
         if fr >= carry_min:
-            opps.append({
-                "strategy":     "CARRY_ARB",
-                "symbol":       sym,
-                "direction":    "LONG_SPOT_SHORT_PERP",
-                "funding_rate": fr,
-                "ann_pct":      ann_pct,
-                "basis_pct":    basis_pct,
-                "spot":         spot,
-                "perp":         perp,
-                "volume24h":    vol,
-                "score":        ann_pct,
-            })
-        elif fr <= -carry_min:
+            # Gate: skip CARRY_ARB when perp is already at significant discount to spot.
+            # Long_spot_short_perp with deep negative basis = perp can fall further → headwind.
+            if basis_pct < -0.15:
+                pass  # basis too negative — additional risk for long_spot position
+            else:
+                # Fee breakeven gate: even if fr stays flat, can we recover fees in ≤3 days?
+                # breakeven_days = 0.00107 / fr  →  require fr ≥ 0.00107 / max_days
+                _fee_be_days = 0.00107 / fr  # days to recover round-trip fees at today's rate
+                if _fee_be_days > CARRY_FEE_BREAKEVEN_MAX_DAYS:
+                    pass  # fee breakeven too far out — not worth the basis/decay risk
+                else:
+                    opps.append({
+                        "strategy":     "CARRY_ARB",
+                        "symbol":       sym,
+                        "direction":    "LONG_SPOT_SHORT_PERP",
+                        "funding_rate": fr,
+                        "ann_pct":      ann_pct,
+                        "basis_pct":    basis_pct,
+                        "spot":         spot,
+                        "perp":         perp,
+                        "volume24h":    vol,
+                        "score":        ann_pct,
+                    })
+        elif fr <= NEG_CARRY_MIN_RATE:  # use dedicated 20%/yr floor (not regime carry_min)
             opps.append({
                 "strategy":     "NEG_CARRY",
                 "symbol":       sym,
@@ -452,32 +568,46 @@ def scan_opportunities():
                 "score":        abs(ann_pct),
             })
 
+        # Record basis history for every symbol showing a meaningful dislocation —
+        # feeds the convergence trend gate below (needs >=3 readings over >=60 min).
+        if abs(basis_pct) >= 0.05:
+            _record_basis(sym, basis_pct)
+
         if BASIS_MIN_PCT <= basis_pct <= BASIS_MAX_PCT:
-            opps.append({
-                "strategy":     "SPOT_PREMIUM",
-                "symbol":       sym,
-                "direction":    "LONG_SPOT_SHORT_PERP",
-                "funding_rate": fr,
-                "ann_pct":      ann_pct,
-                "basis_pct":    basis_pct,
-                "spot":         spot,
-                "perp":         perp,
-                "volume24h":    vol,
-                "score":        basis_pct * 10,
-            })
+            # Convergence gate: only fade a premium that is already NARROWING.
+            # A widening premium = momentum-driven dislocation still growing.
+            if _basis_converging(sym):
+                opps.append({
+                    "strategy":     "SPOT_PREMIUM",
+                    "symbol":       sym,
+                    "direction":    "LONG_SPOT_SHORT_PERP",
+                    "funding_rate": fr,
+                    "ann_pct":      ann_pct,
+                    "basis_pct":    basis_pct,
+                    "basis_yield_ann_pct": round(abs(basis_pct) * BASIS_ANNUALIZE, 1),
+                    "spot":         spot,
+                    "perp":         perp,
+                    "volume24h":    vol,
+                    "score":        basis_pct * 10,
+                })
         elif -BASIS_MAX_PCT <= basis_pct <= -BASIS_MIN_PCT:
-            opps.append({
-                "strategy":     "SPOT_DISCOUNT",
-                "symbol":       sym,
-                "direction":    "LONG_PERP_SHORT_SPOT",
-                "funding_rate": fr,
-                "ann_pct":      ann_pct,
-                "basis_pct":    basis_pct,
-                "spot":         spot,
-                "perp":         perp,
-                "volume24h":    vol,
-                "score":        abs(basis_pct) * 10,
-            })
+            # Gate: LONG_PERP_SHORT_SPOT — skip if funding is significantly positive
+            # (we'd pay carry while waiting for basis convergence, eroding the edge)
+            # Convergence gate: only fade a discount already narrowing toward 0.
+            if fr <= 0.00015 and _basis_converging(sym):
+                opps.append({
+                    "strategy":     "SPOT_DISCOUNT",
+                    "symbol":       sym,
+                    "direction":    "LONG_PERP_SHORT_SPOT",
+                    "funding_rate": fr,
+                    "ann_pct":      -ann_pct,   # direction-adjusted: LONG_PERP receives when fr<0
+                    "basis_pct":    basis_pct,
+                    "basis_yield_ann_pct": round(abs(basis_pct) * BASIS_ANNUALIZE, 1),
+                    "spot":         spot,
+                    "perp":         perp,
+                    "volume24h":    vol,
+                    "score":        abs(basis_pct) * 10,
+                })
         elif 0.05 <= abs(basis_pct) < BASIS_MIN_PCT:
             # Near-miss: approaching threshold — record for dashboard "watching" display
             watching.append({
@@ -540,11 +670,13 @@ def _apply_momentum_and_vol(opps):
             # ── 1. SPIKE FILTER ──────────────────────────────────────────────
             # If current rate is MUCH higher than the 7-day average, it's a one-period
             # spike. The next 8h print will revert → we'd pay fees and collect nothing.
+            # NEG_CARRY allows up to 5× avg (bear-market structural squeeze is real).
             # EXCEPTION: OI growing > 5%/24h + top traders confirming + funding RISING
             # = regime change (new structural carry forming) → allow at half size.
+            _spike_limit = SPIKE_RATIO_NEG if o["strategy"] == "NEG_CARRY" else SPIKE_RATIO
             if abs(avg7) > 1e-9:
                 spike_ratio = abs(fr) / abs(avg7)
-                if spike_ratio > SPIKE_RATIO:
+                if spike_ratio > _spike_limit:
                     # Check for regime-change exception before skipping
                     _is_regime_change = False
                     if INTEL_GATE_ENABLED:
@@ -565,13 +697,15 @@ def _apply_momentum_and_vol(opps):
                         continue   # spike entry — will revert — SKIP
 
             # ── 2. SUSTAINED CHECK ───────────────────────────────────────────
-            # Require the last SUSTAINED_PERIODS prints to ALL be above a floor.
-            # This confirms the carry is structural (days-old), not a one-period event.
+            # Require the last N prints to ALL be above a floor.
+            # CARRY_ARB: stricter (5 prints = 40h) — positive funding spikes are common noise.
+            # NEG_CARRY: 3 prints (24h) — bear market generates structural neg funding quickly.
             # EXEMPT: regime-change entries (OI growth is the confirmation, not history)
+            _n_periods = SUSTAINED_PERIODS_CARRY if o["strategy"] == "CARRY_ARB" else SUSTAINED_PERIODS
             if not o.get("_regime_change"):
                 rates_hist = _funding_hist(o["symbol"])
-                if rates_hist and len(rates_hist) >= SUSTAINED_PERIODS:
-                    last_n    = rates_hist[-SUSTAINED_PERIODS:]
+                if rates_hist and len(rates_hist) >= _n_periods:
+                    last_n    = rates_hist[-_n_periods:]
                     min_floor = abs(avg7) * SUSTAINED_FLOOR_PCT
                     if o["strategy"] == "CARRY_ARB":
                         sustained = all(r >= min_floor for r in last_n)
@@ -602,9 +736,8 @@ def _apply_momentum_and_vol(opps):
                 o["_vol_flagged"] = True
 
             # ── 6. INSTITUTIONAL INTELLIGENCE GATE ──────────────────────────
-            # Uses live OI velocity, top-trader positioning, taker flow, basis
-            # alignment to decide if the carry is institutionally confirmed.
-            # Only blocks entries — never crashes (fail-open on API errors).
+            # carry_quality_score() is direction-aware: for NEG_CARRY it rewards
+            # bearish OI/top-trader/taker-flow alignment.  INTEL_MIN_SKIP = 30.
             # SKIP for regime-change entries (already vetted in step 1).
             if INTEL_GATE_ENABLED and not o.get("_regime_change"):
                 try:
@@ -613,8 +746,10 @@ def _apply_momentum_and_vol(opps):
                         intel = intel_fn(o["symbol"])
                         score = intel.get("score", 50)
                         gate  = intel.get("gate", "MODERATE")
-                        if score < INTEL_MIN_SKIP:
-                            continue   # OI falling + wrong-side institutions + spiking → SKIP
+                        # NEG_CARRY allows slightly lower scores (bear market conditions)
+                        min_skip = INTEL_MIN_SKIP - 5 if o["strategy"] == "NEG_CARRY" else INTEL_MIN_SKIP
+                        if score < min_skip:
+                            continue   # institutional conditions don't support carry
                         if score < INTEL_MIN_HALVE:
                             o["_vol_flagged"] = True   # marginal conditions → half size
                         o["intel_score"] = score
@@ -715,14 +850,30 @@ def _tiered_size(opps, n_slots, budget):
 
 # ── OPEN PAPER TRADE ──────────────────────────────────────────────────────────
 
+STOP_LOSS_COOLDOWN_H = 48   # don't re-enter a symbol for 48h after a stop-loss exit
+
 def open_trade(opp):
-    """Insert a new paper trade into the DB. Skip if one already open for (symbol, strategy)."""
+    """Insert a new paper trade into the DB. Skip if one already open for (symbol, strategy)
+    OR if the symbol had a stop-loss exit within the cooldown window."""
     c = _conn()
     existing = c.execute(
         "SELECT id FROM trades WHERE symbol=? AND strategy=? AND status='OPEN'",
         (opp["symbol"], opp["strategy"])
     ).fetchone()
     if existing:
+        c.close()
+        return None
+
+    # Stop-loss cooldown: don't re-enter same symbol for 48h after any stop/diverge exit
+    cooldown_cutoff = (datetime.now(timezone.utc) - timedelta(hours=STOP_LOSS_COOLDOWN_H)).isoformat()
+    recent_loss = c.execute(
+        "SELECT id FROM trades WHERE symbol=? AND status='CLOSED' "
+        "AND exit_reason IN ('STOP_LOSS_BASIS','BASIS_DIVERGING','STOP_LOSS') "
+        "AND closed_at > ?",
+        (opp["symbol"], cooldown_cutoff)
+    ).fetchone()
+    if recent_loss:
+        print(f"    [cooldown] {opp['symbol']} blocked — stop-loss within last {STOP_LOSS_COOLDOWN_H}h")
         c.close()
         return None
 
@@ -921,11 +1072,17 @@ def _should_close(trade, spot_now, perp_now, fr):
 
     # ── 6–9. Strategy-specific exits ─────────────────────────────────────────
     if strategy in ("CARRY_ARB", "NEG_CARRY"):
-        # Funding dropped below exit threshold
+        # Funding dropped below exit threshold.
+        # Minimum 24h hold: funding often normalizes then comes back within 24h.
+        # Early exit at 11h just locks in a fee loss. Exception: if already near stop.
+        near_stop = unrealized < stop_usd * 0.6  # within 60% of hard stop
         if strategy == "CARRY_ARB" and fr <= CARRY_EXIT_RATE:
-            return "FUNDING_DROPPED"
+            # CARRY_ARB needs 48h minimum — fees require ~2.5 days to recover at 39%/yr
+            if hours_open >= CARRY_MIN_HOLD_H or near_stop:
+                return "FUNDING_DROPPED"
         if strategy == "NEG_CARRY" and fr >= -CARRY_EXIT_RATE:
-            return "FUNDING_NORMALIZED"
+            if hours_open >= 24 or near_stop:
+                return "FUNDING_NORMALIZED"
 
         # Funding decay — CONFIRMED fade only (a single low print during a
         # volatile stretch is noise; funding often snaps back next period):
@@ -953,6 +1110,10 @@ def _should_close(trade, spot_now, perp_now, fr):
             return "BASIS_CONVERGED"
         if basis_now > basis_entry + BASIS_STOP_PCT:
             return "STOP_LOSS_BASIS"
+        # Divergence exit: after 24h, if the basis is WIDER than at entry the
+        # convergence thesis has failed — exit early, don't wait out 72h max.
+        if hours_open >= BASIS_DIVERGE_EXIT_H and abs(basis_now) > abs(basis_entry):
+            return "BASIS_DIVERGING"
         if hours_open >= BASIS_MAX_HOURS:
             return "MAX_DURATION"
 
@@ -961,6 +1122,14 @@ def _should_close(trade, spot_now, perp_now, fr):
             return "BASIS_CONVERGED"
         if basis_now < basis_entry - BASIS_STOP_PCT:
             return "STOP_LOSS_BASIS"
+        # Exit paying-carry positions if basis isn't converging.
+        # fr_entry > 0 means we're paying carry while holding — exit if still losing after 12h.
+        if fr_entry > 0.00015 and unrealized < 0 and hours_open >= 12:
+            return "CARRY_COST_EXIT"
+        # Divergence exit: after 24h, if the basis is WIDER (more negative) than
+        # at entry the convergence thesis has failed — exit early.
+        if hours_open >= BASIS_DIVERGE_EXIT_H and abs(basis_now) > abs(basis_entry):
+            return "BASIS_DIVERGING"
         if hours_open >= BASIS_MAX_HOURS:
             return "MAX_DURATION"
 
@@ -1195,6 +1364,9 @@ def open_new_trades():
 # ── REPORT ────────────────────────────────────────────────────────────────────
 
 def compute_report(verbose=True):
+    global _SCAN_REGIME
+    if not _SCAN_REGIME:
+        _SCAN_REGIME = get_market_regime()
     c    = _conn()
     all_ = c.execute("SELECT * FROM trades ORDER BY opened_at DESC").fetchall()
     c.close()
@@ -1218,20 +1390,28 @@ def compute_report(verbose=True):
     open_partials = sum(float(r.get("partial_pnl") or 0) for r in open_)
 
     capital_deployed = sum(float(r["size_usd"] or 0) for r in open_)
-    # True equity includes ALL realized (closed trades + partials + booked profit events)
-    account_equity   = STARTING_BALANCE + total_booked + total_pnl + open_partials + total_unreal
-    available_cash   = STARTING_BALANCE + total_booked + total_pnl + open_partials - capital_deployed
+    # True equity = starting + ALL realized PnL from closed trades + unrealized + partial exits
+    # NOTE: total_booked_pnl (meta) is the sum of unrealized_pnl AT TIME OF book events.
+    # Those same trades' realized_pnl is already counted in total_pnl — do NOT add both.
+    account_equity   = STARTING_BALANCE + total_pnl + open_partials + total_unreal
+    available_cash   = STARTING_BALANCE + total_pnl + open_partials - capital_deployed
     return_pct       = (account_equity - STARTING_BALANCE) / STARTING_BALANCE * 100
 
     # Portfolio trailing stop floor (live display)
     trail_floor = port_peak * (1 - PORT_TRAIL_DROP_PCT) if port_peak >= 1000 else None
 
     # Projected daily funding income from open positions
+    # Only count funding we RECEIVE, not pay:
+    #   LONG_PERP_SHORT_SPOT → receives when funding < 0 (shorts pay longs)
+    #   LONG_SPOT_SHORT_PERP → receives when funding > 0 (longs pay shorts)
     proj_daily_funding = 0.0
     for r in open_:
-        fr = float(r["funding_at_open"] or 0)
-        sz = float(r["size_usd"] or 0)
-        proj_daily_funding += abs(fr) * 3 * sz  # 3 payments/day × size
+        fr  = float(r["funding_at_open"] or 0)
+        sz  = float(r["size_usd"] or 0)
+        dirn = r["direction"] or ""
+        if (dirn == "LONG_PERP_SHORT_SPOT" and fr < 0) or \
+           (dirn == "LONG_SPOT_SHORT_PERP" and fr > 0):
+            proj_daily_funding += abs(fr) * 3 * sz
 
     win_rate  = len(wins) / len(closed) * 100 if closed else 0.0
     gains     = sum(r["realized_pnl"] for r in wins)
@@ -1369,6 +1549,11 @@ def compute_report(verbose=True):
                 "opened_at":   r["opened_at"],
                 "funding_at_open": r["funding_at_open"],
                 "ann_yield":   r["ann_yield_at_open"],
+                # For basis strategies the funding-annualized number is meaningless
+                # (extreme-funding tokens stored -2000%+/yr). Expected return comes
+                # from basis convergence: |basis_entry| × (8760h / 72h max hold).
+                "basis_yield_ann": round(abs(float(r["basis_entry_pct"] or 0)) * BASIS_ANNUALIZE, 1)
+                                   if r["strategy"] in ("SPOT_DISCOUNT", "SPOT_PREMIUM") else None,
                 "spot_entry":  r["spot_entry"],
                 "perp_entry":  r["perp_entry"],
                 "basis_entry": r["basis_entry_pct"],
@@ -1388,19 +1573,57 @@ def compute_report(verbose=True):
         ],
         "recent_closed": [
             {
-                "id":          r["id"],
-                "strategy":    r["strategy"],
-                "symbol":      r["symbol"],
-                "direction":   r["direction"],
+                "id":           r["id"],
+                "strategy":     r["strategy"],
+                "symbol":       r["symbol"],
+                "direction":    r["direction"],
+                "size_usd":     round(float(r["size_usd"] or 0), 2),
+                "ann_yield":    round(float(r.get("ann_yield_at_open") or 0), 2),
+                "spot_entry":   round(float(r["spot_entry"] or 0), 6),
+                "perp_entry":   round(float(r["perp_entry"] or 0), 6),
+                "spot_exit":    round(float(r.get("spot_exit") or 0), 6),
+                "perp_exit":    round(float(r.get("perp_exit") or 0), 6),
+                "basis_entry":  round(float(r.get("basis_entry_pct") or 0), 4),
                 "realized_pnl": round(float(r["realized_pnl"] or 0), 4),
                 "funding_earned": round(float(r["funding_total"] or 0), 4),
-                "fees":        round(float(r["fees_total"] or 0), 4),
-                "exit_reason": r["exit_reason"],
-                "opened_at":   r["opened_at"],
-                "closed_at":   r["closed_at"],
+                "fees":         round(float(r["fees_total"] or 0), 4),
+                "exit_reason":  r["exit_reason"],
+                "opened_at":    r["opened_at"],
+                "closed_at":    r["closed_at"],
             }
             for r in sorted(closed, key=lambda x: x["closed_at"] or "", reverse=True)[:20]
         ],
+        # Full journal: ALL closed trades oldest→newest for timeline + complete log
+        "trade_journal": (lambda trades: [
+            {
+                "trade_no":     i + 1,
+                "id":           r["id"],
+                "strategy":     r["strategy"],
+                "symbol":       r["symbol"],
+                "direction":    r["direction"],
+                "size_usd":     round(float(r["size_usd"] or 0), 2),
+                "ann_yield":    round(float(r.get("ann_yield_at_open") or 0), 2),
+                "spot_entry":   round(float(r["spot_entry"] or 0), 6),
+                "perp_entry":   round(float(r["perp_entry"] or 0), 6),
+                "spot_exit":    round(float(r.get("spot_exit") or 0), 6),
+                "perp_exit":    round(float(r.get("perp_exit") or 0), 6),
+                "basis_entry":  round(float(r.get("basis_entry_pct") or 0), 4),
+                "realized_pnl": round(float(r["realized_pnl"] or 0), 4),
+                "funding_earned": round(float(r["funding_total"] or 0), 4),
+                "fees":         round(float(r["fees_total"] or 0), 4),
+                "exit_reason":  r["exit_reason"],
+                "opened_at":    r["opened_at"],
+                "closed_at":    r["closed_at"],
+                "hold_hours":   round((
+                    (datetime.fromisoformat(r["closed_at"].replace("Z","+00:00")) -
+                     datetime.fromisoformat(r["opened_at"].replace("Z","+00:00"))).total_seconds() / 3600
+                ) if r["closed_at"] and r["opened_at"] else 0, 1),
+                "is_win":       (float(r["realized_pnl"] or 0) > 0),
+                "cum_wr":       round((sum(1 for x in trades[:i+1] if (float(x["realized_pnl"] or 0)) > 0) / (i + 1)) * 100, 1),
+                "cum_pnl":      round(sum(float(x["realized_pnl"] or 0) for x in trades[:i+1]), 2),
+            }
+            for i, r in enumerate(trades)
+        ])(sorted(closed, key=lambda x: x["closed_at"] or "")),
         # Live scanner state — always populated, even with 0 open positions
         "scan_time":        datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         "scan_regime":      _SCAN_REGIME.get("regime", "UNKNOWN"),
